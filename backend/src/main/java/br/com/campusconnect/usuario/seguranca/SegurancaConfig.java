@@ -52,6 +52,8 @@ class SegurancaConfig {
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(rotas -> rotas
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
+                        // A tag <img> não manda o JWT; o nome aleatório do arquivo é a proteção.
+                        .requestMatchers(HttpMethod.GET, "/api/arquivos/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .anyRequest().authenticated())
                 .oauth2ResourceServer(servidor -> servidor.jwt(jwt -> { }))

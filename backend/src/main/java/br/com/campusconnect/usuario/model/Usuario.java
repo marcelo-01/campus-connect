@@ -1,12 +1,18 @@
 package br.com.campusconnect.usuario.model;
 
 import br.com.campusconnect.comum.EntidadeAuditada;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OrderColumn;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -46,6 +52,21 @@ public class Usuario extends EntidadeAuditada {
     @Column(name = "foto_perfil_url", columnDefinition = "text")
     private String fotoPerfilUrl;
 
+    @Column(name = "capa_url", columnDefinition = "text")
+    private String capaUrl;
+
+    /** Sempre com {@code https://} ou {@code http://} na frente. */
+    @Column(name = "link", length = 200)
+    private String link;
+
+    /** Na ordem em que a pessoa digitou. Troque a lista inteira com {@link #setHabilidades}. */
+    @Setter(AccessLevel.NONE)
+    @ElementCollection
+    @CollectionTable(name = "habilidade_usuario", joinColumns = @JoinColumn(name = "usuario_id"))
+    @OrderColumn(name = "ordem")
+    @Column(name = "nome", nullable = false, length = 30)
+    private List<String> habilidades = new ArrayList<>();
+
     @Column(name = "email_verificado", nullable = false)
     private boolean emailVerificado;
 
@@ -72,6 +93,15 @@ public class Usuario extends EntidadeAuditada {
     /** Só conta ativa e não anonimizada pode entrar ou renovar a sessão. */
     public boolean podeEntrar() {
         return status == StatusUsuario.ATIVO && anonimizadoEm == null;
+    }
+
+    /**
+     * Troca a lista por uma nova em vez de alterar a atual: assim o Hibernate apaga as linhas antigas
+     * antes de inserir as novas, e o índice único de nome sem diferenciar maiúsculas
+     * ({@code ux_habilidade_usuario_nome}) nunca vê dois nomes iguais no meio da troca.
+     */
+    public void setHabilidades(@NonNull List<String> habilidades) {
+        this.habilidades = new ArrayList<>(habilidades);
     }
 
     public void setUsername(@NonNull String username) {

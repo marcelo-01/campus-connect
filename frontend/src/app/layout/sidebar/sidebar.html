@@ -1,0 +1,49 @@
+<aside class="sidebar">
+  <div class="logo">
+    <img class="logo-mark" src="assets/logo.png" alt="CampusConnect" />
+    <span class="logo-word">campusconnect<span class="logo-dot">.</span></span>
+  </div>
+
+  <nav class="nav">
+    @for (item of itens; track item.rotulo) {
+      @if (item.rota) {
+        <a
+          class="nav-item"
+          [routerLink]="item.rota"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: item.rota === '/' }"
+        >
+          <app-icone [nome]="item.icone" />
+          {{ item.rotulo }}
+        </a>
+      } @else {
+        <button type="button" class="nav-item" (click)="emBreve(item.rotulo)">
+          <app-icone [nome]="item.icone" />
+          {{ item.rotulo }}
+        </button>
+      }
+    }
+    <button type="button" class="nav-item" (click)="sair()">
+      <app-icone nome="sair" />
+      Sair
+    </button>
+  </nav>
+
+  <div class="section-label">
+    Minhas bolhas
+    <button type="button" title="Nova bolha" (click)="emBreve('Nova bolha')"><app-icone nome="mais" /></button>
+  </div>
+  <div class="bubbles-list">
+    @for (bolha of bolhas() ?? []; track bolha.id) {
+      <button type="button" class="bubble-item" [class]="recuo(bolha.tipo)" (click)="emBreve(bolha.nome)">
+        <div class="bubble-dot" [style.background]="cor(bolha.tipo)">{{ sigla(bolha.nome) }}</div>
+        <span class="bubble-name">{{ bolha.nome }}</span>
+        <span class="bubble-count">{{ bolha.totalMembros }}</span>
+      </button>
+    } @empty {
+      @if (bolhas()) {
+        <p class="vazio-discreto">Você ainda não participa de nenhuma bolha.</p>
+      }
+    }
+  </div>
+</aside>

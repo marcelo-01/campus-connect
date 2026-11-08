@@ -10,6 +10,17 @@ spring:
     hibernate:
       ddl-auto: validate
     open-in-view: false
+  servlet:
+    multipart:
+      # Fotos de perfil e capas. O frontend avisa antes de enviar; aqui e a garantia.
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  tomcat:
+    # Sem isso, num upload acima do limite o Tomcat fecha a conexao e o navegador ve
+    # "erro de rede" em vez da resposta 413 com a mensagem.
+    max-swallow-size: 20MB
 
 campusconnect:
   seguranca:
@@ -24,3 +35,6 @@ campusconnect:
     duracao-refresh-sessao: 1d
     # Secure: o cookie so trafega em HTTPS. Navegadores aceitam em http://localhost.
     cookie-seguro: ${COOKIE_SEGURO:true}
+  arquivos:
+    # Pasta das imagens enviadas (fotos e capas). Relativa a pasta em que a aplicacao sobe.
+    diretorio: ${ARQUIVOS_DIR:uploads}

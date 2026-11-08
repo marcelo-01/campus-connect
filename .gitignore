@@ -1,6 +1,8 @@
 HELP.md
 target/
 backend/.mvn/wrapper/maven-wrapper.jar
+# Imagens enviadas pelos usuarios em desenvolvimento
+backend/uploads/
 !**/src/main/**/target/
 !**/src/test/**/target/
 

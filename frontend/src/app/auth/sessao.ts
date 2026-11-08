@@ -6,6 +6,8 @@ export interface UsuarioResumo {
   nomeCompleto: string;
   nomeExibicao: string | null;
   email: string;
+  /** Caminho da foto de perfil (`/api/arquivos/…`), ou `null` para mostrar as iniciais. */
+  fotoUrl: string | null;
 }
 
 /** O refresh token não vem aqui: o servidor o entrega só no cookie HttpOnly `cc_refresh`. */

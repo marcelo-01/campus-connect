@@ -1,0 +1,112 @@
+<div class="content content-form">
+  <div class="backbar">
+    <button type="button" class="back-btn" title="Voltar" (click)="cancelar()">
+      <app-icone nome="voltar" />
+    </button>
+    <div class="backbar-title">
+      <h1>Editar perfil</h1>
+      @if (perfil(); as p) {
+        <span>&#64;{{ p.username }}</span>
+      }
+    </div>
+    <div class="hstack" style="gap: 8px">
+      <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+      <button type="button" class="btn btn-primary" [disabled]="salvando() || !perfil()" (click)="salvar()">
+        {{ salvando() ? 'Salvando…' : 'Salvar alterações' }}
+      </button>
+    </div>
+  </div>
+
+  @if (erroGeral(); as erro) {
+    <div class="auth-alert" role="alert">{{ erro }}</div>
+  }
+
+  <div class="edit-cover">
+    <div
+      class="profile-cover"
+      style="height: 150px"
+      [class.com-imagem]="perfil()?.capaUrl"
+      [class.enviando]="enviandoCapa()"
+      [style.background-image]="perfil()?.capaUrl ? 'url(' + perfil()?.capaUrl + ')' : null"
+    ></div>
+    <button type="button" class="cover-edit" [disabled]="enviandoCapa()" (click)="arquivoCapa.click()">
+      <app-icone nome="imagem" /> {{ enviandoCapa() ? 'Enviando…' : 'Trocar capa' }}
+    </button>
+    <div class="edit-avatar" [class.enviando]="enviandoFoto()">
+      <app-avatar [nome]="perfil()?.nomeCompleto" [fotoUrl]="perfil()?.fotoUrl" tamanho="xl" />
+      <button type="button" class="avatar-edit" title="Trocar foto de perfil" [disabled]="enviandoFoto()" (click)="arquivoFoto.click()">
+        <app-icone nome="editar" />
+      </button>
+    </div>
+    <input #arquivoFoto type="file" accept="image/jpeg,image/png" hidden (change)="trocarFoto($event)" />
+    <input #arquivoCapa type="file" accept="image/jpeg,image/png" hidden (change)="trocarCapa($event)" />
+  </div>
+  @if (erroImagem(); as erro) {
+    <p class="field-error" role="alert">{{ erro }}</p>
+  }
+
+  <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+    <div class="field-group full">
+      <label for="perfil-nome">Nome completo</label>
+      <input id="perfil-nome" class="form-input" [class.invalid]="mostrarErro('nomeCompleto')" formControlName="nomeCompleto" autocomplete="name" />
+      @if (mostrarErro('nomeCompleto')) {
+        <p class="field-error">{{ mensagem('nomeCompleto') }}</p>
+      }
+    </div>
+
+    <div class="field-group">
+      <label for="perfil-username">Nome de usuário</label>
+      <div class="input-prefix" [class.invalid]="mostrarErro('username')">
+        <span>&#64;</span>
+        <input id="perfil-username" formControlName="username" autocapitalize="none" spellcheck="false" autocomplete="nickname" />
+      </div>
+      @if (mostrarErro('username')) {
+        <p class="field-error">{{ mensagem('username') }}</p>
+      }
+    </div>
+
+    <div class="field-group">
+      <label for="perfil-link">Link</label>
+      <input id="perfil-link" class="form-input" [class.invalid]="mostrarErro('link')" formControlName="link" placeholder="seu-site.com" autocomplete="url" />
+      @if (mostrarErro('link')) {
+        <p class="field-error">{{ mensagem('link') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="perfil-bio">Bio <span class="counter">{{ form.controls.bio.value.length }}/{{ tamanhoBio }}</span></label>
+      <textarea id="perfil-bio" class="form-input" rows="3" [attr.maxlength]="tamanhoBio" [class.invalid]="mostrarErro('bio')" formControlName="bio"></textarea>
+      @if (mostrarErro('bio')) {
+        <p class="field-error">{{ mensagem('bio') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="perfil-habilidade">Habilidades <span class="counter">{{ habilidades().length }}/{{ maximoHabilidades }}</span></label>
+      <div class="skills-editor">
+        @for (habilidade of habilidades(); track habilidade) {
+          <span class="skill-chip">
+            {{ habilidade }}
+            <button type="button" [title]="'Remover ' + habilidade" (click)="removerHabilidade(habilidade)">×</button>
+          </span>
+        }
+        <input
+          id="perfil-habilidade"
+          [value]="rascunhoHabilidade()"
+          (input)="rascunhoHabilidade.set($any($event.target).value)"
+          (keydown.enter)="adicionarHabilidade($event)"
+          [attr.maxlength]="tamanhoHabilidade"
+          [disabled]="habilidades().length >= maximoHabilidades"
+          placeholder="Adicionar habilidade…"
+        />
+      </div>
+    </div>
+  </form>
+
+  <div class="form-foot">
+    <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+    <button type="button" class="btn btn-primary" [disabled]="salvando() || !perfil()" (click)="salvar()">
+      {{ salvando() ? 'Salvando…' : 'Salvar alterações' }}
+    </button>
+  </div>
+</div>

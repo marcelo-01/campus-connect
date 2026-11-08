@@ -1,0 +1,129 @@
+@if (perfil(); as p) {
+  <div class="content">
+    <div
+      class="profile-cover"
+      [class.com-imagem]="p.capaUrl"
+      [style.background-image]="p.capaUrl ? 'url(' + p.capaUrl + ')' : null"
+    ></div>
+    <div class="profile-head">
+      <app-avatar [nome]="p.nomeCompleto" [fotoUrl]="p.fotoUrl" tamanho="xl" />
+      <div class="profile-id">
+        <h1>{{ p.nomeCompleto }}</h1>
+        <div class="handle">&#64;{{ p.username }} · entrou em {{ membroDesde() }}</div>
+      </div>
+      <div class="profile-actions">
+        @if (p.proprio) {
+          <a class="btn btn-secondary" routerLink="/perfil/editar"><app-icone nome="editar" /> Editar perfil</a>
+        }
+        <button type="button" class="btn btn-primary" (click)="compartilhar(p)">Compartilhar</button>
+      </div>
+    </div>
+
+    @if (p.bio) {
+      <div class="profile-bio">{{ p.bio }}</div>
+    }
+    @if (p.link) {
+      <a class="profile-link" [href]="p.link" target="_blank" rel="noopener noreferrer nofollow">
+        <app-icone nome="link" />{{ linkSemEsquema(p.link) }}
+      </a>
+    }
+
+    <div class="profile-stats">
+      <button type="button" class="stat stat-btn" (click)="emBreve('Conexões')">
+        <b>{{ conexoes() }}</b>{{ conexoes() === 1 ? 'conexão' : 'conexões' }}
+      </button>
+      <button type="button" class="stat stat-btn" (click)="emBreve('Explorar bolhas')">
+        <b>{{ bolhas().length }}</b>{{ bolhas().length === 1 ? 'bolha' : 'bolhas' }}
+      </button>
+    </div>
+
+    @if (bolhas().length || p.proprio) {
+      <div class="profile-bubbles">
+        @for (bolha of bolhas(); track bolha.id) {
+          <span class="chip" style="padding-left: 6px">
+            <div class="bubble-dot" [style.background]="cor(bolha.tipo)">{{ sigla(bolha.nome) }}</div>
+            {{ bolha.nome }}
+          </span>
+        }
+        @if (p.proprio) {
+          <button type="button" class="chip" (click)="emBreve('Explorar bolhas')"><app-icone nome="mais" /> Entrar em mais bolhas</button>
+        }
+      </div>
+    }
+
+    <div class="tabs">
+      <button type="button" [class.active]="aba() === 'posts'" (click)="aba.set('posts')">Posts</button>
+      <button type="button" [class.active]="aba() === 'market'" (click)="aba.set('market')">Marketplace</button>
+      @if (p.proprio) {
+        <button type="button" [class.active]="aba() === 'saved'" (click)="aba.set('saved')">Salvos</button>
+      }
+      <button type="button" [class.active]="aba() === 'about'" (click)="aba.set('about')">Sobre</button>
+    </div>
+
+    @switch (aba()) {
+      @case ('posts') {
+        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+          {{ p.proprio ? 'Você ainda não publicou nada. Seus posts aparecerão aqui.' : primeiroNome() + ' ainda não publicou nada.' }}
+        </div>
+      }
+      @case ('market') {
+        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+          {{ p.proprio ? 'Você ainda não anunciou nenhum serviço. Seus anúncios aparecerão aqui.' : primeiroNome() + ' ainda não anunciou nenhum serviço.' }}
+        </div>
+      }
+      @case ('saved') {
+        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+          Você ainda não salvou nada. Os posts e serviços que você salvar aparecerão aqui.
+        </div>
+      }
+      @case ('about') {
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+          <div class="card">
+            <h3>Formação</h3>
+            <p class="vazio-discreto">Nenhuma formação informada.</p>
+          </div>
+          <div class="card">
+            <h3>Habilidades</h3>
+            @if (p.habilidades.length) {
+              <div style="display: flex; flex-wrap: wrap; gap: 6px">
+                @for (habilidade of p.habilidades; track habilidade) {
+                  <span class="chip" style="font-size: 12px; padding: 5px 10px">{{ habilidade }}</span>
+                }
+              </div>
+            } @else {
+              <p class="vazio-discreto">Nenhuma habilidade informada.</p>
+            }
+          </div>
+          <div class="card" style="grid-column: span 2">
+            <h3>Bolhas que participo</h3>
+            @if (bolhas().length) {
+              <div class="vstack" style="gap: 4px">
+                @for (bolha of bolhas(); track bolha.id) {
+                  <div class="hstack" style="padding: 8px 0; border-bottom: 1px solid var(--border)">
+                    <div class="bubble-dot" [style.background]="cor(bolha.tipo)">{{ sigla(bolha.nome) }}</div>
+                    <div style="flex: 1">
+                      <div style="font-weight: 600; font-size: 14px">{{ bolha.nome }}</div>
+                      <div class="muted" style="font-size: 12.5px">{{ bolha.totalMembros }} {{ bolha.totalMembros === 1 ? 'membro' : 'membros' }}</div>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" (click)="emBreve(bolha.nome)">Visitar</button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="vazio-discreto">{{ p.proprio ? 'Você ainda não participa de nenhuma bolha.' : 'Nenhuma bolha por enquanto.' }}</p>
+            }
+          </div>
+        </div>
+      }
+    }
+  </div>
+} @else if (naoEncontrado()) {
+  <div class="content content-narrow">
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--text-subtle)">?</div>
+      <h3>Perfil não encontrado</h3>
+      <p>Esse nome de usuário não existe ou a conta não está mais disponível.</p>
+      <a class="btn btn-secondary" routerLink="/">Voltar ao início</a>
+    </div>
+  </div>
+}

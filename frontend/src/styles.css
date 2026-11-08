@@ -1403,30 +1403,37 @@ app-root { display: contents; }
 
 .btn:disabled { opacity: 0.6; cursor: progress; }
 
-/* ---- Página provisória pós-login (será substituída pelo feed) ---- */
-.inicio {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 40px 16px;
-}
-.inicio-card {
-  width: 100%;
-  max-width: 420px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow);
-  padding: 28px;
-}
-.inicio-card .logo { padding: 0 0 24px; }
-.inicio-perfil { display: flex; align-items: center; gap: 14px; margin-bottom: 18px; }
-.inicio-perfil .auth-title { font-size: 24px; }
-.inicio-perfil .handle { color: var(--text-muted); font-size: 13.5px; margin-top: 2px; word-break: break-all; }
-.inicio-card .auth-sub { margin: 0 0 22px; }
-
 /* ========================================================================
    Ajustes sobre o MVP
    ======================================================================== */
 /* Sem o rodapé "Indigo estrutura · …" no painel da marca: o texto continua centralizado na altura. */
 .auth-brand-copy { margin-block: auto; }
+
+/* Fotos e capas enviadas (no MVP eram só iniciais e gradiente). */
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.profile-cover.com-imagem { background-size: cover; background-position: center; }
+.profile-cover.com-imagem::after { display: none; }
+.enviando { opacity: 0.55; transition: opacity 0.15s; }
+
+/* O MVP só usava <button>. Itens que viraram link (<a>) herdariam a altura de linha do texto e
+   ficariam 2px mais altos que os botões vizinhos. */
+a.nav-item, a.btn { line-height: normal; }
+
+/* Link do perfil, colado na bio (o MVP tinha o campo no formulário mas não o mostrava).
+   A margem negativa desconta parte do espaço entre blocos do .content. */
+.profile-link {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: -6px;
+  font-size: 14px; font-weight: 600;
+  color: var(--accent);
+  width: fit-content;
+}
+.profile-link:hover { color: var(--accent-hover); }
+.profile-link svg { width: 15px; height: 15px; }
+
+/* Lista de bolhas vazia, no menu lateral e na aba "Sobre". */
+.vazio-discreto { font-size: 13px; color: var(--text-subtle); padding: 2px 12px 0; margin: 0; }
+.card .vazio-discreto { padding: 0; font-size: 14px; color: var(--text-muted); }
+
+/* Avatar da barra do topo leva ao perfil. */
+.topbar-avatar { display: grid; border-radius: 999px; }

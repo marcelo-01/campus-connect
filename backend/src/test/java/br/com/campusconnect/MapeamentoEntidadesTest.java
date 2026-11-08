@@ -95,6 +95,9 @@ class MapeamentoEntidadesTest {
         em.persist(ads);
 
         Usuario ana = usuario("ana");
+        ana.setLink("https://github.com/ana");
+        ana.setCapaUrl("/api/arquivos/capa.jpg");
+        ana.setHabilidades(List.of("Java", "Figma"));
         Usuario joao = usuario("joao");
 
         VinculoInstitucional vinculo = new VinculoInstitucional(ana, ifba.getId(), TipoVinculo.ALUNO);
@@ -191,7 +194,7 @@ class MapeamentoEntidadesTest {
                 where table_schema = 'public' and table_type = 'BASE TABLE'
                   and table_name <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(tabelas).hasSize(25).allSatisfy(tabela -> assertThat(
+        assertThat(tabelas).hasSize(26).allSatisfy(tabela -> assertThat(
                 jdbc.queryForObject("select count(*) from " + tabela, Long.class)).as(tabela).isPositive());
 
         Campus campusLido = em.find(Campus.class, eunapolis.getId());
@@ -202,6 +205,9 @@ class MapeamentoEntidadesTest {
         Usuario anaLida = em.find(Usuario.class, ana.getId());
         assertThat(anaLida.getStatus()).isEqualTo(StatusUsuario.ATIVO);
         assertThat(anaLida.isEmailVerificado()).isFalse();
+        assertThat(anaLida.getLink()).isEqualTo("https://github.com/ana");
+        assertThat(anaLida.getCapaUrl()).isEqualTo("/api/arquivos/capa.jpg");
+        assertThat(anaLida.getHabilidades()).containsExactly("Java", "Figma");
         assertThat(em.find(VinculoInstitucional.class, vinculo.getId()).getCursoId()).isEqualTo(ads.getId());
 
         RefreshToken refreshTokenLido = em.find(RefreshToken.class, refreshToken.getId());
@@ -364,6 +370,32 @@ class MapeamentoEntidadesTest {
                 """))
                 .isInstanceOf(DataIntegrityViolationException.class)
                 .hasMessageContaining("ck_usuario_username_normalizado");
+    }
+
+    /** Trocar a lista inteira apaga as linhas antigas antes de inserir: reordenar não esbarra no índice único. */
+    @Test
+    void trocaAsHabilidadesSemColidirNoIndiceUnico() {
+        Usuario ana = usuario("ana");
+        ana.setHabilidades(List.of("Java", "Figma", "SQL"));
+        em.flush();
+
+        ana.setHabilidades(List.of("SQL", "Java"));
+        em.flush();
+        em.clear();
+
+        assertThat(em.find(Usuario.class, ana.getId()).getHabilidades()).containsExactly("SQL", "Java");
+    }
+
+    @Test
+    void oBancoRejeitaHabilidadeRepetidaComOutrasMaiusculas() {
+        UUID ana = usuario("ana").getId();
+        em.flush();
+        jdbc.update("insert into habilidade_usuario (usuario_id, ordem, nome) values (?, 0, 'Java')", ana);
+
+        assertThatThrownBy(() -> jdbc.update(
+                "insert into habilidade_usuario (usuario_id, ordem, nome) values (?, 1, 'JAVA')", ana))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ux_habilidade_usuario_nome");
     }
 
     @Test

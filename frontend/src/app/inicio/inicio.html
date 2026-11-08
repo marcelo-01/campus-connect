@@ -1,26 +1,13 @@
-<main class="inicio" data-theme="light">
-  <section class="inicio-card">
-    <div class="logo">
-      <img class="logo-mark" src="assets/logo.png" alt="CampusConnect" />
-      <span class="logo-word">campusconnect<span class="logo-dot">.</span></span>
-    </div>
+<div class="content content-narrow">
+  <div>
+    <h1 class="section-title">Olá, {{ primeiroNome() }}!</h1>
+    <div class="section-sub">Que bom ter você no CampusConnect.</div>
+  </div>
 
-    @if (usuario(); as conta) {
-      <div class="inicio-perfil">
-        <div class="avatar lg">{{ iniciais() }}</div>
-        <div>
-          <h1 class="auth-title">Olá, {{ primeiroNome() }}!</h1>
-          <div class="handle">&#64;{{ conta.username }} · {{ conta.email }}</div>
-        </div>
-      </div>
-    }
-
-    <p class="auth-sub">
-      Sua conta está pronta. O feed, as bolhas e o marketplace chegam nas próximas etapas.
-    </p>
-
-    <button type="button" class="btn btn-secondary btn-block" [disabled]="saindo()" (click)="sair()">
-      {{ saindo() ? 'Saindo…' : 'Sair' }}
-    </button>
-  </section>
-</main>
+  <div class="card empty-state">
+    <div class="empty-bubble" style="background: var(--accent)">CC</div>
+    <h3>O feed das suas bolhas está a caminho</h3>
+    <p>Enquanto isso, deixe seu perfil com a sua cara: foto, capa, bio, link e habilidades.</p>
+    <a class="btn btn-primary" routerLink="/perfil/editar">Editar meu perfil</a>
+  </div>
+</div>

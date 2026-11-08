@@ -7,7 +7,7 @@ import { SessaoResponse } from './sessao';
 const SESSAO: SessaoResponse = {
   accessToken: 'jwt-1',
   expiraEm: '2026-11-08T23:00:00Z',
-  usuario: { id: '1', username: 'ana', nomeCompleto: 'Ana Beatriz', nomeExibicao: null, email: 'ana@exemplo.com' },
+  usuario: { id: '1', username: 'ana', nomeCompleto: 'Ana Beatriz', nomeExibicao: null, email: 'ana@exemplo.com', fotoUrl: null },
 };
 
 describe('AuthService', () => {

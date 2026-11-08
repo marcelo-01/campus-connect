@@ -67,6 +67,11 @@ export class AuthService {
     }
   }
 
+  /** Depois de editar o perfil: o menu lateral e a barra do topo mostram o nome e a foto novos na hora. */
+  atualizarUsuario(campos: Partial<UsuarioResumo>): void {
+    this.usuarioAtual.update((atual) => (atual ? { ...atual, ...campos } : atual));
+  }
+
   limpar(): void {
     this.tokenAcesso = null;
     this.usuarioAtual.set(null);
