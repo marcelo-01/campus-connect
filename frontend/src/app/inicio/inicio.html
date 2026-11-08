@@ -1,0 +1,26 @@
+<main class="inicio" data-theme="light">
+  <section class="inicio-card">
+    <div class="logo">
+      <img class="logo-mark" src="assets/logo.png" alt="CampusConnect" />
+      <span class="logo-word">campusconnect<span class="logo-dot">.</span></span>
+    </div>
+
+    @if (usuario(); as conta) {
+      <div class="inicio-perfil">
+        <div class="avatar lg">{{ iniciais() }}</div>
+        <div>
+          <h1 class="auth-title">Olá, {{ primeiroNome() }}!</h1>
+          <div class="handle">&#64;{{ conta.username }} · {{ conta.email }}</div>
+        </div>
+      </div>
+    }
+
+    <p class="auth-sub">
+      Sua conta está pronta. O feed, as bolhas e o marketplace chegam nas próximas etapas.
+    </p>
+
+    <button type="button" class="btn btn-secondary btn-block" [disabled]="saindo()" (click)="sair()">
+      {{ saindo() ? 'Saindo…' : 'Sair' }}
+    </button>
+  </section>
+</main>

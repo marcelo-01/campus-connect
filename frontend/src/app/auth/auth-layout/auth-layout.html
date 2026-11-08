@@ -1,0 +1,38 @@
+<div class="auth" data-theme="light">
+  <!-- Painel da marca -->
+  <aside class="auth-brand">
+    <div class="auth-bubbles" aria-hidden="true">
+      <span class="ab ab-1"></span>
+      <span class="ab ab-2"></span>
+      <span class="ab ab-3"></span>
+      <span class="ab ab-4"></span>
+    </div>
+
+    <div class="auth-brand-top">
+      <!-- Só o nome: o símbolo não tem contraste sobre o roxo do painel. -->
+      <div class="logo">
+        <span class="logo-word" style="color: #fff">campusconnect<span class="logo-dot">.</span></span>
+      </div>
+    </div>
+
+    <div class="auth-brand-copy">
+      <h2>A rede que conecta cada bolha da sua universidade.</h2>
+      <p>
+        Do comunicado geral ao grupo do seu curso — encontre sua comunidade,
+        troque ideias e ofereça seus serviços no marketplace estudantil.
+      </p>
+    </div>
+  </aside>
+
+  <!-- Formulário -->
+  <main class="auth-panel">
+    <div class="auth-card">
+      <div class="auth-logo-mobile">
+        <img class="logo-mark" src="assets/logo.png" alt="CampusConnect" />
+        <span class="logo-word">campusconnect<span class="logo-dot">.</span></span>
+      </div>
+
+      <ng-content />
+    </div>
+  </main>
+</div>

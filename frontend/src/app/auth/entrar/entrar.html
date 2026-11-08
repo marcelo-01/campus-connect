@@ -1,0 +1,74 @@
+<app-auth-layout>
+  <h1 class="auth-title">Que bom te ver de novo</h1>
+  <p class="auth-sub">Entre para acompanhar suas bolhas e conversas.</p>
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="entrar()">
+    @if (erroGeral(); as erro) {
+      <div class="auth-alert" role="alert">{{ erro }}</div>
+    }
+
+    <div class="field-group full">
+      <label for="login-email">E-mail</label>
+      <input
+        id="login-email"
+        class="form-input"
+        [class.invalid]="mostrarErro('email')"
+        type="email"
+        placeholder="seu.email@exemplo.com"
+        autocomplete="username"
+        formControlName="email"
+      />
+      @if (mostrarErro('email')) {
+        <p class="field-error">{{ mensagem('email') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="login-senha">
+        Senha
+        <a href="#" (click)="emBreve($event, 'Recuperação de senha')">Esqueceu a senha?</a>
+      </label>
+      <div class="input-affix" [class.invalid]="mostrarErro('senha')">
+        <input
+          id="login-senha"
+          [type]="mostrarSenha() ? 'text' : 'password'"
+          placeholder="••••••••"
+          autocomplete="current-password"
+          formControlName="senha"
+        />
+        <button
+          type="button"
+          class="affix-btn"
+          (click)="mostrarSenha.set(!mostrarSenha())"
+          [title]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <app-icone-olho [riscado]="mostrarSenha()" />
+        </button>
+      </div>
+      @if (mostrarErro('senha')) {
+        <p class="field-error">{{ mensagem('senha') }}</p>
+      }
+    </div>
+
+    <label class="auth-remember">
+      <input type="checkbox" formControlName="manterConectado" />
+      <span>Manter conectado</span>
+    </label>
+
+    <button type="submit" class="btn btn-primary btn-block auth-submit" [disabled]="enviando()">
+      {{ enviando() ? 'Entrando…' : 'Entrar' }}
+    </button>
+  </form>
+
+  <div class="auth-sep"><span>ou</span></div>
+
+  <button type="button" class="btn btn-secondary btn-block" (click)="emBreve($event, 'Entrar com Google')">
+    <app-icone-google />
+    Entrar com Google
+  </button>
+
+  <p class="auth-foot">
+    Novo no CampusConnect?
+    <a routerLink="/cadastro">Criar conta</a>
+  </p>
+</app-auth-layout>

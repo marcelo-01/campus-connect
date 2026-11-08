@@ -1,0 +1,125 @@
+<app-auth-layout>
+  <h1 class="auth-title">Crie sua conta</h1>
+  <p class="auth-sub">Entre nas bolhas do seu campus e comece a se conectar.</p>
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="cadastrar()">
+    @if (erroGeral(); as erro) {
+      <div class="auth-alert" role="alert">{{ erro }}</div>
+    }
+
+    <div class="field-group full">
+      <label for="cadastro-nome">Nome completo</label>
+      <input
+        id="cadastro-nome"
+        class="form-input"
+        [class.invalid]="mostrarErro('nomeCompleto')"
+        type="text"
+        placeholder="Seu nome completo"
+        autocomplete="name"
+        formControlName="nomeCompleto"
+      />
+      @if (mostrarErro('nomeCompleto')) {
+        <p class="field-error">{{ mensagem('nomeCompleto') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="cadastro-username">Nome de usuário</label>
+      <div class="input-prefix" [class.invalid]="mostrarErro('username')">
+        <span>&#64;</span>
+        <input
+          id="cadastro-username"
+          type="text"
+          placeholder="seu.usuario"
+          autocomplete="nickname"
+          autocapitalize="none"
+          spellcheck="false"
+          formControlName="username"
+        />
+      </div>
+      @if (mostrarErro('username')) {
+        <p class="field-error">{{ mensagem('username') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="cadastro-email">E-mail</label>
+      <input
+        id="cadastro-email"
+        class="form-input"
+        [class.invalid]="mostrarErro('email')"
+        type="email"
+        placeholder="seu.email@exemplo.com"
+        autocomplete="username"
+        formControlName="email"
+      />
+      @if (mostrarErro('email')) {
+        <p class="field-error">{{ mensagem('email') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="cadastro-senha">Senha</label>
+      <div class="input-affix" [class.invalid]="mostrarErro('senha')">
+        <input
+          id="cadastro-senha"
+          [type]="mostrarSenha() ? 'text' : 'password'"
+          placeholder="Mínimo de 8 caracteres"
+          autocomplete="new-password"
+          formControlName="senha"
+        />
+        <button
+          type="button"
+          class="affix-btn"
+          (click)="mostrarSenha.set(!mostrarSenha())"
+          [title]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <app-icone-olho [riscado]="mostrarSenha()" />
+        </button>
+      </div>
+      @if (mostrarErro('senha')) {
+        <p class="field-error">{{ mensagem('senha') }}</p>
+      }
+    </div>
+
+    <div class="field-group full">
+      <label for="cadastro-confirmar">Confirmar senha</label>
+      <div class="input-affix" [class.invalid]="mostrarErro('confirmarSenha')">
+        <input
+          id="cadastro-confirmar"
+          [type]="mostrarConfirmacao() ? 'text' : 'password'"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          formControlName="confirmarSenha"
+        />
+        <button
+          type="button"
+          class="affix-btn"
+          (click)="mostrarConfirmacao.set(!mostrarConfirmacao())"
+          [title]="mostrarConfirmacao() ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <app-icone-olho [riscado]="mostrarConfirmacao()" />
+        </button>
+      </div>
+      @if (mostrarErro('confirmarSenha')) {
+        <p class="field-error">{{ mensagem('confirmarSenha') }}</p>
+      }
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block auth-submit" [disabled]="enviando()">
+      {{ enviando() ? 'Criando conta…' : 'Criar conta' }}
+    </button>
+  </form>
+
+  <div class="auth-sep"><span>ou</span></div>
+
+  <button type="button" class="btn btn-secondary btn-block" (click)="emBreve($event, 'Cadastro com Google')">
+    <app-icone-google />
+    Continuar com Google
+  </button>
+
+  <p class="auth-foot">
+    Já tem uma conta?
+    <a routerLink="/entrar">Entrar</a>
+  </p>
+</app-auth-layout>
