@@ -1,0 +1,276 @@
+<div class="content content-form">
+  <div class="backbar">
+    <button type="button" class="back-btn" title="Voltar" (click)="cancelar()">
+      <app-icone nome="voltar" />
+    </button>
+    <div class="backbar-title">
+      <h1>{{ edicao ? 'Editar bolha' : 'Nova bolha' }}</h1>
+      <span>{{ edicao ? (original()?.nome ?? '') : 'Só administradores criam bolhas' }}</span>
+    </div>
+    <div class="hstack" style="gap: 8px">
+      <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+      <button
+        type="button"
+        class="btn btn-primary"
+        [disabled]="salvando() || carregando()"
+        (click)="salvar()"
+      >
+        {{ salvando() ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Criar bolha' }}
+      </button>
+    </div>
+  </div>
+
+  @if (erroGeral(); as erro) {
+    <div class="auth-alert" role="alert">{{ erro }}</div>
+  }
+
+  <div class="create-layout">
+    <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="field-group full">
+        <span class="rotulo-campo">Foto</span>
+        <div class="bolha-foto-campo" [class.enviando]="salvando() && fotoNova()">
+          <app-bolha-marca [bolha]="previa()" tamanho="grande" />
+          <div class="vstack" style="gap: 6px">
+            <div class="hstack" style="gap: 8px">
+              <button type="button" class="btn btn-secondary btn-sm" (click)="arquivoFoto.click()">
+                <app-icone nome="imagem" /> {{ previa().fotoUrl ? 'Trocar foto' : 'Escolher foto' }}
+              </button>
+              @if (fotoNova()) {
+                <button type="button" class="btn btn-ghost btn-sm" (click)="descartarFoto()">
+                  Descartar
+                </button>
+              }
+            </div>
+            <p class="field-hint">JPG ou PNG, até 5 MB. Sem foto, a bolha mostra a sigla.</p>
+          </div>
+        </div>
+        <input
+          #arquivoFoto
+          type="file"
+          accept="image/jpeg,image/png"
+          hidden
+          (change)="escolherFoto($event)"
+        />
+        @if (erroFoto(); as erro) {
+          <p class="field-error" role="alert">{{ erro }}</p>
+        }
+      </div>
+
+      <div class="field-group full">
+        <label for="bolha-nome">Nome</label>
+        <input
+          id="bolha-nome"
+          class="form-input"
+          [class.invalid]="mostrarErro('nome')"
+          formControlName="nome"
+          placeholder="Ex.: Campus Eunápolis"
+          maxlength="120"
+        />
+        @if (mostrarErro('nome')) {
+          <p class="field-error">{{ mensagem('nome') }}</p>
+        }
+      </div>
+
+      <div class="field-group">
+        <label for="bolha-sigla">Sigla</label>
+        <input
+          id="bolha-sigla"
+          class="form-input"
+          [class.invalid]="mostrarErro('sigla')"
+          formControlName="sigla"
+          placeholder="Ex.: IFBA"
+          maxlength="10"
+        />
+        @if (mostrarErro('sigla')) {
+          <p class="field-error">{{ mensagem('sigla') }}</p>
+        } @else {
+          <p class="field-hint">Opcional. Aparece no círculo quando não há foto.</p>
+        }
+      </div>
+
+      @if (edicao) {
+        <div class="field-group">
+          <label for="bolha-tipo-fixo">Tipo</label>
+          <input
+            id="bolha-tipo-fixo"
+            class="form-input"
+            disabled
+            [value]="original() ? rotuloDoTipo(original()!.tipo) : ''"
+          />
+          <p class="field-hint">Tipo e bolha acima não mudam depois de criados.</p>
+        </div>
+        <div class="field-group full">
+          <label for="bolha-acima-fixa">Fica dentro de</label>
+          <input id="bolha-acima-fixa" class="form-input" disabled [value]="caminhoOriginal()" />
+        </div>
+      } @else {
+        <div class="field-group">
+          <label for="bolha-tipo">Tipo</label>
+          <select
+            id="bolha-tipo"
+            class="form-input"
+            [class.invalid]="mostrarErro('tipo')"
+            formControlName="tipo"
+          >
+            <option value="" disabled>Escolha o tipo</option>
+            @for (tipo of tipos; track tipo) {
+              <option [value]="tipo">{{ rotuloDoTipo(tipo) }}</option>
+            }
+          </select>
+          @if (mostrarErro('tipo')) {
+            <p class="field-error">{{ mensagem('tipo') }}</p>
+          } @else if (dica(); as texto) {
+            <p class="field-hint">{{ texto }}</p>
+          }
+        </div>
+
+        @if (mostraBolhaAcima()) {
+          <div class="field-group full">
+            <label for="bolha-acima">Fica dentro de</label>
+            <select
+              id="bolha-acima"
+              class="form-input"
+              [class.invalid]="mostrarErro('bolhaPaiId')"
+              formControlName="bolhaPaiId"
+            >
+              <option value="">
+                {{ tipo() === 'COMUNIDADE' ? 'Nenhuma: fica no topo' : 'Escolha a bolha acima' }}
+              </option>
+              @for (opcao of opcoesAcima(); track opcao.id) {
+                <option [value]="opcao.id">{{ opcao.rotulo }}</option>
+              }
+            </select>
+            @if (mostrarErro('bolhaPaiId')) {
+              <p class="field-error">{{ mensagem('bolhaPaiId') }}</p>
+            } @else if (!opcoesAcima().length && tipo() !== 'COMUNIDADE') {
+              <p class="field-hint">
+                Ainda não há {{ tipo() === 'CAMPUS' ? 'bolha geral' : 'campus' }} para colocar esta
+                bolha dentro. Crie {{ tipo() === 'CAMPUS' ? 'a bolha geral' : 'o campus' }} antes.
+              </p>
+            }
+          </div>
+        }
+      }
+
+      <div class="field-group full">
+        <label for="bolha-descricao">
+          Descrição
+          <span class="counter"
+            >{{ form.controls.descricao.value.length }}/{{ tamanhoDescricao }}</span
+          >
+        </label>
+        <textarea
+          id="bolha-descricao"
+          class="form-input"
+          rows="3"
+          [class.invalid]="mostrarErro('descricao')"
+          formControlName="descricao"
+          placeholder="Do que se trata esta bolha?"
+          [attr.maxlength]="tamanhoDescricao"
+        ></textarea>
+        @if (mostrarErro('descricao')) {
+          <p class="field-error">{{ mensagem('descricao') }}</p>
+        }
+      </div>
+
+      <div class="field-group full">
+        <label for="bolha-endereco">Endereço</label>
+        <input
+          id="bolha-endereco"
+          class="form-input"
+          [class.invalid]="mostrarErro('endereco')"
+          formControlName="endereco"
+          placeholder="Ex.: BR-367, Km 57 — Eunápolis, BA"
+          maxlength="200"
+        />
+        @if (mostrarErro('endereco')) {
+          <p class="field-error">{{ mensagem('endereco') }}</p>
+        } @else {
+          <p class="field-hint">Opcional. Onde a bolha se encontra fisicamente.</p>
+        }
+      </div>
+    </form>
+
+    <div class="create-preview">
+      <div
+        class="muted"
+        style="
+          font-size: 12px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          margin-bottom: 10px;
+        "
+      >
+        Pré-visualização
+      </div>
+      <div class="card explore-card">
+        <app-bolha-marca [bolha]="previa()" />
+        <div class="explore-card-info">
+          <div class="explore-card-nome">{{ previa().nome }}</div>
+          <div class="explore-card-meta">
+            {{ membrosPorExtenso(original()?.totalMembros ?? 0) }}
+          </div>
+        </div>
+        <app-icone nome="mais" />
+      </div>
+      @if (previa().descricao) {
+        <p class="field-hint" style="margin-top: 10px">{{ previa().descricao }}</p>
+      }
+    </div>
+  </div>
+
+  <div class="form-foot">
+    <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+    <button
+      type="button"
+      class="btn btn-primary"
+      [disabled]="salvando() || carregando()"
+      (click)="salvar()"
+    >
+      {{ salvando() ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Criar bolha' }}
+    </button>
+  </div>
+
+  @if (original(); as b) {
+    <div class="card zona-exclusao">
+      <h3>Excluir bolha</h3>
+      @if (b.filhas.length) {
+        <p>
+          {{ b.nome }} tem {{ b.filhas.length }}
+          {{ b.filhas.length === 1 ? 'sub-bolha' : 'sub-bolhas' }}. Exclua as sub-bolhas antes de
+          excluir esta.
+        </p>
+        <button type="button" class="btn btn-danger" disabled>
+          <app-icone nome="lixeira" /> Excluir bolha
+        </button>
+      } @else if (!confirmandoExclusao()) {
+        <p>Os membros saem da bolha e ela some para todo mundo. Não dá para desfazer.</p>
+        <button type="button" class="btn btn-danger" (click)="confirmandoExclusao.set(true)">
+          <app-icone nome="lixeira" /> Excluir bolha
+        </button>
+      } @else {
+        <p>
+          <b>Excluir {{ b.nome }}?</b> {{ membrosPorExtenso(b.totalMembros) }}
+          {{ b.totalMembros === 1 ? 'sai' : 'saem' }} da bolha. Não dá para desfazer.
+        </p>
+        <div class="hstack" style="gap: 8px">
+          <button
+            type="button"
+            class="btn btn-ghost"
+            [disabled]="excluindo()"
+            (click)="confirmandoExclusao.set(false)"
+          >
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-danger" [disabled]="excluindo()" (click)="excluir()">
+            {{ excluindo() ? 'Excluindo…' : 'Excluir definitivamente' }}
+          </button>
+        </div>
+      }
+      @if (erroExclusao(); as erro) {
+        <p class="field-error" role="alert" style="margin-top: 10px">{{ erro }}</p>
+      }
+    </div>
+  }
+</div>

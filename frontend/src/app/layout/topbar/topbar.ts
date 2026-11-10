@@ -6,8 +6,9 @@ import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
 
 /**
- * O `Topbar` do MVP. No MVP a trilha mostrava a bolha ativa; enquanto não há feed por bolha, ela mostra a
- * tela atual. O ponto de "notificação nova" saiu porque não há notificações ainda.
+ * O `Topbar` do MVP. No MVP a trilha mostrava a hierarquia da bolha ativa; aqui ela faz isso na página de
+ * uma bolha e, nas outras telas, mostra a tela atual. O ponto de "notificação nova" saiu porque não há
+ * notificações ainda.
  */
 @Component({
   selector: 'app-topbar',

@@ -1437,3 +1437,109 @@ a.nav-item, a.btn { line-height: normal; }
 
 /* Avatar da barra do topo leva ao perfil. */
 .topbar-avatar { display: grid; border-radius: 999px; }
+
+/* ========================================================================
+   Bolhas — adicionados no projeto Angular
+   O MVP só tinha o Explorar (com estilos inline) e o filtro do feed. A página
+   da bolha e o formulário usam as peças dele: .bubble-hero, .tabs,
+   .person-row e .create-layout.
+   ======================================================================== */
+/* Itens de bolha viraram link (<a>), como os itens do menu. */
+a.bubble-item { line-height: normal; }
+/* Comunidade dentro de um curso: um nível a mais que o MVP previa. */
+.bubble-item.nested-3 { padding-left: 60px; }
+
+/* Foto da bolha dentro do círculo (no MVP eram só siglas). */
+.bubble-dot img,
+.big-dot img,
+.explore-hero-marca img {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  border-radius: 999px;
+  display: block;
+}
+
+/* Explorar: cabeçalho com o botão de nova bolha e a busca. */
+.explorar-topo { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.busca-bolhas { max-width: 420px; }
+.busca-bolhas svg { width: 16px; height: 16px; color: var(--text-subtle); }
+.busca-bolhas input { -webkit-appearance: none; appearance: none; }
+
+/* O destaque da bolha geral, com os estilos que o MVP escrevia inline. */
+.explore-hero {
+  padding: 26px 24px;
+  background: linear-gradient(120deg, var(--indigo) 0%, var(--lavanda) 60%, var(--tangerina) 130%);
+  color: white;
+  display: flex; align-items: center; gap: 18px;
+}
+.explore-hero-marca {
+  width: 72px; height: 72px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px);
+  display: grid; place-items: center;
+  font-size: 26px; font-weight: 800;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+.explore-hero h2 { margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em; }
+.explore-hero h2 a { color: inherit; }
+.explore-hero p { margin: 4px 0 0; font-size: 14px; opacity: 0.9; }
+.explore-hero-meta { margin-top: 8px; font-size: 13px; opacity: 0.85; }
+
+.explore-secao { margin: 8px 0 -4px; font-size: 16px; font-weight: 700; }
+.explore-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.explore-card { text-align: left; display: flex; align-items: center; gap: 14px; color: var(--text); }
+.explore-card-info { flex: 1; min-width: 0; }
+.explore-card-nome { font-weight: 700; font-size: 14.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.explore-card-meta { font-size: 12.5px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.explore-card-membro { display: grid; color: var(--accent); }
+
+/* Página da bolha. */
+.bolha-acoes { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.bubble-hero .members a,
+.bolha-link { color: var(--accent); font-weight: 600; }
+.bubble-hero .members a:hover,
+.bolha-link:hover { color: var(--accent-hover); }
+.bolha-descricao { margin: 0; font-size: 15px; line-height: 1.55; white-space: pre-line; }
+.bolha-endereco {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: -8px;
+  font-size: 14px; color: var(--text-muted);
+  width: fit-content;
+}
+.bolha-endereco svg { width: 15px; height: 15px; }
+a.person-row { color: inherit; }
+a.person-row:hover .name { color: var(--accent); }
+.person-list .person-row:last-child { border-bottom: none; }
+
+/* Formulário de bolha. */
+.rotulo-campo { font-size: 13px; font-weight: 600; color: var(--text); }
+.field-hint { margin: -2px 0 0; font-size: 12.5px; color: var(--text-subtle); }
+.bolha-foto-campo { display: flex; align-items: center; gap: 18px; }
+.bolha-foto-campo .big-dot {
+  width: 64px; height: 64px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  color: white;
+  display: grid; place-items: center;
+  font-weight: 800; font-size: 22px;
+}
+.form-input:disabled { background: var(--surface-2); color: var(--text-muted); cursor: not-allowed; }
+
+.btn-danger { background: var(--danger); color: white; }
+.btn-danger:hover { background: color-mix(in oklch, var(--danger) 85%, black); }
+.btn-danger:disabled { cursor: not-allowed; }
+.zona-exclusao { border-color: color-mix(in oklch, var(--danger) 30%, var(--border)); }
+.zona-exclusao h3 { color: var(--danger); }
+.zona-exclusao p { margin: 0 0 14px; font-size: 14px; color: var(--text-muted); line-height: 1.5; }
+.zona-exclusao p b { color: var(--text); }
+
+/* Telas estreitas (RNF01): grades e formulário em uma coluna. */
+@media (max-width: 880px) {
+  .explore-grid { grid-template-columns: 1fr; }
+  .create-layout { grid-template-columns: 1fr; }
+  .create-preview { position: static; }
+  .bubble-hero,
+  .explore-hero { flex-wrap: wrap; }
+}

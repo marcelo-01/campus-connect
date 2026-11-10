@@ -14,11 +14,16 @@ export type NomeIcone =
   | 'imagem'
   | 'link'
   | 'voltar'
-  | 'sair';
+  | 'sair'
+  | 'globo'
+  | 'local'
+  | 'lixeira'
+  | 'check';
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
- * MVP; `sair` não existia lá e segue o mesmo estilo. O elemento do componente não cria caixa
+ * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `sair`, `local`, `lixeira` e `check` não existiam lá e
+ * seguem o mesmo estilo. O elemento do componente não cria caixa
  * (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
  */
 @Component({
@@ -68,6 +73,18 @@ export type NomeIcone =
       }
       @case ('sair') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+      }
+      @case ('globo') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></svg>
+      }
+      @case ('local') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
+      }
+      @case ('lixeira') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16"/><path d="M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13"/><path d="M9 7V4h6v3"/></svg>
+      }
+      @case ('check') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
       }
     }
   `,

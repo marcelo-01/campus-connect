@@ -1,0 +1,144 @@
+@if (bolha(); as b) {
+  <div class="content content-detail">
+    <div class="bubble-hero">
+      <app-bolha-marca [bolha]="b" tamanho="grande" />
+      <div class="info">
+        <h2>{{ b.nome }}</h2>
+        <div class="members">
+          {{ rotuloDoTipo(b.tipo) }}
+          @if (b.sigla) {
+            · {{ b.sigla }}
+          }
+          · {{ membrosPorExtenso(b.totalMembros) }}
+          @if (acima(); as pai) {
+            · em <a [routerLink]="['/bolhas', pai.slug]">{{ pai.nome }}</a>
+          }
+        </div>
+      </div>
+      <div class="bolha-acoes">
+        @if (administrador()) {
+          <a class="btn btn-ghost" [routerLink]="['/bolhas', b.slug, 'editar']"
+            ><app-icone nome="editar" /> Editar</a
+          >
+        }
+        @if (b.membro) {
+          <button type="button" class="btn btn-secondary" [disabled]="agindo()" (click)="sair(b)">
+            {{ agindo() ? 'Saindo…' : 'Sair da bolha' }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-primary" [disabled]="agindo()" (click)="entrar(b)">
+            {{ agindo() ? 'Entrando…' : 'Entrar' }}
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (b.descricao) {
+      <p class="bolha-descricao">{{ b.descricao }}</p>
+    }
+    @if (b.endereco) {
+      <div class="bolha-endereco"><app-icone nome="local" />{{ b.endereco }}</div>
+    }
+
+    <div class="tabs">
+      <button type="button" [class.active]="aba() === 'posts'" (click)="aba.set('posts')">
+        Posts
+      </button>
+      @if (b.filhas.length) {
+        <button type="button" [class.active]="aba() === 'subbolhas'" (click)="aba.set('subbolhas')">
+          Sub-bolhas<span class="tab-count">{{ b.filhas.length }}</span>
+        </button>
+      }
+      <button type="button" [class.active]="aba() === 'membros'" (click)="aba.set('membros')">
+        Membros<span class="tab-count">{{ b.totalMembros }}</span>
+      </button>
+      <button type="button" [class.active]="aba() === 'sobre'" (click)="aba.set('sobre')">
+        Sobre
+      </button>
+    </div>
+
+    @switch (aba()) {
+      @case ('posts') {
+        <div class="empty-state">
+          <div class="empty-bubble" [style.background]="cor()">{{ sigla() }}</div>
+          <h3>Nada por aqui ainda em {{ b.nome }}</h3>
+          <p>
+            As publicações das bolhas chegam em breve. Quando chegarem, os posts desta bolha
+            aparecem aqui.
+          </p>
+        </div>
+      }
+      @case ('subbolhas') {
+        <div class="explore-grid">
+          @for (filha of b.filhas; track filha.id) {
+            <app-bolha-cartao [bolha]="filha" />
+          }
+        </div>
+      }
+      @case ('membros') {
+        @if (membros(); as lista) {
+          @if (lista.length) {
+            <div class="card" style="padding-block: 4px">
+              <div class="person-list">
+                @for (membro of lista; track membro.id) {
+                  <a class="person-row" [routerLink]="['/perfil', membro.username]">
+                    <app-avatar
+                      [nome]="membro.nomeCompleto"
+                      [fotoUrl]="membro.fotoUrl"
+                      tamanho="md"
+                    />
+                    <div class="person-info">
+                      <div class="name">{{ membro.nomeCompleto }}</div>
+                      <div class="handle">
+                        &#64;{{ membro.username }} · entrou em {{ mesEAno(membro.entrouEm) }}
+                      </div>
+                    </div>
+                  </a>
+                }
+              </div>
+            </div>
+          } @else {
+            <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+              Ninguém entrou nesta bolha ainda.{{ b.membro ? '' : ' Seja a primeira pessoa!' }}
+            </div>
+          }
+        }
+      }
+      @case ('sobre') {
+        <div class="card">
+          <h3>Sobre {{ b.nome }}</h3>
+          <div class="vstack" style="gap: 10px; font-size: 14px">
+            @if (b.descricao) {
+              <p class="bolha-descricao">{{ b.descricao }}</p>
+            }
+            <div><span class="muted">Tipo:</span> {{ rotuloDoTipo(b.tipo) }}</div>
+            @if (b.caminho.length) {
+              <div>
+                <span class="muted">Fica dentro de:</span>
+                @for (acima of b.caminho; track acima.id; let ultima = $last) {
+                  <a class="bolha-link" [routerLink]="['/bolhas', acima.slug]">{{ acima.nome }}</a>
+                  @if (!ultima) {
+                    <span class="muted"> › </span>
+                  }
+                }
+              </div>
+            }
+            @if (b.endereco) {
+              <div><span class="muted">Endereço:</span> {{ b.endereco }}</div>
+            }
+            <div><span class="muted">Criada em</span> {{ mesEAno(b.criadaEm) }}</div>
+          </div>
+        </div>
+      }
+    }
+  </div>
+} @else if (naoEncontrada()) {
+  <div class="content content-narrow">
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--text-subtle)">?</div>
+      <h3>Bolha não encontrada</h3>
+      <p>Esse endereço não leva a nenhuma bolha. Ela pode ter sido excluída.</p>
+      <a class="btn btn-secondary" routerLink="/bolhas">Explorar bolhas</a>
+    </div>
+  </div>
+}

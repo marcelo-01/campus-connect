@@ -8,8 +8,9 @@ import { ProblemaApi } from '../../auth/sessao';
 import { Avatar } from '../../shared/avatar';
 import { aplicarErroDaApi, mensagemDeErro, normalizarUsername, usernameValido } from '../../shared/formulario';
 import { Icone } from '../../shared/icone';
+import { problemaNaImagem } from '../../shared/imagem';
 import { ToastService } from '../../shared/toast.service';
-import { Perfil, PerfilService, linkSemEsquema, problemaNaImagem } from '../perfil.service';
+import { Perfil, PerfilService, linkSemEsquema } from '../perfil.service';
 
 type Campo = 'nomeCompleto' | 'username' | 'link' | 'bio';
 
@@ -28,8 +29,8 @@ const MENSAGENS: Record<Campo, Record<string, string>> = {
 };
 
 /**
- * O `EditProfileScreen` do MVP. Ficaram de fora "Curso" e "Campus", que dependem do cadastro de
- * instituições. Foto e capa são enviadas assim que escolhidas, como o MVP sugeria com os botões
+ * O `EditProfileScreen` do MVP. Ficaram de fora "Curso" e "Campus": não há cadastro oficial de
+ * instituições, e se voltarem virão das bolhas. Foto e capa são enviadas assim que escolhidas, como o MVP sugeria com os botões
  * "Trocar foto" e "Trocar capa"; os outros campos só valem ao clicar em "Salvar alterações".
  */
 @Component({

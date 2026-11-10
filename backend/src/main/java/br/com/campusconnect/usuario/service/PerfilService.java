@@ -13,8 +13,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 @Service
 @RequiredArgsConstructor
@@ -66,22 +64,13 @@ public class PerfilService {
         return trocarImagem(id, conteudo, FormatoImagem.CAPA, Usuario::getCapaUrl, Usuario::setCapaUrl);
     }
 
-    /**
-     * Grava a imagem nova antes de mexer no banco. Depois do commit apaga a antiga; se a transação falhar,
-     * apaga a nova. Assim nenhuma imagem fica órfã na pasta e nenhum perfil aponta para arquivo apagado.
-     */
+    /** Grava a imagem nova antes de mexer no banco; a que sobrar é apagada quando a transação terminar. */
     private Perfil trocarImagem(UUID id, byte[] conteudo, FormatoImagem formato, Function<Usuario, String> atual,
             BiConsumer<Usuario, String> definir) {
         Usuario usuario = carregar(id);
         String nova = imagens.salvar(conteudo, formato);
-        String antiga = atual.apply(usuario);
+        imagens.descartarAoFim(atual.apply(usuario), nova);
         definir.accept(usuario, nova);
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                imagens.remover(status == STATUS_COMMITTED ? antiga : nova);
-            }
-        });
         return Perfil.de(usuario, true);
     }
 

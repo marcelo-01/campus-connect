@@ -1,7 +1,7 @@
-/** Contas de usuário e vínculos institucionais. */
+/** Contas de usuário, sessão e perfil. */
 @ApplicationModule(
         displayName = "Usuários",
-        allowedDependencies = {"comum", "instituicao :: service", "arquivo :: service"})
+        allowedDependencies = {"comum", "arquivo :: service"})
 package br.com.campusconnect.usuario;
 
 import org.springframework.modulith.ApplicationModule;

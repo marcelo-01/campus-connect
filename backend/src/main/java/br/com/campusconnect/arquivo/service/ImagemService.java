@@ -11,7 +11,10 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.regex.Pattern;
 import lombok.extern.slf4j.Slf4j;
+import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Guarda imagens em disco e devolve o caminho público delas ({@code /api/arquivos/<nome>.jpg}).
@@ -67,6 +70,23 @@ public class ImagemService {
                 Files.deleteIfExists(arquivo);
             } catch (IOException erro) {
                 log.warn("Não foi possível apagar a imagem {}", arquivo, erro);
+            }
+        });
+    }
+
+    /**
+     * Agenda a limpeza para quando a transação atual terminar: se ela confirmar, apaga
+     * {@code seConfirmar}; se desfizer, apaga {@code seDesfazer}. Quem troca uma imagem grava a nova antes
+     * de mexer no banco e chama isto com a antiga e a nova; quem exclui chama com a atual e {@code null}.
+     * Assim nenhuma imagem fica órfã na pasta e nenhum registro aponta para arquivo apagado.
+     *
+     * @throws IllegalStateException fora de uma transação
+     */
+    public void descartarAoFim(@Nullable String seConfirmar, @Nullable String seDesfazer) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                remover(status == STATUS_COMMITTED ? seConfirmar : seDesfazer);
             }
         });
     }

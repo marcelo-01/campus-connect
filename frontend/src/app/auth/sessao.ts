@@ -8,6 +8,8 @@ export interface UsuarioResumo {
   email: string;
   /** Caminho da foto de perfil (`/api/arquivos/…`), ou `null` para mostrar as iniciais. */
   fotoUrl: string | null;
+  /** Pode criar, editar e excluir bolhas. O backend confere de novo a cada ação. */
+  administrador: boolean;
 }
 
 /** O refresh token não vem aqui: o servidor o entrega só no cookie HttpOnly `cc_refresh`. */

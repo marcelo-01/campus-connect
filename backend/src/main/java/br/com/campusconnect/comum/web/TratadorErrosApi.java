@@ -1,5 +1,6 @@
 package br.com.campusconnect.comum.web;
 
+import br.com.campusconnect.comum.AcessoNegadoException;
 import br.com.campusconnect.comum.CampoDuplicadoException;
 import br.com.campusconnect.comum.CampoInvalidoException;
 import java.util.LinkedHashMap;
@@ -64,6 +65,11 @@ class TratadorErrosApi extends ResponseEntityExceptionHandler {
     @ExceptionHandler(CampoInvalidoException.class)
     ProblemDetail campoInvalido(CampoInvalidoException excecao) {
         return comErros(HttpStatus.BAD_REQUEST, excecao.getMessage(), Map.of(excecao.getCampo(), excecao.getMessage()));
+    }
+
+    @ExceptionHandler(AcessoNegadoException.class)
+    ProblemDetail acessoNegado(AcessoNegadoException excecao) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, excecao.getMessage());
     }
 
     private static ProblemDetail comErros(HttpStatus status, String detalhe, Map<String, String> erros) {

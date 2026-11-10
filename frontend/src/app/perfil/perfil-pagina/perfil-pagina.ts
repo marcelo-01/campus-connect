@@ -4,18 +4,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
+import { BolhaResumo, BolhaService, membrosPorExtenso } from '../../bolhas/bolha.service';
 import { Avatar } from '../../shared/avatar';
+import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
-import {
-  BolhaResumo,
-  Perfil,
-  PerfilService,
-  corDaBolha,
-  linkSemEsquema,
-  mesEAno,
-  siglaDaBolha,
-} from '../perfil.service';
+import { Perfil, PerfilService, linkSemEsquema, mesEAno } from '../perfil.service';
 
 type Aba = 'posts' | 'market' | 'saved' | 'about';
 
@@ -29,13 +23,14 @@ type Aba = 'posts' | 'market' | 'saved' | 'about';
 @Component({
   selector: 'app-perfil-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, Icone],
+  imports: [RouterLink, Avatar, BolhaMarca, Icone],
   styles: ':host { display: contents; }',
   templateUrl: './perfil-pagina.html',
 })
 export class PerfilPagina {
   private readonly auth = inject(AuthService);
   private readonly perfis = inject(PerfilService);
+  private readonly bolhasService = inject(BolhaService);
   private readonly toast = inject(ToastService);
 
   protected readonly perfil = signal<Perfil | null>(null);
@@ -44,8 +39,7 @@ export class PerfilPagina {
   protected readonly naoEncontrado = signal(false);
   protected readonly aba = signal<Aba>('posts');
 
-  protected readonly cor = corDaBolha;
-  protected readonly sigla = siglaDaBolha;
+  protected readonly membros = membrosPorExtenso;
   protected readonly linkSemEsquema = linkSemEsquema;
   protected readonly membroDesde = computed(() => {
     const perfil = this.perfil();
@@ -67,7 +61,7 @@ export class PerfilPagina {
             switchMap((perfil) =>
               forkJoin({
                 perfil: of(perfil),
-                bolhas: this.perfis.bolhasDoUsuario(perfil.id).pipe(catchError(() => of([]))),
+                bolhas: this.bolhasService.doUsuario(perfil.id).pipe(catchError(() => of([]))),
                 conexoes: this.perfis.totalDeConexoes(perfil.id).pipe(catchError(() => of(0))),
               }),
             ),

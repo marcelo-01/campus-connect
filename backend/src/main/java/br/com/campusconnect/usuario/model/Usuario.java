@@ -81,6 +81,11 @@ public class Usuario extends EntidadeAuditada {
     @Column(name = "anonimizado_em")
     private Instant anonimizadoEm;
 
+    /** Pode criar, editar e excluir bolhas. Só muda por SQL (ver a migration V16). */
+    @Setter(AccessLevel.NONE)
+    @Column(name = "administrador", nullable = false)
+    private boolean administrador;
+
     public Usuario(@NonNull String username, @NonNull String nomeCompleto, @NonNull String email,
             @NonNull String senhaHash, @NonNull StatusUsuario status) {
         this.username = normalizarUsername(username);
@@ -93,6 +98,11 @@ public class Usuario extends EntidadeAuditada {
     /** Só conta ativa e não anonimizada pode entrar ou renovar a sessão. */
     public boolean podeEntrar() {
         return status == StatusUsuario.ATIVO && anonimizadoEm == null;
+    }
+
+    /** Conta suspensa ou desativada perde os poderes de administrador junto com o acesso. */
+    public boolean podeAdministrar() {
+        return administrador && podeEntrar();
     }
 
     /**

@@ -1,7 +1,7 @@
-/** Bolhas e seus membros. */
+/** Bolhas, a hierarquia entre elas e seus membros. */
 @ApplicationModule(
         displayName = "Bolhas",
-        allowedDependencies = {"comum", "instituicao :: service", "usuario :: service"})
+        allowedDependencies = {"comum", "usuario :: service", "arquivo :: service"})
 package br.com.campusconnect.bolha;
 
 import org.springframework.modulith.ApplicationModule;

@@ -11,7 +11,7 @@
           class="nav-item"
           [routerLink]="item.rota"
           routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: item.rota === '/' }"
+          [routerLinkActiveOptions]="{ exact: item.exato === true }"
         >
           <app-icone [nome]="item.icone" />
           {{ item.rotulo }}
@@ -31,17 +31,25 @@
 
   <div class="section-label">
     Minhas bolhas
-    <button type="button" title="Nova bolha" (click)="emBreve('Nova bolha')"><app-icone nome="mais" /></button>
+    @if (administrador()) {
+      <button type="button" title="Nova bolha" (click)="novaBolha()"><app-icone nome="mais" /></button>
+    }
   </div>
   <div class="bubbles-list">
-    @for (bolha of bolhas() ?? []; track bolha.id) {
-      <button type="button" class="bubble-item" [class]="recuo(bolha.tipo)" (click)="emBreve(bolha.nome)">
-        <div class="bubble-dot" [style.background]="cor(bolha.tipo)">{{ sigla(bolha.nome) }}</div>
+    @for (bolha of bolhas.minhas() ?? []; track bolha.id) {
+      <a
+        class="bubble-item"
+        [class]="recuo(bolha.nivel)"
+        [routerLink]="['/bolhas', bolha.slug]"
+        routerLinkActive="active"
+        [title]="bolha.nome"
+      >
+        <app-bolha-marca [bolha]="bolha" />
         <span class="bubble-name">{{ bolha.nome }}</span>
         <span class="bubble-count">{{ bolha.totalMembros }}</span>
-      </button>
+      </a>
     } @empty {
-      @if (bolhas()) {
+      @if (bolhas.minhas()) {
         <p class="vazio-discreto">Você ainda não participa de nenhuma bolha.</p>
       }
     }

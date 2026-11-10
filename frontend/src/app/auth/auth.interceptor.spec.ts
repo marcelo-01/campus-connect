@@ -10,7 +10,7 @@ function sessao(token: string): SessaoResponse {
   return {
     accessToken: token,
     expiraEm: '2026-11-08T23:00:00Z',
-    usuario: { id: '1', username: 'ana', nomeCompleto: 'Ana', nomeExibicao: null, email: 'ana@exemplo.com', fotoUrl: null },
+    usuario: { id: '1', username: 'ana', nomeCompleto: 'Ana', nomeExibicao: null, email: 'ana@exemplo.com', fotoUrl: null, administrador: false },
   };
 }
 

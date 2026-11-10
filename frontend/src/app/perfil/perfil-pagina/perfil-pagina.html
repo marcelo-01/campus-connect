@@ -32,7 +32,7 @@
       <button type="button" class="stat stat-btn" (click)="emBreve('Conexões')">
         <b>{{ conexoes() }}</b>{{ conexoes() === 1 ? 'conexão' : 'conexões' }}
       </button>
-      <button type="button" class="stat stat-btn" (click)="emBreve('Explorar bolhas')">
+      <button type="button" class="stat stat-btn" routerLink="/bolhas">
         <b>{{ bolhas().length }}</b>{{ bolhas().length === 1 ? 'bolha' : 'bolhas' }}
       </button>
     </div>
@@ -40,13 +40,13 @@
     @if (bolhas().length || p.proprio) {
       <div class="profile-bubbles">
         @for (bolha of bolhas(); track bolha.id) {
-          <span class="chip" style="padding-left: 6px">
-            <div class="bubble-dot" [style.background]="cor(bolha.tipo)">{{ sigla(bolha.nome) }}</div>
+          <a class="chip" style="padding-left: 6px" [routerLink]="['/bolhas', bolha.slug]">
+            <app-bolha-marca [bolha]="bolha" />
             {{ bolha.nome }}
-          </span>
+          </a>
         }
         @if (p.proprio) {
-          <button type="button" class="chip" (click)="emBreve('Explorar bolhas')"><app-icone nome="mais" /> Entrar em mais bolhas</button>
+          <a class="chip" routerLink="/bolhas"><app-icone nome="mais" /> Entrar em mais bolhas</a>
         }
       </div>
     }
@@ -100,12 +100,12 @@
               <div class="vstack" style="gap: 4px">
                 @for (bolha of bolhas(); track bolha.id) {
                   <div class="hstack" style="padding: 8px 0; border-bottom: 1px solid var(--border)">
-                    <div class="bubble-dot" [style.background]="cor(bolha.tipo)">{{ sigla(bolha.nome) }}</div>
+                    <app-bolha-marca [bolha]="bolha" />
                     <div style="flex: 1">
                       <div style="font-weight: 600; font-size: 14px">{{ bolha.nome }}</div>
-                      <div class="muted" style="font-size: 12.5px">{{ bolha.totalMembros }} {{ bolha.totalMembros === 1 ? 'membro' : 'membros' }}</div>
+                      <div class="muted" style="font-size: 12.5px">{{ membros(bolha.totalMembros) }}</div>
                     </div>
-                    <button type="button" class="btn btn-secondary btn-sm" (click)="emBreve(bolha.nome)">Visitar</button>
+                    <a class="btn btn-secondary btn-sm" [routerLink]="['/bolhas', bolha.slug]">Visitar</a>
                   </div>
                 }
               </div>

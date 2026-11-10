@@ -1,5 +1,6 @@
 import { iniciais } from '../shared/avatar';
-import { linkSemEsquema, mesEAno, problemaNaImagem, siglaDaBolha } from './perfil.service';
+import { problemaNaImagem } from '../shared/imagem';
+import { linkSemEsquema, mesEAno } from './perfil.service';
 
 describe('funções do perfil', () => {
   it('mostra o link sem https:// e sem barra no fim, como o MVP', () => {
@@ -15,12 +16,6 @@ describe('funções do perfil', () => {
     expect(iniciais('Marcelo Henrique Noronha Brito')).toBe('MB');
     expect(iniciais('Ana')).toBe('A');
     expect(iniciais('')).toBe('');
-  });
-
-  it('gera a sigla da bolha a partir das palavras principais', () => {
-    expect(siglaDaBolha('Campus Eunápolis')).toBe('CE');
-    expect(siglaDaBolha('Cinema na sexta')).toBe('CS');
-    expect(siglaDaBolha('ADS')).toBe('AD');
   });
 
   it('confere tipo e tamanho da imagem antes de enviar', () => {

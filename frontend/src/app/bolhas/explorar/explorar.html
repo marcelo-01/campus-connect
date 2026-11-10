@@ -1,0 +1,133 @@
+<div class="content">
+  <div class="explorar-topo">
+    <div>
+      <h1 class="section-title">Explorar bolhas</h1>
+      <p class="section-sub">Encontre comunidades da sua universidade — do geral ao seu curso.</p>
+    </div>
+    @if (administrador()) {
+      <a class="btn btn-primary" routerLink="/bolhas/nova"><app-icone nome="mais" /> Nova bolha</a>
+    }
+  </div>
+
+  <div class="input-prefix busca-bolhas">
+    <app-icone nome="busca" />
+    <input
+      type="search"
+      placeholder="Buscar por nome ou sigla"
+      aria-label="Buscar bolhas"
+      [value]="busca()"
+      (input)="digitar($event)"
+    />
+  </div>
+
+  <div class="chips">
+    @for (opcao of filtros; track opcao.valor) {
+      <button
+        type="button"
+        class="chip"
+        [class.active]="filtro() === opcao.valor"
+        (click)="filtro.set(opcao.valor)"
+      >
+        @if (opcao.valor === 'TODAS') {
+          <app-icone nome="globo" />
+        }
+        {{ opcao.rotulo }}
+      </button>
+    }
+  </div>
+
+  @if (erro()) {
+    <div class="auth-alert" role="alert">
+      Não foi possível carregar as bolhas. Recarregue a página.
+    </div>
+  } @else if (bolhas(); as todas) {
+    @if (!todas.length) {
+      <div class="card empty-state">
+        <div class="empty-bubble" style="background: var(--accent)">CC</div>
+        <h3>Nenhuma bolha por enquanto</h3>
+        @if (administrador()) {
+          <p>
+            Comece pela bolha geral da sua universidade; depois vêm os campus e os cursos dentro
+            dela.
+          </p>
+          <a class="btn btn-primary" routerLink="/bolhas/nova">Criar a primeira bolha</a>
+        } @else {
+          <p>A equipe do CampusConnect ainda está montando as bolhas. Volte daqui a pouco.</p>
+        }
+      </div>
+    } @else if (filtrando()) {
+      @if (resultados().length) {
+        <div class="explore-grid">
+          @for (bolha of resultados(); track bolha.id) {
+            <app-bolha-cartao [bolha]="bolha" [acima]="nomeAcima(bolha)" />
+          }
+        </div>
+      } @else {
+        <div class="card empty-state">
+          <div class="empty-bubble" style="background: var(--text-subtle)">?</div>
+          <h3>Nenhuma bolha encontrada</h3>
+          <p>Tente outro nome, outra sigla ou outro filtro.</p>
+        </div>
+      }
+    } @else {
+      @for (geral of gerais(); track geral.id) {
+        <div class="card" style="padding: 0; overflow: hidden">
+          <div class="explore-hero">
+            <app-bolha-marca [bolha]="geral" tamanho="destaque" />
+            <div style="flex: 1; min-width: 0">
+              <h2>
+                <a [routerLink]="['/bolhas', geral.slug]">{{ geral.nome }}</a>
+              </h2>
+              @if (geral.descricao) {
+                <p>{{ geral.descricao }}</p>
+              }
+              <div class="explore-hero-meta">
+                {{ membros(geral.totalMembros) }}
+                @if (campusDe(geral)) {
+                  · {{ campusDe(geral) }} campus
+                }
+              </div>
+            </div>
+            @if (geral.membro) {
+              <a class="btn btn-secondary" [routerLink]="['/bolhas', geral.slug]">Ver bolha</a>
+            } @else {
+              <button
+                type="button"
+                class="btn btn-secondary"
+                [disabled]="entrando() === geral.id"
+                (click)="entrar(geral)"
+              >
+                {{ entrando() === geral.id ? 'Entrando…' : 'Entrar' }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @if (campi().length) {
+        <h3 class="explore-secao">Por campus</h3>
+        <div class="explore-grid">
+          @for (bolha of campi(); track bolha.id) {
+            <app-bolha-cartao [bolha]="bolha" [acima]="nomeAcima(bolha)" />
+          }
+        </div>
+      }
+      @if (cursos().length) {
+        <h3 class="explore-secao">Cursos</h3>
+        <div class="explore-grid">
+          @for (bolha of cursos(); track bolha.id) {
+            <app-bolha-cartao [bolha]="bolha" [acima]="nomeAcima(bolha)" />
+          }
+        </div>
+      }
+      @if (comunidades().length) {
+        <h3 class="explore-secao">Comunidades</h3>
+        <div class="explore-grid">
+          @for (bolha of comunidades(); track bolha.id) {
+            <app-bolha-cartao [bolha]="bolha" [acima]="nomeAcima(bolha)" />
+          }
+        </div>
+      }
+    }
+  }
+</div>

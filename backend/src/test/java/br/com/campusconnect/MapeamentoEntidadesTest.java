@@ -15,10 +15,6 @@ import br.com.campusconnect.conversa.model.Mensagem;
 import br.com.campusconnect.conversa.model.ParticipanteConversa;
 import br.com.campusconnect.conversa.model.ParticipanteConversaId;
 import br.com.campusconnect.conversa.model.TipoConversa;
-import br.com.campusconnect.instituicao.model.Campus;
-import br.com.campusconnect.instituicao.model.Curso;
-import br.com.campusconnect.instituicao.model.GrauCurso;
-import br.com.campusconnect.instituicao.model.Instituicao;
 import br.com.campusconnect.marketplace.model.Anuncio;
 import br.com.campusconnect.marketplace.model.AnuncioBolha;
 import br.com.campusconnect.marketplace.model.AnuncioBolhaId;
@@ -46,9 +42,7 @@ import br.com.campusconnect.publicacao.model.TipoMidia;
 import br.com.campusconnect.publicacao.model.TipoReacao;
 import br.com.campusconnect.usuario.model.RefreshToken;
 import br.com.campusconnect.usuario.model.StatusUsuario;
-import br.com.campusconnect.usuario.model.TipoVinculo;
 import br.com.campusconnect.usuario.model.Usuario;
-import br.com.campusconnect.usuario.model.VinculoInstitucional;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -81,30 +75,11 @@ class MapeamentoEntidadesTest {
 
     @Test
     void gravaELeUmaInstanciaDeCadaTabela() {
-        Instituicao ifba = new Instituicao("Instituto Federal da Bahia");
-        ifba.setSigla("IFBA");
-        em.persist(ifba);
-
-        Campus eunapolis = new Campus(ifba, "Eunápolis");
-        eunapolis.setCidade("Eunápolis");
-        eunapolis.setUf("BA");
-        em.persist(eunapolis);
-
-        Curso ads = new Curso(eunapolis, "Análise e Desenvolvimento de Sistemas");
-        ads.setGrau(GrauCurso.TECNOLOGO);
-        em.persist(ads);
-
         Usuario ana = usuario("ana");
         ana.setLink("https://github.com/ana");
         ana.setCapaUrl("/api/arquivos/capa.jpg");
         ana.setHabilidades(List.of("Java", "Figma"));
         Usuario joao = usuario("joao");
-
-        VinculoInstitucional vinculo = new VinculoInstitucional(ana, ifba.getId(), TipoVinculo.ALUNO);
-        vinculo.setCampusId(eunapolis.getId());
-        vinculo.setCursoId(ads.getId());
-        vinculo.setMatricula("2026001");
-        em.persist(vinculo);
 
         RefreshToken refreshToken = em.persist(new RefreshToken(ana, UUID.randomUUID(), "a".repeat(64), true,
                 Instant.parse("2026-12-01T03:00:00Z")));
@@ -116,17 +91,17 @@ class MapeamentoEntidadesTest {
         notificacao.setReferenciaId(conexao.getId());
         em.persist(notificacao);
 
-        Bolha bolhaCampus = new Bolha(TipoBolha.CAMPUS, "Campus Eunápolis", "ifba-eunapolis");
-        bolhaCampus.setInstituicaoId(ifba.getId());
-        bolhaCampus.setCampusId(eunapolis.getId());
+        Bolha bolhaGeral = new Bolha(TipoBolha.GERAL, "IFBA", "ifba", null);
+        bolhaGeral.setSigla("IFBA");
+        bolhaGeral.setFotoUrl("/api/arquivos/ifba.jpg");
+        em.persist(bolhaGeral);
+
+        Bolha bolhaCampus = new Bolha(TipoBolha.CAMPUS, "Campus Eunápolis", "ifba-eunapolis", bolhaGeral);
+        bolhaCampus.setEndereco("BR-367, Km 57 — Eunápolis, BA");
         em.persist(bolhaCampus);
 
-        Bolha bolhaCurso = new Bolha(TipoBolha.CURSO, "ADS", "ifba-eunapolis-ads");
-        bolhaCurso.setBolhaPai(bolhaCampus);
-        bolhaCurso.setInstituicaoId(ifba.getId());
-        bolhaCurso.setCampusId(eunapolis.getId());
-        bolhaCurso.setCursoId(ads.getId());
-        bolhaCurso.setEntradaAutomatica(true);
+        Bolha bolhaCurso = new Bolha(TipoBolha.CURSO, "ADS", "ifba-eunapolis-ads", bolhaCampus);
+        bolhaCurso.setDescricao("Análise e Desenvolvimento de Sistemas");
         em.persist(bolhaCurso);
 
         em.persist(new MembroBolha(bolhaCurso, ana.getId(), PapelMembro.MODERADOR));
@@ -194,13 +169,8 @@ class MapeamentoEntidadesTest {
                 where table_schema = 'public' and table_type = 'BASE TABLE'
                   and table_name <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(tabelas).hasSize(26).allSatisfy(tabela -> assertThat(
+        assertThat(tabelas).hasSize(22).allSatisfy(tabela -> assertThat(
                 jdbc.queryForObject("select count(*) from " + tabela, Long.class)).as(tabela).isPositive());
-
-        Campus campusLido = em.find(Campus.class, eunapolis.getId());
-        assertThat(campusLido.getUf()).isEqualTo("BA");
-        assertThat(campusLido.getInstituicao().getSigla()).isEqualTo("IFBA");
-        assertThat(em.find(Curso.class, ads.getId()).getGrau()).isEqualTo(GrauCurso.TECNOLOGO);
 
         Usuario anaLida = em.find(Usuario.class, ana.getId());
         assertThat(anaLida.getStatus()).isEqualTo(StatusUsuario.ATIVO);
@@ -208,7 +178,6 @@ class MapeamentoEntidadesTest {
         assertThat(anaLida.getLink()).isEqualTo("https://github.com/ana");
         assertThat(anaLida.getCapaUrl()).isEqualTo("/api/arquivos/capa.jpg");
         assertThat(anaLida.getHabilidades()).containsExactly("Java", "Figma");
-        assertThat(em.find(VinculoInstitucional.class, vinculo.getId()).getCursoId()).isEqualTo(ads.getId());
 
         RefreshToken refreshTokenLido = em.find(RefreshToken.class, refreshToken.getId());
         assertThat(refreshTokenLido.getUsuario().getId()).isEqualTo(ana.getId());
@@ -220,8 +189,11 @@ class MapeamentoEntidadesTest {
         assertThat(em.find(Notificacao.class, notificacao.getId()).getReferenciaId()).isEqualTo(conexao.getId());
 
         Bolha bolhaLida = em.find(Bolha.class, bolhaCurso.getId());
-        assertThat(bolhaLida.getBolhaPai().getSlug()).isEqualTo("ifba-eunapolis");
-        assertThat(bolhaLida.isEntradaAutomatica()).isTrue();
+        assertThat(bolhaLida.getTipo()).isEqualTo(TipoBolha.CURSO);
+        assertThat(bolhaLida.getDescricao()).isEqualTo("Análise e Desenvolvimento de Sistemas");
+        assertThat(bolhaLida.getBolhaPai().getEndereco()).isEqualTo("BR-367, Km 57 — Eunápolis, BA");
+        assertThat(bolhaLida.getBolhaPai().getBolhaPai().getSigla()).isEqualTo("IFBA");
+        assertThat(bolhaLida.getBolhaPai().getBolhaPai().getFotoUrl()).isEqualTo("/api/arquivos/ifba.jpg");
         assertThat(bolhaLida.isSomenteLeitura()).isFalse();
 
         MembroBolha membroLido = em.find(MembroBolha.class, new MembroBolhaId(bolhaCurso.getId(), ana.getId()));
@@ -310,28 +282,30 @@ class MapeamentoEntidadesTest {
     }
 
     @Test
-    void oBancoRejeitaCampusDeOutraInstituicao() {
-        Instituicao ifba = em.persist(new Instituicao("IFBA"));
-        Instituicao outra = em.persist(new Instituicao("Outra"));
-        Campus campusDaOutra = em.persist(new Campus(outra, "Campus da outra"));
+    void oBancoRejeitaBolhaGeralComBolhaAcima() {
+        Bolha ifba = em.persistAndFlush(new Bolha(TipoBolha.GERAL, "IFBA", "ifba", null));
 
-        VinculoInstitucional vinculo = new VinculoInstitucional(usuario("ana"), ifba.getId(), TipoVinculo.ALUNO);
-        vinculo.setCampusId(campusDaOutra.getId());
-
-        assertThatThrownBy(() -> em.persistAndFlush(vinculo))
+        assertThatThrownBy(() -> em.persistAndFlush(new Bolha(TipoBolha.GERAL, "Outra", "outra", ifba)))
                 .rootCause()
-                .hasMessageContaining("fk_vinculo_campus");
+                .hasMessageContaining("ck_bolha_geral_sem_pai");
+    }
+
+    @Test
+    void oBancoRejeitaCampusOuCursoNoTopo() {
+        assertThatThrownBy(() -> em.persistAndFlush(new Bolha(TipoBolha.CAMPUS, "Solto", "solto", null)))
+                .rootCause()
+                .hasMessageContaining("ck_bolha_campus_curso_com_pai");
     }
 
     @Test
     void preencheAtualizadoEmSomenteNaAlteracao() {
-        Instituicao instituicao = em.persistAndFlush(new Instituicao("IFBA"));
-        assertThat(instituicao.getCriadoEm()).isNotNull();
-        assertThat(instituicao.getAtualizadoEm()).isNull();
+        Bolha bolha = em.persistAndFlush(new Bolha(TipoBolha.COMUNIDADE, "Cinema", "cinema", null));
+        assertThat(bolha.getCriadoEm()).isNotNull();
+        assertThat(bolha.getAtualizadoEm()).isNull();
 
-        instituicao.setSigla("IFBA");
+        bolha.setSigla("CN");
         em.flush();
-        assertThat(instituicao.getAtualizadoEm()).isNotNull();
+        assertThat(bolha.getAtualizadoEm()).isNotNull();
     }
 
     @Test
