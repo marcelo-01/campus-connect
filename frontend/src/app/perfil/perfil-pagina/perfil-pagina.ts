@@ -5,6 +5,8 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
 import { BolhaResumo, BolhaService, membrosPorExtenso } from '../../bolhas/bolha.service';
+import { BotaoConexao } from '../../conexoes/botao-conexao';
+import { ConexaoService } from '../../conexoes/conexao.service';
 import { Avatar } from '../../shared/avatar';
 import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone } from '../../shared/icone';
@@ -14,16 +16,17 @@ import { Perfil, PerfilService, linkSemEsquema, mesEAno } from '../perfil.servic
 type Aba = 'posts' | 'market' | 'saved' | 'about';
 
 /**
- * O `ProfileScreen` do MVP com dados reais. Conexões e bolhas vêm do banco (zero até essas funções
- * existirem). "Seguidores" e "seguindo" saíram: o modelo de dados só tem conexões. As abas de posts,
- * marketplace e salvos mostram o estado vazio até cada função chegar.
+ * O `ProfileScreen` do MVP com dados reais. Conexões e bolhas vêm do banco. "Seguidores" e "seguindo" saíram:
+ * o modelo de dados só tem conexões. No perfil de outra pessoa, o "Seguir" do MVP virou o botão de conexão, e o
+ * número de conexões abre a lista. As abas de posts, marketplace e salvos mostram o estado vazio até cada
+ * função chegar.
  *
  * Sem `:username` na rota, mostra o perfil de quem está logado.
  */
 @Component({
   selector: 'app-perfil-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, BolhaMarca, Icone],
+  imports: [RouterLink, Avatar, BolhaMarca, BotaoConexao, Icone],
   styles: ':host { display: contents; }',
   templateUrl: './perfil-pagina.html',
 })
@@ -31,11 +34,12 @@ export class PerfilPagina {
   private readonly auth = inject(AuthService);
   private readonly perfis = inject(PerfilService);
   private readonly bolhasService = inject(BolhaService);
+  private readonly conexoes = inject(ConexaoService);
   private readonly toast = inject(ToastService);
 
   protected readonly perfil = signal<Perfil | null>(null);
   protected readonly bolhas = signal<BolhaResumo[]>([]);
-  protected readonly conexoes = signal(0);
+  protected readonly totalConexoes = signal(0);
   protected readonly naoEncontrado = signal(false);
   protected readonly aba = signal<Aba>('posts');
 
@@ -62,7 +66,7 @@ export class PerfilPagina {
               forkJoin({
                 perfil: of(perfil),
                 bolhas: this.bolhasService.doUsuario(perfil.id).pipe(catchError(() => of([]))),
-                conexoes: this.perfis.totalDeConexoes(perfil.id).pipe(catchError(() => of(0))),
+                conexoes: this.conexoes.total(perfil.id).pipe(catchError(() => of(0))),
               }),
             ),
             catchError((erro: unknown) => {
@@ -78,10 +82,25 @@ export class PerfilPagina {
       .subscribe((dados) => {
         if (dados) {
           this.bolhas.set(dados.bolhas);
-          this.conexoes.set(dados.conexoes);
+          this.totalConexoes.set(dados.conexoes);
           this.perfil.set(dados.perfil);
+          if (!dados.perfil.proprio) {
+            // O botão de conexão vem das listas: a outra pessoa pode ter respondido desde a última recarga.
+            this.conexoes.recarregarMinhas();
+          }
         }
       });
+  }
+
+  /** Depois de conectar ou desfazer, o número do perfil muda. Se a tela já mostra outro perfil, nada muda. */
+  protected recarregarTotal(perfil: Perfil): void {
+    this.conexoes.total(perfil.id).subscribe({
+      next: (total) => {
+        if (this.perfil()?.id === perfil.id) {
+          this.totalConexoes.set(total);
+        }
+      },
+    });
   }
 
   protected async compartilhar(perfil: Perfil): Promise<void> {
@@ -92,9 +111,5 @@ export class PerfilPagina {
     } catch {
       this.toast.mostrar(endereco);
     }
-  }
-
-  protected emBreve(recurso: string): void {
-    this.toast.mostrar(`${recurso} — em breve`);
   }
 }

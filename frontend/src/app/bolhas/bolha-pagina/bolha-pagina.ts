@@ -12,9 +12,9 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, catchError, map, merge, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
+import { PessoaLinha } from '../../conexoes/pessoa-linha';
 import { TrilhaService } from '../../layout/trilha.service';
 import { mesEAno } from '../../perfil/perfil.service';
-import { Avatar } from '../../shared/avatar';
 import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
@@ -34,15 +34,15 @@ type Aba = 'posts' | 'subbolhas' | 'membros' | 'sobre';
 /**
  * A página de uma bolha. O MVP não tinha uma: clicar numa bolha só filtrava o feed. Ela junta peças que o
  * MVP já tinha: o `.bubble-hero` (estilo pronto e nunca usado), as abas do perfil, o card do Explorar
- * para as sub-bolhas e a `.person-row` das conexões para os membros. A barra do topo mostra a hierarquia
- * ("IFBA › Campus › Curso"), como o `Topbar` do MVP.
+ * para as sub-bolhas e a linha de pessoa das conexões para os membros, com o botão de conexão. A barra do
+ * topo mostra a hierarquia ("IFBA › Campus › Curso"), como o `Topbar` do MVP.
  *
  * O feed da bolha chega com as publicações; por ora a aba de posts mostra o estado vazio do MVP.
  */
 @Component({
   selector: 'app-bolha-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, BolhaCartao, BolhaMarca, Icone],
+  imports: [RouterLink, BolhaCartao, BolhaMarca, Icone, PessoaLinha],
   styles: ':host { display: contents; }',
   templateUrl: './bolha-pagina.html',
 })

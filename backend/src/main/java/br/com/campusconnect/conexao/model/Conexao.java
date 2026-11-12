@@ -15,7 +15,11 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 
-/** O par de usuários é ordenado pelo banco; crie conexões sempre por {@link #solicitar}. */
+/**
+ * Um registro por par de usuários, com o par na ordem do banco ({@code usuario_menor_id < usuario_maior_id}). Em
+ * Java, crie sempre por {@link #solicitar}, que ordena o par. A aplicação cria os pedidos por SQL
+ * ({@code ConexaoRepository.pedir}), para que dois pedidos ao mesmo tempo não esbarrem no UNIQUE do par.
+ */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity

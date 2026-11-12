@@ -16,3 +16,14 @@ export const administradorGuard: CanActivateFn = () =>
 /** Login e cadastro são só para quem ainda não entrou; quem já está logado vai para o início. */
 export const visitanteGuard: CanActivateFn = () =>
   !inject(AuthService).autenticado() || inject(Router).createUrlTree(['/']);
+
+/**
+ * `/perfil/<o próprio username>/conexoes` vai para `/conexoes`, onde a pessoa também vê os pedidos. O username é
+ * comparado como o backend guarda: sem o `@` da frente e em minúsculas.
+ */
+export const conexoesDeOutraPessoaGuard: CanActivateFn = (rota) => {
+  const pedido = (rota.paramMap.get('username') ?? '').trim().replace(/^@/, '').toLowerCase();
+  return (
+    pedido !== inject(AuthService).usuario()?.username || inject(Router).createUrlTree(['/conexoes'])
+  );
+};

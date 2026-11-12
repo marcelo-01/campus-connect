@@ -39,8 +39,13 @@ class AutenticacaoApiTest {
     @Autowired
     private JdbcTemplate jdbc;
 
+    /**
+     * As classes de teste dividem o mesmo banco. A {@code conexao} aponta para {@code usuario} sem cascade, então as
+     * linhas deixadas por outra classe precisam sair antes, senão o delete de usuários falha.
+     */
     @BeforeEach
     void limparContas() {
+        jdbc.update("delete from conexao");
         jdbc.update("delete from refresh_token");
         jdbc.update("delete from usuario");
     }

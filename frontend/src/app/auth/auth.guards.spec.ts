@@ -5,9 +5,10 @@ import {
   Router,
   RouterStateSnapshot,
   UrlTree,
+  convertToParamMap,
   provideRouter,
 } from '@angular/router';
-import { administradorGuard } from './auth.guards';
+import { administradorGuard, conexoesDeOutraPessoaGuard } from './auth.guards';
 import { AuthService } from './auth.service';
 import { UsuarioResumo } from './sessao';
 
@@ -47,5 +48,31 @@ describe('administradorGuard', () => {
 
     expect(resultado).toBeInstanceOf(UrlTree);
     expect(TestBed.inject(Router).serializeUrl(resultado as UrlTree)).toBe('/bolhas');
+  });
+});
+
+describe('conexoesDeOutraPessoaGuard', () => {
+  function abrir(username: string): boolean | UrlTree {
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { usuario: signal(conta(false)) } },
+      ],
+    });
+    const rota = { paramMap: convertToParamMap({ username }) } as ActivatedRouteSnapshot;
+    return TestBed.runInInjectionContext(
+      () => conexoesDeOutraPessoaGuard(rota, {} as RouterStateSnapshot) as boolean | UrlTree,
+    );
+  }
+
+  it('deixa abrir as conexões de outra pessoa', () => {
+    expect(abrir('bia')).toBe(true);
+  });
+
+  it('leva as próprias conexões para /conexoes, mesmo com @ e maiúsculas', () => {
+    const resultado = abrir('@Ana');
+
+    expect(resultado).toBeInstanceOf(UrlTree);
+    expect(TestBed.inject(Router).serializeUrl(resultado as UrlTree)).toBe('/conexoes');
   });
 });

@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable } from 'rxjs';
 import { comArquivo } from '../shared/imagem';
 
 /** Perfil público (`GET /api/usuarios/{username}/perfil`). Não traz e-mail. */
@@ -45,12 +45,6 @@ export class PerfilService {
 
   trocarCapa(arquivo: File): Observable<Perfil> {
     return this.http.post<Perfil>('/api/usuarios/me/capa', comArquivo(arquivo));
-  }
-
-  totalDeConexoes(usuarioId: string): Observable<number> {
-    return this.http
-      .get<{ total: number }>(`/api/conexoes/usuario/${usuarioId}/total`)
-      .pipe(map((resposta) => resposta.total));
   }
 }
 

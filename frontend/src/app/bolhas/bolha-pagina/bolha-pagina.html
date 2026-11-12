@@ -81,19 +81,11 @@
             <div class="card" style="padding-block: 4px">
               <div class="person-list">
                 @for (membro of lista; track membro.id) {
-                  <a class="person-row" [routerLink]="['/perfil', membro.username]">
-                    <app-avatar
-                      [nome]="membro.nomeCompleto"
-                      [fotoUrl]="membro.fotoUrl"
-                      tamanho="md"
-                    />
-                    <div class="person-info">
-                      <div class="name">{{ membro.nomeCompleto }}</div>
-                      <div class="handle">
-                        &#64;{{ membro.username }} · entrou em {{ mesEAno(membro.entrouEm) }}
-                      </div>
-                    </div>
-                  </a>
+                  <app-pessoa-linha
+                    [pessoa]="membro"
+                    [detalhe]="'entrou em ' + mesEAno(membro.entrouEm)"
+                    tamanhoAvatar="md"
+                  />
                 }
               </div>
             </div>

@@ -18,13 +18,14 @@ export type NomeIcone =
   | 'globo'
   | 'local'
   | 'lixeira'
-  | 'check';
+  | 'check'
+  | 'conexoes';
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
- * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `sair`, `local`, `lixeira` e `check` não existiam lá e
- * seguem o mesmo estilo. O elemento do componente não cria caixa
- * (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
+ * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `sair`, `local`, `lixeira`, `check` e `conexoes` (o
+ * `Icon.User` do MVP com uma segunda pessoa atrás) não existiam lá e seguem o mesmo estilo. O elemento do
+ * componente não cria caixa (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
  */
 @Component({
   selector: 'app-icone',
@@ -85,6 +86,9 @@ export type NomeIcone =
       }
       @case ('check') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+      }
+      @case ('conexoes') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/><path d="M17.5 14.4c2.3.7 4 2.7 4 5.6"/></svg>
       }
     }
   `,

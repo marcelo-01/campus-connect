@@ -14,8 +14,11 @@
       <div class="profile-actions">
         @if (p.proprio) {
           <a class="btn btn-secondary" routerLink="/perfil/editar"><app-icone nome="editar" /> Editar perfil</a>
+          <button type="button" class="btn btn-primary" (click)="compartilhar(p)">Compartilhar</button>
+        } @else {
+          <app-botao-conexao [pessoa]="p" (mudou)="recarregarTotal(p)" />
+          <button type="button" class="btn btn-secondary" (click)="compartilhar(p)">Compartilhar</button>
         }
-        <button type="button" class="btn btn-primary" (click)="compartilhar(p)">Compartilhar</button>
       </div>
     </div>
 
@@ -29,12 +32,12 @@
     }
 
     <div class="profile-stats">
-      <button type="button" class="stat stat-btn" (click)="emBreve('Conexões')">
-        <b>{{ conexoes() }}</b>{{ conexoes() === 1 ? 'conexão' : 'conexões' }}
-      </button>
-      <button type="button" class="stat stat-btn" routerLink="/bolhas">
+      <a class="stat stat-btn" [routerLink]="p.proprio ? '/conexoes' : ['/perfil', p.username, 'conexoes']">
+        <b>{{ totalConexoes() }}</b>{{ totalConexoes() === 1 ? 'conexão' : 'conexões' }}
+      </a>
+      <a class="stat stat-btn" routerLink="/bolhas">
         <b>{{ bolhas().length }}</b>{{ bolhas().length === 1 ? 'bolha' : 'bolhas' }}
-      </button>
+      </a>
     </div>
 
     @if (bolhas().length || p.proprio) {

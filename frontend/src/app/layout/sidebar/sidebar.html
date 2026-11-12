@@ -12,9 +12,13 @@
           [routerLink]="item.rota"
           routerLinkActive="active"
           [routerLinkActiveOptions]="{ exact: item.exato === true }"
+          [attr.aria-label]="rotuloAcessivel(item)"
         >
           <app-icone [nome]="item.icone" />
           {{ item.rotulo }}
+          @if (item.contador?.(); as total) {
+            <span class="badge">{{ total }}</span>
+          }
         </a>
       } @else {
         <button type="button" class="nav-item" (click)="emBreve(item.rotulo)">

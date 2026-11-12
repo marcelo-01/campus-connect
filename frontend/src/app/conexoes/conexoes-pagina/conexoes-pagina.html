@@ -1,0 +1,89 @@
+@if (dono(); as d) {
+  <div class="content content-narrow">
+    <div class="backbar">
+      <a class="back-btn" [routerLink]="voltarPara()" title="Voltar ao perfil" aria-label="Voltar ao perfil">
+        <app-icone nome="voltar" />
+      </a>
+      <div class="backbar-title">
+        <h1>{{ d.nomeCompleto }}</h1>
+        <span>
+          &#64;{{ d.username }}
+          @if (!propria() && pessoas(); as lista) {
+            · {{ conexoesPorExtenso(lista.length) }}
+          }
+        </span>
+      </div>
+    </div>
+
+    @if (propria()) {
+      <div class="tabs">
+        <button type="button" [class.active]="aba() === 'conexoes'" (click)="aba.set('conexoes')">
+          Conexões<span class="tab-count">{{ totais()?.conexoes }}</span>
+        </button>
+        <button type="button" [class.active]="aba() === 'recebidos'" (click)="aba.set('recebidos')">
+          Pedidos recebidos<span class="tab-count">{{ totais()?.recebidos }}</span>
+        </button>
+        <button type="button" [class.active]="aba() === 'enviados'" (click)="aba.set('enviados')">
+          Pedidos enviados<span class="tab-count">{{ totais()?.enviados }}</span>
+        </button>
+      </div>
+    }
+
+    <div class="thread-search" style="background: var(--surface)">
+      <app-icone nome="busca" />
+      <input
+        type="search"
+        placeholder="Buscar pessoas…"
+        aria-label="Buscar pessoas nesta lista"
+        [value]="busca()"
+        (input)="digitar($event)"
+      />
+    </div>
+
+    @if (pessoas(); as lista) {
+      @if (filtradas().length) {
+        <div class="person-list">
+          @for (pessoa of filtradas(); track pessoa.id) {
+            <app-pessoa-linha
+              [pessoa]="pessoa"
+              [detalhe]="detalhe(pessoa)"
+              (mudou)="registrarMudanca(pessoa, $event)"
+            />
+          }
+        </div>
+      } @else if (lista.length) {
+        <div class="muted" style="text-align: center; padding: 24px">Ninguém encontrado.</div>
+      } @else if (!propria()) {
+        <div class="muted" style="text-align: center; padding: 24px">
+          {{ primeiroNome(d.nomeCompleto) }} ainda não tem conexões.
+        </div>
+      } @else {
+        @switch (aba()) {
+          @case ('conexoes') {
+            <div class="card empty-state">
+              <div class="empty-bubble" style="background: var(--accent)"><app-icone nome="conexoes" /></div>
+              <h3>Você ainda não tem conexões</h3>
+              <p>Entre nas bolhas e conecte-se com quem participa delas. As suas conexões aparecem aqui.</p>
+              <a class="btn btn-primary" routerLink="/bolhas">Explorar bolhas</a>
+            </div>
+          }
+          @case ('recebidos') {
+            <div class="muted" style="text-align: center; padding: 24px">Nenhum pedido esperando resposta.</div>
+          }
+          @case ('enviados') {
+            <div class="muted" style="text-align: center; padding: 24px">Você não tem pedidos enviados.</div>
+          }
+        }
+      }
+    }
+  </div>
+} @else if (naoEncontrado()) {
+  <div class="content content-narrow">
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--text-subtle)">?</div>
+      <h3>Perfil não encontrado</h3>
+      <p>Esse nome de usuário não existe ou a conta não está mais disponível.</p>
+      <a class="btn btn-secondary" routerLink="/">Voltar ao início</a>
+    </div>
+  </div>
+}

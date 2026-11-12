@@ -1,10 +1,16 @@
 import { Routes } from '@angular/router';
-import { administradorGuard, autenticadoGuard, visitanteGuard } from './auth/auth.guards';
+import {
+  administradorGuard,
+  autenticadoGuard,
+  conexoesDeOutraPessoaGuard,
+  visitanteGuard,
+} from './auth/auth.guards';
 import { Cadastro } from './auth/cadastro/cadastro';
 import { Entrar } from './auth/entrar/entrar';
 import { BolhaForm } from './bolhas/bolha-form/bolha-form';
 import { BolhaPagina } from './bolhas/bolha-pagina/bolha-pagina';
 import { Explorar } from './bolhas/explorar/explorar';
+import { ConexoesPagina } from './conexoes/conexoes-pagina/conexoes-pagina';
 import { Inicio } from './inicio/inicio';
 import { Shell } from './layout/shell/shell';
 import { EditarPerfil } from './perfil/editar-perfil/editar-perfil';
@@ -29,6 +35,21 @@ export const routes: Routes = [
         data: { trilha: ['Perfil', 'Editar perfil'] },
       },
       { path: 'perfil/:username', component: PerfilPagina, title: 'Perfil · CampusConnect', data: { trilha: ['Perfil'] } },
+      {
+        // As conexões de quem está logado, com os pedidos. O item "Conexões" do menu leva para cá.
+        path: 'conexoes',
+        component: ConexoesPagina,
+        title: 'Conexões · CampusConnect',
+        data: { trilha: ['Conexões'] },
+      },
+      {
+        // As de outra pessoa. As da própria vão para '/conexoes', onde também ficam os pedidos.
+        path: 'perfil/:username/conexoes',
+        component: ConexoesPagina,
+        canActivate: [conexoesDeOutraPessoaGuard],
+        title: 'Conexões · CampusConnect',
+        data: { trilha: ['Perfil', 'Conexões'] },
+      },
       {
         path: 'bolhas',
         component: Explorar,

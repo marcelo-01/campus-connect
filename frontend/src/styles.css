@@ -1509,9 +1509,6 @@ a.bubble-item { line-height: normal; }
   width: fit-content;
 }
 .bolha-endereco svg { width: 15px; height: 15px; }
-a.person-row { color: inherit; }
-a.person-row:hover .name { color: var(--accent); }
-.person-list .person-row:last-child { border-bottom: none; }
 
 /* Formulário de bolha. */
 .rotulo-campo { font-size: 13px; font-weight: 600; color: var(--text); }
@@ -1543,3 +1540,28 @@ a.person-row:hover .name { color: var(--accent); }
   .bubble-hero,
   .explore-hero { flex-wrap: wrap; }
 }
+
+/* ========================================================================
+   Conexões — adicionados no projeto Angular
+   O MVP tinha a tela de conexões (.person-row, .tab-count, .thread-search)
+   com o botão "Seguir". A linha de pessoa serve também para os membros
+   de uma bolha.
+   ======================================================================== */
+/* Avatar e nome levam ao perfil; o botão de conexão fica fora do link. */
+.person-link {
+  display: flex; align-items: center; gap: 14px;
+  flex: 1; min-width: 0;
+  color: inherit;
+}
+.person-link:hover .name { color: var(--accent); }
+/* Cada linha fica dentro do elemento do componente: a borda some na última linha, não em todas. */
+.person-list > :last-child > .person-row { border-bottom: none; }
+
+/* Aceitar e Recusar, ou a confirmação de cancelar ou desfazer, lado a lado. */
+.botoes-conexao { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
+
+/* Os números do perfil viraram link (<a>), como os itens do menu. */
+a.stat-btn { line-height: normal; }
+
+/* Ícone no círculo do estado vazio (no MVP eram só letras). */
+.empty-bubble svg { width: 28px; height: 28px; }
