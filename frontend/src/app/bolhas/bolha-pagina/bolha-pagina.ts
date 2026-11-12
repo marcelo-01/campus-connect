@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -13,6 +14,9 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subject, catchError, map, merge, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
 import { PessoaLinha } from '../../conexoes/pessoa-linha';
+import { Composer } from '../../publicacoes/composer/composer';
+import { Feed } from '../../publicacoes/feed/feed';
+import { EscopoFeed, Publicacao } from '../../publicacoes/publicacao.service';
 import { TrilhaService } from '../../layout/trilha.service';
 import { mesEAno } from '../../perfil/perfil.service';
 import { BolhaMarca } from '../../shared/bolha-marca';
@@ -37,12 +41,13 @@ type Aba = 'posts' | 'subbolhas' | 'membros' | 'sobre';
  * para as sub-bolhas e a linha de pessoa das conexões para os membros, com o botão de conexão. A barra do
  * topo mostra a hierarquia ("IFBA › Campus › Curso"), como o `Topbar` do MVP.
  *
- * O feed da bolha chega com as publicações; por ora a aba de posts mostra o estado vazio do MVP.
+ * A aba Posts mostra os posts da bolha e os das bolhas acima dela: o que é publicado numa bolha desce
+ * para as de dentro, mas não sobe. Quem é membro publica ali mesmo, pelo composer com o destino fixo.
  */
 @Component({
   selector: 'app-bolha-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, BolhaCartao, BolhaMarca, Icone, PessoaLinha],
+  imports: [RouterLink, BolhaCartao, BolhaMarca, Icone, PessoaLinha, Composer, Feed],
   styles: ':host { display: contents; }',
   templateUrl: './bolha-pagina.html',
 })
@@ -70,6 +75,13 @@ export class BolhaPagina {
     const bolha = this.bolha();
     return bolha ? siglaExibida(bolha, 2) : '';
   });
+
+  protected readonly escopoPosts = computed<EscopoFeed | null>(() => {
+    const bolha = this.bolha();
+    return bolha ? { tipo: 'bolha', bolhaId: bolha.id } : null;
+  });
+
+  private readonly feed = viewChild(Feed);
 
   protected readonly rotuloDoTipo = rotuloDoTipo;
   protected readonly membrosPorExtenso = membrosPorExtenso;
@@ -123,6 +135,10 @@ export class BolhaPagina {
       ? `Você saiu de ${bolha.nome} e das bolhas dentro dela`
       : `Você saiu de ${bolha.nome}`;
     this.agir(this.bolhas.sair(bolha.id), recado);
+  }
+
+  protected aoPublicar(publicacao: Publicacao): void {
+    this.feed()?.adicionar(publicacao);
   }
 
   private agir(acao: ReturnType<BolhaService['entrar']>, recado: string): void {

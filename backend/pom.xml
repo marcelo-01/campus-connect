@@ -31,6 +31,7 @@
 		<spring-modulith.version>2.1.1</spring-modulith.version>
 		<!-- Exigido pelo Argon2PasswordEncoder; o Spring Boot nao gerencia esta versao. -->
 		<bouncycastle.version>1.86</bouncycastle.version>
+		<jsoup.version>1.22.1</jsoup.version>
 	</properties>
 	<dependencies>
 		<dependency>
@@ -57,6 +58,18 @@
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk18on</artifactId>
 			<version>${bouncycastle.version}</version>
+		</dependency>
+		<!-- Previa de links das publicacoes: o cliente HTTP deixa trocar a resolucao de DNS, que e
+		     onde os enderecos internos sao barrados (protecao contra SSRF). Versao gerida pelo Boot. -->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+		</dependency>
+		<!-- Le as tags og:title, og:image... da pagina do link. O Spring Boot nao gerencia esta versao. -->
+		<dependency>
+			<groupId>org.jsoup</groupId>
+			<artifactId>jsoup</artifactId>
+			<version>${jsoup.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

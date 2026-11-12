@@ -58,7 +58,7 @@ export class Sidebar {
     { rotulo: 'Marketplace', icone: 'marketplace' },
     { rotulo: 'Mensagens', icone: 'mensagens' },
     { rotulo: 'Notificações', icone: 'notificacoes' },
-    { rotulo: 'Salvos', icone: 'salvos' },
+    { rotulo: 'Salvos', icone: 'salvos', rota: '/salvos', exato: true },
     {
       // Sem `exato`: com ele o item apagaria em '/conexoes?aba=enviados'.
       rotulo: 'Conexões',

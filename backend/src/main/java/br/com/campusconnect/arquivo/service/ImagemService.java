@@ -1,105 +1,56 @@
 package br.com.campusconnect.arquivo.service;
 
-import br.com.campusconnect.arquivo.config.PropriedadesArquivos;
 import br.com.campusconnect.arquivo.processamento.ProcessadorImagem;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.regex.Pattern;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
- * Guarda imagens em disco e devolve o caminho público delas ({@code /api/arquivos/<nome>.jpg}).
- *
- * <p>Os outros módulos gravam esse caminho no banco. O nome do arquivo é aleatório, então o conteúdo de
- * um caminho nunca muda: dá para o navegador guardar em cache para sempre.
+ * Valida e ajusta imagens antes de gravar na pasta de arquivos. Devolve o caminho público
+ * ({@code /api/arquivos/<nome>.jpg}), que os outros módulos gravam no banco.
  */
-@Slf4j
 @Service
+@RequiredArgsConstructor
 public class ImagemService {
 
-    public static final String PREFIXO_URL = "/api/arquivos/";
+    public static final String PREFIXO_URL = ArquivoService.PREFIXO_URL;
 
-    private static final Pattern NOME_VALIDO = Pattern.compile("[0-9a-f]{32}\\.jpg");
+    /**
+     * O limite de upload do servidor é o do vídeo, então o das imagens é conferido aqui. Quem recebe um
+     * {@code MultipartFile} pode conferir antes de ler os bytes.
+     */
+    public static final long TAMANHO_MAXIMO = 5L * 1024 * 1024;
+
+    static final String GRANDE_DEMAIS = "Envie uma imagem de até 5 MB.";
 
     private final ProcessadorImagem processador;
-    private final Path diretorio;
-
-    public ImagemService(ProcessadorImagem processador, PropriedadesArquivos propriedades) {
-        this.processador = processador;
-        this.diretorio = propriedades.diretorio().toAbsolutePath().normalize();
-        try {
-            Files.createDirectories(diretorio);
-        } catch (IOException erro) {
-            throw new UncheckedIOException("Não foi possível criar a pasta de arquivos " + diretorio, erro);
-        }
-    }
+    private final ArquivoService arquivos;
 
     /**
      * Valida, ajusta e grava a imagem.
      *
      * @return caminho público da imagem gravada
-     * @throws ImagemInvalidaException se o conteúdo não for um JPG ou PNG aceitável
+     * @throws ImagemInvalidaException se o conteúdo não for um JPG ou PNG aceitável ou passar de 5 MB
      */
     public String salvar(byte[] conteudo, FormatoImagem formato) {
-        byte[] jpeg = processador.processar(conteudo, formato);
-        String nome = UUID.randomUUID().toString().replace("-", "") + ".jpg";
-        try {
-            Files.write(diretorio.resolve(nome), jpeg, StandardOpenOption.CREATE_NEW);
-        } catch (IOException erro) {
-            throw new UncheckedIOException("Não foi possível gravar a imagem " + nome, erro);
-        }
-        return PREFIXO_URL + nome;
+        garantirTamanho(conteudo.length);
+        return arquivos.gravar(processador.processar(conteudo, formato), "jpg");
     }
 
-    /** Apaga a imagem de um caminho devolvido por {@link #salvar}. Caminho nulo ou desconhecido é ignorado. */
-    public void remover(String url) {
-        if (url == null || !url.startsWith(PREFIXO_URL)) {
-            return;
+    /** @throws ImagemInvalidaException se passar de 5 MB */
+    public static void garantirTamanho(long tamanho) {
+        if (tamanho > TAMANHO_MAXIMO) {
+            throw new ImagemInvalidaException(GRANDE_DEMAIS);
         }
-        localizar(url.substring(PREFIXO_URL.length())).ifPresent(arquivo -> {
-            try {
-                Files.deleteIfExists(arquivo);
-            } catch (IOException erro) {
-                log.warn("Não foi possível apagar a imagem {}", arquivo, erro);
-            }
-        });
     }
 
-    /**
-     * Agenda a limpeza para quando a transação atual terminar: se ela confirmar, apaga
-     * {@code seConfirmar}; se desfizer, apaga {@code seDesfazer}. Quem troca uma imagem grava a nova antes
-     * de mexer no banco e chama isto com a antiga e a nova; quem exclui chama com a atual e {@code null}.
-     * Assim nenhuma imagem fica órfã na pasta e nenhum registro aponta para arquivo apagado.
-     *
-     * @throws IllegalStateException fora de uma transação
-     */
+    /** Veja {@link ArquivoService#remover}. */
+    public void remover(@Nullable String url) {
+        arquivos.remover(url);
+    }
+
+    /** Veja {@link ArquivoService#descartarAoFim(String, String)}. */
     public void descartarAoFim(@Nullable String seConfirmar, @Nullable String seDesfazer) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCompletion(int status) {
-                remover(status == STATUS_COMMITTED ? seConfirmar : seDesfazer);
-            }
-        });
-    }
-
-    /**
-     * Arquivo em disco de um nome publicado. Só aceita nomes no formato gerado aqui, então um nome como
-     * {@code ../application.yml} nunca sai da pasta de arquivos.
-     */
-    public Optional<Path> localizar(String nome) {
-        if (nome == null || !NOME_VALIDO.matcher(nome).matches()) {
-            return Optional.empty();
-        }
-        Path arquivo = diretorio.resolve(nome);
-        return Files.isRegularFile(arquivo) ? Optional.of(arquivo) : Optional.empty();
+        arquivos.descartarAoFim(seConfirmar, seDesfazer);
     }
 }

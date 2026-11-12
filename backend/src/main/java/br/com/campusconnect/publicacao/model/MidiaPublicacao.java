@@ -49,6 +49,21 @@ public class MidiaPublicacao extends EntidadeBase {
     @Column(name = "ordem", nullable = false)
     private Short ordem = 0;
 
+    // Prévia de um LINK, quando o servidor conseguiu ler a página. Nulos nas outras mídias.
+
+    @Column(name = "titulo", length = 300)
+    private String titulo;
+
+    @Column(name = "descricao", length = 500)
+    private String descricao;
+
+    @Column(name = "site", length = 100)
+    private String site;
+
+    /** Cópia da imagem de destaque da página, gravada em {@code /api/arquivos}. */
+    @Column(name = "imagem_url", columnDefinition = "text")
+    private String imagemUrl;
+
     @Setter(AccessLevel.NONE)
     @CreationTimestamp
     @Column(name = "criado_em", nullable = false, updatable = false)

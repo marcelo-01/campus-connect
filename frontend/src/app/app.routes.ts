@@ -15,6 +15,8 @@ import { Inicio } from './inicio/inicio';
 import { Shell } from './layout/shell/shell';
 import { EditarPerfil } from './perfil/editar-perfil/editar-perfil';
 import { PerfilPagina } from './perfil/perfil-pagina/perfil-pagina';
+import { PublicacaoPagina } from './publicacoes/publicacao-pagina/publicacao-pagina';
+import { SalvosPagina } from './publicacoes/salvos-pagina/salvos-pagina';
 
 export const routes: Routes = [
   { path: 'entrar', component: Entrar, canActivate: [visitanteGuard], title: 'Entrar · CampusConnect' },
@@ -50,6 +52,14 @@ export const routes: Routes = [
         title: 'Conexões · CampusConnect',
         data: { trilha: ['Perfil', 'Conexões'] },
       },
+      {
+        // A publicação com os comentários. O botão "Compartilhar" do card copia este endereço.
+        path: 'publicacoes/:id',
+        component: PublicacaoPagina,
+        title: 'Publicação · CampusConnect',
+        data: { trilha: ['Publicação'] },
+      },
+      { path: 'salvos', component: SalvosPagina, title: 'Salvos · CampusConnect', data: { trilha: ['Salvos'] } },
       {
         path: 'bolhas',
         component: Explorar,

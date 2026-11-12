@@ -5,6 +5,7 @@ import br.com.campusconnect.arquivo.service.ImagemInvalidaException;
 import br.com.campusconnect.arquivo.service.ImagemService;
 import br.com.campusconnect.bolha.model.Bolha;
 import br.com.campusconnect.bolha.model.MembroBolha;
+import br.com.campusconnect.bolha.model.MembroBolhaId;
 import br.com.campusconnect.bolha.model.PapelMembro;
 import br.com.campusconnect.bolha.model.TipoBolha;
 import br.com.campusconnect.bolha.repository.BolhaRepository;
@@ -13,6 +14,9 @@ import br.com.campusconnect.bolha.repository.MembroBolhaRepository.TotalPorBolha
 import br.com.campusconnect.comum.AcessoNegadoException;
 import br.com.campusconnect.comum.CampoInvalidoException;
 import br.com.campusconnect.usuario.service.UsuarioService;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -23,6 +27,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +43,7 @@ public class BolhaService {
     private final RegrasBolha regras;
     private final UsuarioService usuarios;
     private final ImagemService imagens;
+    private final ApplicationEventPublisher eventos;
 
     // ------------------------------------------------------------ leitura
 
@@ -78,6 +84,45 @@ public class BolhaService {
                             usuario.fotoUrl(), membro.getPapel().name(), membro.getEntrouEm());
                 })
                 .toList();
+    }
+
+    // ------------------------------------------------------------ para os outros módulos
+
+    /** Bolhas em que a pessoa participa. */
+    @Transactional(readOnly = true)
+    public Set<UUID> idsDasBolhasDo(UUID usuarioId) {
+        return membros.idsDasBolhasDo(usuarioId);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean ehMembro(UUID usuarioId, UUID bolhaId) {
+        return membros.existsById(new MembroBolhaId(bolhaId, usuarioId));
+    }
+
+    /**
+     * A bolha e as que ficam acima dela, de baixo para cima. É o que o feed de uma bolha mostra: o que foi
+     * publicado numa bolha desce para as de dentro dela, mas não sobe.
+     *
+     * @throws BolhaNaoEncontradaException se a bolha não existir
+     */
+    @Transactional(readOnly = true)
+    public List<UUID> idsDoCaminho(UUID bolhaId) {
+        List<UUID> ids = new ArrayList<>();
+        for (Bolha atual = carregar(bolhaId); atual != null; atual = atual.getBolhaPai()) {
+            ids.add(atual.getId());
+        }
+        return ids;
+    }
+
+    /** Resumo de cada bolha pedida, com {@code membro} do ponto de vista de quem vê. Ids que não existem ficam de fora. */
+    @Transactional(readOnly = true)
+    public Map<UUID, BolhaResumo> resumos(Collection<UUID> ids, UUID quemVe) {
+        Arvore arvore = arvore(quemVe);
+        Map<UUID, BolhaResumo> resumos = new HashMap<>();
+        for (UUID id : ids) {
+            arvore.porId(id).ifPresent(no -> resumos.put(id, no.resumo()));
+        }
+        return resumos;
     }
 
     // ------------------------------------------------------------ participação
@@ -139,7 +184,9 @@ public class BolhaService {
     }
 
     /**
-     * Os membros saem junto (cascade no banco) e a foto é apagada depois do commit.
+     * Os membros saem junto (cascade no banco) e a foto é apagada depois do commit. Antes de apagar, avisa
+     * com {@link BolhaExcluida}, na mesma transação, para os outros módulos apagarem o que é da bolha
+     * (as publicações, por exemplo).
      *
      * @throws BolhaComSubBolhasException se ainda houver bolhas dentro desta
      */
@@ -150,6 +197,7 @@ public class BolhaService {
         if (bolhas.existsByBolhaPaiId(bolhaId)) {
             throw new BolhaComSubBolhasException();
         }
+        eventos.publishEvent(new BolhaExcluida(bolhaId));
         imagens.descartarAoFim(bolha.getFotoUrl(), null);
         bolhas.delete(bolha);
         try {

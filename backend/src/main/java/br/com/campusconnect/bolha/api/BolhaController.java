@@ -1,5 +1,6 @@
 package br.com.campusconnect.bolha.api;
 
+import br.com.campusconnect.arquivo.service.ImagemService;
 import br.com.campusconnect.bolha.service.BolhaDetalhe;
 import br.com.campusconnect.bolha.service.BolhaResumo;
 import br.com.campusconnect.bolha.service.BolhaService;
@@ -87,6 +88,7 @@ class BolhaController {
     @PostMapping(path = "/{id}/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     BolhaDetalhe trocarFoto(@PathVariable UUID id, @RequestPart("arquivo") MultipartFile arquivo,
             @AuthenticationPrincipal Jwt jwt) throws IOException {
+        ImagemService.garantirTamanho(arquivo.getSize());
         return bolhas.trocarFoto(idDe(jwt), id, arquivo.getBytes());
     }
 

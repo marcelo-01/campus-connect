@@ -7,7 +7,13 @@ public enum FormatoImagem {
     AVATAR(512, true),
 
     /** Capa do perfil: mantém a proporção, com no máximo 1600 px no maior lado. */
-    CAPA(1600, false);
+    CAPA(1600, false),
+
+    /** Imagem de uma publicação: mantém a proporção, com no máximo 1600 px no maior lado. */
+    PUBLICACAO(1600, false),
+
+    /** Imagem de destaque da prévia de um link: mantém a proporção, com no máximo 800 px no maior lado. */
+    PREVIA_LINK(800, false);
 
     private final int ladoMaximo;
     private final boolean quadrado;

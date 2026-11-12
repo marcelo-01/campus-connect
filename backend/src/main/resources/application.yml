@@ -12,15 +12,17 @@ spring:
     open-in-view: false
   servlet:
     multipart:
-      # Fotos de perfil e capas. O frontend avisa antes de enviar; aqui e a garantia.
-      max-file-size: 5MB
-      max-request-size: 6MB
+      # O maior arquivo aceito e o video de uma publicacao (50 MB). O limite das imagens
+      # (5 MB) e conferido no ImagemService. O frontend avisa antes de enviar; aqui e a garantia.
+      max-file-size: 50MB
+      # Uma publicacao leva ate 4 imagens de 5 MB ou 1 video de 50 MB, mais o JSON.
+      max-request-size: 60MB
 
 server:
   tomcat:
     # Sem isso, num upload acima do limite o Tomcat fecha a conexao e o navegador ve
     # "erro de rede" em vez da resposta 413 com a mensagem.
-    max-swallow-size: 20MB
+    max-swallow-size: 100MB
 
 campusconnect:
   seguranca:

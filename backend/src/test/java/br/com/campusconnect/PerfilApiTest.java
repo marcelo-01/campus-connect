@@ -50,10 +50,8 @@ class PerfilApiTest {
 
     @BeforeEach
     void criarContas() throws Exception {
-        jdbc.update("delete from conexao");
-        jdbc.update("delete from bolha");
-        jdbc.update("delete from refresh_token");
-        jdbc.update("delete from usuario");
+        // O cascade leva junto tudo o que aponta para contas e bolhas: conexões, membros, publicações...
+        jdbc.execute("truncate usuario, bolha cascade");
         ana = cadastrar("Ana Beatriz", "ana.bc");
         bia = cadastrar("Bia Souza", "bia");
     }

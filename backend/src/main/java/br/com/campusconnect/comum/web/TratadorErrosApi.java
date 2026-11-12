@@ -52,8 +52,9 @@ class TratadorErrosApi extends ResponseEntityExceptionHandler {
     @Override
     protected @Nullable ResponseEntity<Object> handleMaxUploadSizeExceededException(
             MaxUploadSizeExceededException excecao, HttpHeaders headers, HttpStatusCode status, WebRequest requisicao) {
-        ProblemDetail problema = comErros(HttpStatus.CONTENT_TOO_LARGE, "O arquivo é grande demais.",
-                Map.of("arquivo", "Envie uma imagem de até 5 MB."));
+        // O limite do servidor é o do vídeo; o das imagens (5 MB) é conferido no ImagemService.
+        ProblemDetail problema = comErros(HttpStatus.CONTENT_TOO_LARGE, "O arquivo passou do limite.",
+                Map.of("arquivo", "Envie imagens de até 5 MB ou um vídeo de até 50 MB."));
         return handleExceptionInternal(excecao, problema, headers, HttpStatus.CONTENT_TOO_LARGE, requisicao);
     }
 

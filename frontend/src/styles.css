@@ -1565,3 +1565,223 @@ a.stat-btn { line-height: normal; }
 
 /* Ícone no círculo do estado vazio (no MVP eram só letras). */
 .empty-bubble svg { width: 28px; height: 28px; }
+
+/* ========================================================================
+   Publicações — adicionados no projeto Angular
+   O MVP tinha o composer, o card do post (.post) e os comentários, usados
+   como estão. Aqui fica o que ele não tinha: a galeria de 2 a 4 imagens, o
+   vídeo, o cartão do link, o menu de opções, o seletor de destino e os
+   anexos do composer, a linha "republicou", as respostas e o filtro do Início.
+   ======================================================================== */
+/* O texto respeita as quebras de linha de quem escreveu. */
+.post-body,
+.comment-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.post-body.clicavel,
+.post-media.clicavel { cursor: pointer; }
+.post-body a:not(.mention),
+.comment-text a:not(.mention) { color: var(--accent); font-weight: 500; }
+.post-body a:hover,
+.comment-text a:hover { text-decoration: underline; }
+.comment-text .mention { color: var(--accent); font-weight: 600; }
+.comment-text .hashtag { color: var(--accent); font-weight: 500; }
+
+/* Nome, @username, tempo e bolha viraram links. */
+.post-avatar { display: grid; border-radius: 999px; }
+.post-author .name { flex-wrap: wrap; }
+.post-author .name > a:first-child { color: inherit; }
+.post-author .name > a:first-child:hover { color: var(--accent); }
+.post-author .meta a { color: inherit; }
+.post-author .meta a:hover { color: var(--text); text-decoration: underline; }
+a.bubble-tag:hover { background: oklch(from var(--accent) l c h / 0.16); }
+
+/* "Fulano republicou", no feed de um perfil. */
+.post-republicada {
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: -4px;
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-muted);
+}
+.post-republicada svg { width: 14px; height: 14px; }
+.post-republicada a { color: inherit; }
+.post-republicada a:hover { color: var(--text); }
+
+/* Até 4 imagens. Uma só fica inteira; de 2 a 4 viram mosaico. */
+.post-galeria { display: grid; gap: 2px; }
+.post-galeria img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.post-galeria[data-quantidade="1"] img { height: auto; max-height: 560px; object-fit: contain; }
+.post-galeria[data-quantidade="2"] { aspect-ratio: 16/9; grid-template-columns: 1fr 1fr; }
+.post-galeria[data-quantidade="3"] { aspect-ratio: 16/9; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.post-galeria[data-quantidade="3"] img:first-child { grid-row: span 2; }
+.post-galeria[data-quantidade="4"] { aspect-ratio: 4/3; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.post-video video { width: 100%; max-height: 560px; display: block; background: #000; }
+
+/* O link anexado: prévia com imagem, título e descrição; sem prévia, só o domínio. */
+.link-previa {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--surface);
+  color: inherit;
+  transition: border-color 0.15s, background 0.15s;
+}
+.link-previa:hover { border-color: var(--border-strong); background: var(--surface-hover); }
+.link-previa img { width: 148px; flex-shrink: 0; object-fit: cover; background: var(--surface-2); }
+.link-previa-texto { padding: 12px 14px; display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.link-previa-site {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11.5px; font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 0.04em;
+}
+.link-previa-site svg { width: 13px; height: 13px; flex-shrink: 0; }
+.link-previa strong { font-size: 14.5px; line-height: 1.35; }
+.link-previa-descricao {
+  font-size: 13px; color: var(--text-muted);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; overflow-wrap: anywhere;
+}
+
+/* Republicar e salvar marcados ficam na cor da marca; curtir já fica na tangerina (.liked). */
+.post-action.marcada { color: var(--accent); }
+.post-action:disabled { opacity: 0.4; cursor: default; background: none; }
+
+/* Confirmação de exclusão dentro do card (o MVP não tem modal). */
+.post-confirmacao {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;
+  padding: 10px 12px 10px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 13.5px;
+}
+
+/* Menu de opções (três pontos) do post. */
+.menu-ancora { position: relative; flex-shrink: 0; }
+.menu-flutuante {
+  position: absolute; right: 0; top: calc(100% + 4px); z-index: 20;
+  min-width: 160px;
+  padding: 6px;
+  display: flex; flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.menu-flutuante button {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13.5px; font-weight: 500;
+  color: var(--text);
+  text-align: left;
+}
+.menu-flutuante button:hover { background: var(--surface-hover); }
+.menu-flutuante button.perigo { color: var(--danger); }
+.menu-flutuante svg { width: 16px; height: 16px; }
+
+/* A pílula "Postar em" vira um seletor no Início. */
+.target-escolha { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.target-escolha select {
+  -webkit-appearance: none; appearance: none;
+  border: none; background: transparent; outline: none;
+  color: inherit; font: inherit; font-weight: 700;
+  max-width: 200px; text-overflow: ellipsis;
+  padding-right: 14px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 5px center, right 1px center;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+.target-escolha select:focus-visible { outline: 2px solid var(--accent-ring); border-radius: 4px; }
+.tool-btn { cursor: pointer; }
+.tool-btn.ativo { color: var(--accent); background: var(--accent-soft); }
+.tool-btn.desabilitado { opacity: 0.4; pointer-events: none; }
+
+/* Imagens e vídeo anexados no composer, antes de publicar. */
+.composer-anexos { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+.composer-anexo {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+}
+.composer-anexo img,
+.composer-anexo video { width: 100%; height: 100%; object-fit: cover; display: block; }
+.composer-anexo-video { grid-column: span 2; aspect-ratio: 16/9; background: #000; }
+.composer-anexo-rotulo {
+  position: absolute; left: 6px; bottom: 6px;
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: oklch(0 0 0 / 0.6); color: white;
+  font-size: 11.5px; font-weight: 600;
+}
+.composer-anexo-rotulo svg { width: 13px; height: 13px; }
+.composer-anexo .remover {
+  position: absolute; top: 5px; right: 5px;
+  width: 24px; height: 24px;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  background: oklch(0 0 0 / 0.6); color: white;
+}
+.composer-anexo .remover:hover { background: oklch(0 0 0 / 0.8); }
+.composer-anexo .remover svg { width: 13px; height: 13px; }
+.composer-link {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.composer-link:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+.composer-link svg { width: 16px; height: 16px; color: var(--text-muted); flex-shrink: 0; }
+.composer-link input { flex: 1; min-width: 0; border: none; outline: none; background: none; font-size: 14px; color: var(--text); }
+.composer-link-dominio { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+
+/* Filtro por bolha do Início e ordem dos comentários: um select com o visual dos chips. */
+select.chip {
+  -webkit-appearance: none; appearance: none;
+  padding-right: 30px;
+  background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%);
+  background-position: right 15px center, right 11px center;
+  background-size: 4px 4px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  font-family: inherit;
+}
+.chip-select { max-width: 260px; text-overflow: ellipsis; }
+
+/* Avisos do feed (carregando, erro) e o "Ver mais". */
+.feed-aviso { text-align: center; color: var(--text-muted); font-size: 13.5px; padding: 28px 0; }
+.feed-mais { display: flex; justify-content: center; padding: 4px 0 16px; }
+/* A aba Posts da bolha e do perfil, na largura de leitura do feed. */
+.feed-coluna { max-width: 680px; width: 100%; display: flex; flex-direction: column; gap: 18px; }
+
+/* Comentários: respostas recuadas, comentário removido, convite para entrar na bolha. */
+.comment-avatar { display: grid; border-radius: 999px; flex-shrink: 0; }
+.comment-avatar-vazio { background: var(--surface-2); border: 1px dashed var(--border-strong); }
+.comment-head .name { color: inherit; }
+.comment-head .name:hover { color: var(--accent); }
+.comment-respostas { display: flex; flex-direction: column; gap: 14px; margin-top: 14px; }
+.comment-removido .comment-text { font-style: italic; color: var(--text-muted); }
+.comment-confirmacao { display: inline-flex; align-items: center; gap: 10px; color: var(--danger); font-weight: 600; }
+.comment-actions button.perigo { color: var(--danger); }
+.comment-respondendo {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 600; color: var(--accent);
+}
+.comment-respondendo button { display: grid; place-items: center; color: var(--text-muted); }
+.comment-respondendo button:hover { color: var(--text); }
+.comment-respondendo svg { width: 14px; height: 14px; }
+.comment-convite { font-size: 14px; color: var(--text-muted); }
+.comment-convite a { color: var(--accent); font-weight: 600; }
+
+@media (max-width: 560px) {
+  .link-previa { flex-direction: column; }
+  .link-previa img { width: 100%; aspect-ratio: 1.91 / 1; }
+  .target-escolha select { max-width: 130px; }
+}

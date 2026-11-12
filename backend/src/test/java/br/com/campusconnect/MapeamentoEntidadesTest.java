@@ -36,7 +36,11 @@ import br.com.campusconnect.notificacao.model.TipoNotificacao;
 import br.com.campusconnect.publicacao.model.Comentario;
 import br.com.campusconnect.publicacao.model.MidiaPublicacao;
 import br.com.campusconnect.publicacao.model.Publicacao;
+import br.com.campusconnect.publicacao.model.PublicacaoSalva;
+import br.com.campusconnect.publicacao.model.PublicacaoSalvaId;
 import br.com.campusconnect.publicacao.model.Reacao;
+import br.com.campusconnect.publicacao.model.Republicacao;
+import br.com.campusconnect.publicacao.model.RepublicacaoId;
 import br.com.campusconnect.publicacao.model.StatusPublicacao;
 import br.com.campusconnect.publicacao.model.TipoMidia;
 import br.com.campusconnect.publicacao.model.TipoReacao;
@@ -132,8 +136,14 @@ class MapeamentoEntidadesTest {
         Publicacao publicacao = new Publicacao(ana.getId(), bolhaCurso.getId(), "Bem-vindos!",
                 StatusPublicacao.PUBLICADA);
         publicacao.adicionarMidia(TipoMidia.IMAGEM, "https://exemplo.com/foto.png").setTamanhoBytes(5_000_000_000L);
-        publicacao.adicionarMidia(TipoMidia.LINK, "https://exemplo.com");
+        MidiaPublicacao link = publicacao.adicionarMidia(TipoMidia.LINK, "https://exemplo.com");
+        link.setTitulo("Exemplo");
+        link.setDescricao("Um site de exemplo.");
+        link.setSite("exemplo.com");
+        link.setImagemUrl("/api/arquivos/previa.jpg");
         em.persist(publicacao);
+        em.persist(new PublicacaoSalva(joao.getId(), publicacao));
+        em.persist(new Republicacao(joao.getId(), publicacao));
 
         Comentario comentario = em.persist(new Comentario(publicacao, joao.getId(), "Valeu!"));
         Comentario resposta = new Comentario(publicacao, ana.getId(), "De nada");
@@ -169,7 +179,7 @@ class MapeamentoEntidadesTest {
                 where table_schema = 'public' and table_type = 'BASE TABLE'
                   and table_name <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(tabelas).hasSize(22).allSatisfy(tabela -> assertThat(
+        assertThat(tabelas).hasSize(24).allSatisfy(tabela -> assertThat(
                 jdbc.queryForObject("select count(*) from " + tabela, Long.class)).as(tabela).isPositive());
 
         Usuario anaLida = em.find(Usuario.class, ana.getId());
@@ -222,6 +232,15 @@ class MapeamentoEntidadesTest {
         assertThat(publicacaoLida.getMidias()).extracting(MidiaPublicacao::getTipo)
                 .containsExactly(TipoMidia.IMAGEM, TipoMidia.LINK);
         assertThat(publicacaoLida.getMidias().getFirst().getTamanhoBytes()).isEqualTo(5_000_000_000L);
+        MidiaPublicacao linkLido = publicacaoLida.getMidias().getLast();
+        assertThat(linkLido.getTitulo()).isEqualTo("Exemplo");
+        assertThat(linkLido.getDescricao()).isEqualTo("Um site de exemplo.");
+        assertThat(linkLido.getSite()).isEqualTo("exemplo.com");
+        assertThat(linkLido.getImagemUrl()).isEqualTo("/api/arquivos/previa.jpg");
+        assertThat(em.find(PublicacaoSalva.class, new PublicacaoSalvaId(joao.getId(), publicacao.getId()))
+                .getSalvaEm()).isNotNull();
+        assertThat(em.find(Republicacao.class, new RepublicacaoId(joao.getId(), publicacao.getId()))
+                .getCriadoEm()).isNotNull();
 
         assertThat(em.find(Comentario.class, resposta.getId()).getComentarioPai().getConteudo()).isEqualTo("Valeu!");
 

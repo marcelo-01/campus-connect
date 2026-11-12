@@ -1,5 +1,6 @@
 package br.com.campusconnect.usuario.api;
 
+import br.com.campusconnect.arquivo.service.ImagemService;
 import br.com.campusconnect.usuario.service.Perfil;
 import br.com.campusconnect.usuario.service.PerfilService;
 import br.com.campusconnect.usuario.service.UsuarioResumo;
@@ -49,12 +50,14 @@ class UsuarioController {
     @PostMapping(path = "/me/foto", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     Perfil trocarFoto(@RequestPart("arquivo") MultipartFile arquivo, @AuthenticationPrincipal Jwt jwt)
             throws IOException {
+        ImagemService.garantirTamanho(arquivo.getSize());
         return perfis.trocarFoto(idDe(jwt), arquivo.getBytes());
     }
 
     @PostMapping(path = "/me/capa", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     Perfil trocarCapa(@RequestPart("arquivo") MultipartFile arquivo, @AuthenticationPrincipal Jwt jwt)
             throws IOException {
+        ImagemService.garantirTamanho(arquivo.getSize());
         return perfis.trocarCapa(idDe(jwt), arquivo.getBytes());
     }
 

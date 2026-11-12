@@ -1,4 +1,4 @@
-/** Imagens enviadas pelos usuários: validação, gravação em disco e entrega por {@code /api/arquivos}. */
+/** Imagens e vídeos enviados pelos usuários: validação, gravação em disco e entrega por {@code /api/arquivos}. */
 @ApplicationModule(
         displayName = "Arquivos",
         allowedDependencies = "comum")

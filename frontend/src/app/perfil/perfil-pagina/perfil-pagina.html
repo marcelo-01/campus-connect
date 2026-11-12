@@ -65,9 +65,16 @@
 
     @switch (aba()) {
       @case ('posts') {
-        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
-          {{ p.proprio ? 'Você ainda não publicou nada. Seus posts aparecerão aqui.' : primeiroNome() + ' ainda não publicou nada.' }}
-        </div>
+        @if (escopoPosts(); as escopo) {
+          <div class="feed-coluna">
+            <app-feed
+              [escopo]="escopo"
+              [comChips]="false"
+              estiloVazio="cartao"
+              [vazioTexto]="p.proprio ? 'Você ainda não publicou nada. Seus posts aparecerão aqui.' : primeiroNome() + ' ainda não publicou nada.'"
+            />
+          </div>
+        }
       }
       @case ('market') {
         <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
@@ -75,8 +82,13 @@
         </div>
       }
       @case ('saved') {
-        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
-          Você ainda não salvou nada. Os posts e serviços que você salvar aparecerão aqui.
+        <div class="feed-coluna">
+          <app-feed
+            [escopo]="escopoSalvas"
+            [comChips]="false"
+            estiloVazio="cartao"
+            vazioTexto="Você ainda não salvou nada. Os posts e serviços que você salvar aparecerão aqui."
+          />
         </div>
       }
       @case ('about') {

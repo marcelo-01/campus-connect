@@ -1,13 +1,33 @@
 <div class="content content-narrow">
-  <div>
-    <h1 class="section-title">Olá, {{ primeiroNome() }}!</h1>
-    <div class="section-sub">Que bom ter você no CampusConnect.</div>
-  </div>
-
-  <div class="card empty-state">
-    <div class="empty-bubble" style="background: var(--accent)">CC</div>
-    <h3>O feed das suas bolhas está a caminho</h3>
-    <p>Enquanto isso, deixe seu perfil com a sua cara: foto, capa, bio, link e habilidades.</p>
-    <a class="btn btn-primary" routerLink="/perfil/editar">Editar meu perfil</a>
-  </div>
+  @if (minhas(); as lista) {
+    @if (lista.length) {
+      <app-composer [bolhaPreferida]="filtro()?.id ?? null" (publicada)="aoPublicar($event)" />
+      <app-feed
+        [escopo]="escopo()"
+        [vazioTitulo]="vazio().titulo"
+        [vazioTexto]="vazio().texto"
+        [vazioSigla]="vazio().sigla"
+        [vazioCor]="vazio().cor"
+      >
+        <select filtro class="chip chip-select" aria-label="Filtrar por bolha" (change)="filtrar($any($event.target).value)">
+          <option value="" [selected]="!filtro()">Todas as minhas bolhas</option>
+          @for (bolha of lista; track bolha.id) {
+            <option [value]="bolha.slug" [selected]="filtro()?.id === bolha.id">{{ recuo(bolha.nivel) }}{{ bolha.nome }}</option>
+          }
+        </select>
+      </app-feed>
+    } @else {
+      <div class="card empty-state">
+        <div class="empty-bubble" style="background: var(--accent)">CC</div>
+        <h3>Entre numa bolha para ver o feed</h3>
+        <p>
+          O Início mostra o que é publicado nas bolhas em que você está: a da sua universidade, a do seu
+          campus, a do seu curso e as comunidades.
+        </p>
+        <a class="btn btn-primary" routerLink="/bolhas">Explorar bolhas</a>
+      </div>
+    }
+  } @else {
+    <div class="feed-aviso">Carregando…</div>
+  }
 </div>

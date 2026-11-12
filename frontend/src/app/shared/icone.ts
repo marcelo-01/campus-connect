@@ -19,12 +19,23 @@ export type NomeIcone =
   | 'local'
   | 'lixeira'
   | 'check'
-  | 'conexoes';
+  | 'conexoes'
+  | 'coracao'
+  | 'coracao-cheio'
+  | 'comentario'
+  | 'republicar'
+  | 'compartilhar'
+  | 'salvo'
+  | 'opcoes'
+  | 'video'
+  | 'fechar';
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
- * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `sair`, `local`, `lixeira`, `check` e `conexoes` (o
- * `Icon.User` do MVP com uma segunda pessoa atrás) não existiam lá e seguem o mesmo estilo. O elemento do
+ * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `coracao`, `coracao-cheio`, `comentario`,
+ * `republicar`, `compartilhar` e `opcoes` são os do card do post (`Heart`, `HeartFill`, `Comment`, `Repost`,
+ * `Share`, `More`). `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
+ * pessoa atrás), `salvo` (o marcador preenchido), `video` e `fechar` não existiam lá e seguem o mesmo estilo. O elemento do
  * componente não cria caixa (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
  */
 @Component({
@@ -89,6 +100,33 @@ export type NomeIcone =
       }
       @case ('conexoes') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><path d="M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/><path d="M17.5 14.4c2.3.7 4 2.7 4 5.6"/></svg>
+      }
+      @case ('coracao') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.5-9.3-9A5 5 0 0 1 12 6a5 5 0 0 1 9.3 5C19 15.5 12 20 12 20z"/></svg>
+      }
+      @case ('coracao-cheio') {
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 20s-7-4.5-9.3-9A5 5 0 0 1 12 6a5 5 0 0 1 9.3 5C19 15.5 12 20 12 20z"/></svg>
+      }
+      @case ('comentario') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.8 7L4 20.5 5.5 16A8 8 0 1 1 21 12z"/></svg>
+      }
+      @case ('republicar') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+      }
+      @case ('compartilhar') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><path d="M16 6l-4-4-4 4"/><path d="M12 2v13"/></svg>
+      }
+      @case ('salvo') {
+        <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12v18l-6-4-6 4z"/></svg>
+      }
+      @case ('opcoes') {
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.7"/><circle cx="12" cy="12" r="1.7"/><circle cx="19" cy="12" r="1.7"/></svg>
+      }
+      @case ('video') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="13" height="12" rx="2.5"/><path d="M16 10.5l5-3v9l-5-3"/></svg>
+      }
+      @case ('fechar') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
       }
     }
   `,

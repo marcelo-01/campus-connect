@@ -1,0 +1,114 @@
+@if (publicacao(); as p) {
+  <div class="content content-narrow">
+    <div class="backbar">
+      <button type="button" class="back-btn" aria-label="Voltar" (click)="voltar()"><app-icone nome="voltar" /></button>
+      <div class="backbar-title">
+        <h1>Publicação</h1>
+        <span>{{ comentariosPorExtenso(p.comentarios) }}</span>
+      </div>
+    </div>
+
+    <app-publicacao-card
+      [publicacao]="p"
+      [navegavel]="false"
+      [prioritaria]="true"
+      (mudou)="publicacao.set($event)"
+      (excluida)="aoExcluirPublicacao()"
+      (querComentar)="focarComentario()"
+    />
+
+    <div class="comments-head">
+      <span>Comentários</span>
+      <select
+        class="chip"
+        aria-label="Ordem dos comentários"
+        [value]="ordem()"
+        (change)="trocarOrdem($any($event.target).value)"
+      >
+        <option value="relevantes" [selected]="ordem() === 'relevantes'">Mais relevantes</option>
+        <option value="recentes" [selected]="ordem() === 'recentes'">Mais recentes</option>
+      </select>
+    </div>
+
+    @if (p.podeInteragir) {
+      <div class="comment-composer">
+        <app-avatar [nome]="usuario()?.nomeCompleto" [fotoUrl]="usuario()?.fotoUrl" tamanho="md" />
+        <div class="comment-field">
+          @if (respondendo(); as r) {
+            <div class="comment-respondendo">
+              Respondendo a {{ r.comentario.autor?.nomeCompleto }}
+              <button type="button" aria-label="Cancelar resposta" (click)="respondendo.set(null)">
+                <app-icone nome="fechar" />
+              </button>
+            </div>
+          }
+          <textarea
+            #campoComentario
+            rows="1"
+            placeholder="Escreva um comentário…"
+            aria-label="Comentário"
+            [attr.maxlength]="tamanhoComentario"
+            [value]="texto()"
+            (input)="texto.set($any($event.target).value)"
+            (keydown)="aoTeclar($event)"
+          ></textarea>
+          <button
+            type="button"
+            class="btn btn-primary btn-sm"
+            [disabled]="!texto().trim() || enviando()"
+            (click)="comentar()"
+          >
+            {{ enviando() ? 'Enviando…' : respondendo() ? 'Responder' : 'Comentar' }}
+          </button>
+        </div>
+      </div>
+    } @else {
+      <div class="card comment-convite">
+        Entre em <a [routerLink]="['/bolhas', p.bolha.slug]">{{ p.bolha.nome }}</a> para comentar e curtir.
+      </div>
+    }
+
+    <div class="comments-list">
+      @if (comentarios(); as lista) {
+        @for (c of lista; track c.id) {
+          <app-comentario-item
+            [comentario]="c"
+            [podeInteragir]="p.podeInteragir"
+            [nomeDaBolha]="p.bolha.nome"
+            (responder)="responder($event, c.id)"
+            (mudou)="aoMudar($event)"
+            (excluido)="aoExcluir($event)"
+          >
+            @if (c.respostas.length) {
+              <div class="comment-respostas">
+                @for (r of c.respostas; track r.id) {
+                  <app-comentario-item
+                    [comentario]="r"
+                    [podeInteragir]="p.podeInteragir"
+                    [nomeDaBolha]="p.bolha.nome"
+                    (responder)="responder($event, c.id)"
+                    (mudou)="aoMudar($event)"
+                    (excluido)="aoExcluir($event)"
+                  />
+                }
+              </div>
+            }
+          </app-comentario-item>
+        } @empty {
+          <div class="muted">Seja o primeiro a comentar.</div>
+        }
+      } @else {
+        <div class="muted">Carregando comentários…</div>
+      }
+    </div>
+  </div>
+} @else if (naoEncontrada()) {
+  <div class="content content-narrow">
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--accent)">?</div>
+      <h3>Publicação não encontrada</h3>
+      <p>Ela pode ter sido excluída por quem publicou.</p>
+      <a class="btn btn-primary" routerLink="/">Voltar ao início</a>
+    </div>
+  </div>
+}

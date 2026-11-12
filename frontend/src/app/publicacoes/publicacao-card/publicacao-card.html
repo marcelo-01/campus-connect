@@ -1,0 +1,180 @@
+@let p = estado();
+<article class="post" [class.enviando]="excluindo()">
+  @if (republicadaPor(); as quem) {
+    <div class="post-republicada">
+      <app-icone nome="republicar" />
+      <a [routerLink]="['/perfil', quem.username]">{{ quem.nomeCompleto }}</a> republicou
+    </div>
+  }
+
+  <header class="post-head">
+    <a class="post-avatar" [routerLink]="['/perfil', p.autor.username]" [attr.aria-label]="'Perfil de ' + p.autor.nomeCompleto">
+      <app-avatar [nome]="p.autor.nomeCompleto" [fotoUrl]="p.autor.fotoUrl" tamanho="md" />
+    </a>
+    <div class="post-author">
+      <div class="name">
+        <a [routerLink]="['/perfil', p.autor.username]">{{ p.autor.nomeCompleto }}</a>
+        <a class="bubble-tag" [routerLink]="['/bolhas', p.bolha.slug]" [title]="'Publicado em ' + p.bolha.nome">
+          <span class="bubble-dot" [style.background]="cor()"></span>{{ p.bolha.nome }}
+        </a>
+      </div>
+      <div class="meta">
+        <span>&#64;{{ p.autor.username }}</span>
+        <span>·</span>
+        <a [routerLink]="['/publicacoes', p.id]" [title]="quando()">{{ tempo() }}</a>
+        @if (p.editadoEm) {
+          <span>·</span>
+          <span>editado</span>
+        }
+      </div>
+    </div>
+    @if (p.podeEditar || p.podeExcluir) {
+      <div class="menu-ancora">
+        <button
+          type="button"
+          class="icon-btn"
+          aria-label="Opções da publicação"
+          aria-haspopup="menu"
+          [attr.aria-expanded]="menuAberto()"
+          (click)="alternarMenu($event)"
+        >
+          <app-icone nome="opcoes" />
+        </button>
+        @if (menuAberto()) {
+          <div class="menu-flutuante" role="menu">
+            @if (p.podeEditar) {
+              <button type="button" role="menuitem" (click)="comecarEdicao()">
+                <app-icone nome="editar" /> Editar
+              </button>
+            }
+            @if (p.podeExcluir) {
+              <button type="button" role="menuitem" class="perigo" (click)="pedirExclusao()">
+                <app-icone nome="lixeira" /> Excluir
+              </button>
+            }
+          </div>
+        }
+      </div>
+    }
+  </header>
+
+  @if (editando()) {
+    <div class="comment-field">
+      <textarea
+        rows="3"
+        aria-label="Texto da publicação"
+        [attr.maxlength]="tamanhoTexto"
+        [value]="textoEditado()"
+        (input)="textoEditado.set($any($event.target).value)"
+      ></textarea>
+      <div class="hstack" style="justify-content: flex-end; gap: 8px">
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="salvandoEdicao()" (click)="editando.set(false)">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-primary btn-sm" [disabled]="salvandoEdicao()" (click)="salvarEdicao()">
+          {{ salvandoEdicao() ? 'Salvando…' : 'Salvar' }}
+        </button>
+      </div>
+    </div>
+  } @else if (p.conteudo) {
+    <div class="post-body" [class.clicavel]="navegavel()" (click)="abrir()"><app-texto-publicacao [texto]="p.conteudo" /></div>
+  }
+
+  @if (imagens().length) {
+    <div
+      class="post-media post-galeria"
+      [class.clicavel]="navegavel()"
+      [attr.data-quantidade]="imagens().length"
+      (click)="abrir()"
+    >
+      @for (imagem of imagens(); track imagem.url) {
+        <img [src]="imagem.url" alt="" [attr.loading]="prioritaria() ? 'eager' : 'lazy'" />
+      }
+    </div>
+  }
+
+  @if (video(); as v) {
+    <div class="post-media post-video">
+      <video [src]="v.url" controls preload="metadata" playsinline></video>
+    </div>
+  }
+
+  @if (p.link; as link) {
+    <a class="link-previa" [href]="link.url" target="_blank" rel="noopener noreferrer nofollow">
+      @if (link.imagemUrl) {
+        <img [src]="link.imagemUrl" alt="" loading="lazy" />
+      }
+      <div class="link-previa-texto">
+        <span class="link-previa-site"><app-icone nome="link" />{{ link.site || dominio(link.url) }}</span>
+        @if (link.titulo) {
+          <strong>{{ link.titulo }}</strong>
+        }
+        @if (link.descricao) {
+          <span class="link-previa-descricao">{{ link.descricao }}</span>
+        } @else if (!link.titulo) {
+          <span class="link-previa-descricao">{{ link.url }}</span>
+        }
+      </div>
+    </a>
+  }
+
+  @if (confirmandoExclusao()) {
+    <div class="post-confirmacao" role="alert">
+      <span><b>Excluir esta publicação?</b> Não dá para desfazer.</span>
+      <div class="hstack" style="gap: 8px">
+        <button type="button" class="btn btn-ghost btn-sm" [disabled]="excluindo()" (click)="confirmandoExclusao.set(false)">
+          Cancelar
+        </button>
+        <button type="button" class="btn btn-danger btn-sm" [disabled]="excluindo()" (click)="excluir()">
+          {{ excluindo() ? 'Excluindo…' : 'Excluir' }}
+        </button>
+      </div>
+    </div>
+  }
+
+  <footer class="post-actions">
+    <button
+      type="button"
+      class="post-action"
+      [class.liked]="p.curtida"
+      [attr.aria-pressed]="p.curtida"
+      [attr.aria-label]="p.curtida ? 'Descurtir' : 'Curtir'"
+      (click)="curtir()"
+    >
+      <app-icone [nome]="p.curtida ? 'coracao-cheio' : 'coracao'" />
+      {{ p.curtidas }}
+    </button>
+    <button type="button" class="post-action" aria-label="Comentários" (click)="abrirComentarios()">
+      <app-icone nome="comentario" />
+      {{ p.comentarios }}
+    </button>
+    <button
+      type="button"
+      class="post-action"
+      [class.marcada]="p.republicada"
+      [attr.aria-pressed]="p.republicada"
+      [attr.aria-label]="tituloRepublicar()"
+      [title]="tituloRepublicar()"
+      [disabled]="proprio()"
+      (click)="republicar()"
+    >
+      <app-icone nome="republicar" />
+      {{ p.republicacoes }}
+    </button>
+    <div class="spacer"></div>
+    <button type="button" class="post-action" title="Copiar link" aria-label="Copiar link" (click)="compartilhar()">
+      <app-icone nome="compartilhar" />
+    </button>
+    <button
+      type="button"
+      class="post-action"
+      [class.marcada]="p.salva"
+      [attr.aria-pressed]="p.salva"
+      [attr.aria-label]="p.salva ? 'Remover dos salvos' : 'Salvar'"
+      [title]="p.salva ? 'Remover dos salvos' : 'Salvar'"
+      (click)="salvar()"
+    >
+      <app-icone [nome]="p.salva ? 'salvo' : 'salvos'" />
+    </button>
+  </footer>
+</article>

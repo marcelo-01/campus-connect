@@ -7,6 +7,8 @@ import { AuthService } from '../../auth/auth.service';
 import { BolhaResumo, BolhaService, membrosPorExtenso } from '../../bolhas/bolha.service';
 import { BotaoConexao } from '../../conexoes/botao-conexao';
 import { ConexaoService } from '../../conexoes/conexao.service';
+import { Feed } from '../../publicacoes/feed/feed';
+import { EscopoFeed } from '../../publicacoes/publicacao.service';
 import { Avatar } from '../../shared/avatar';
 import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone } from '../../shared/icone';
@@ -18,15 +20,15 @@ type Aba = 'posts' | 'market' | 'saved' | 'about';
 /**
  * O `ProfileScreen` do MVP com dados reais. Conexões e bolhas vêm do banco. "Seguidores" e "seguindo" saíram:
  * o modelo de dados só tem conexões. No perfil de outra pessoa, o "Seguir" do MVP virou o botão de conexão, e o
- * número de conexões abre a lista. As abas de posts, marketplace e salvos mostram o estado vazio até cada
- * função chegar.
+ * número de conexões abre a lista. A aba Posts mostra os posts da pessoa e os que ela republicou; a de
+ * Salvos, só no próprio perfil, os posts salvos. O marketplace mostra o estado vazio até chegar.
  *
  * Sem `:username` na rota, mostra o perfil de quem está logado.
  */
 @Component({
   selector: 'app-perfil-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, BolhaMarca, BotaoConexao, Icone],
+  imports: [RouterLink, Avatar, BolhaMarca, BotaoConexao, Icone, Feed],
   styles: ':host { display: contents; }',
   templateUrl: './perfil-pagina.html',
 })
@@ -50,6 +52,11 @@ export class PerfilPagina {
     return perfil ? mesEAno(perfil.membroDesde) : '';
   });
   protected readonly primeiroNome = computed(() => this.perfil()?.nomeCompleto.split(/\s+/)[0] ?? '');
+  protected readonly escopoPosts = computed<EscopoFeed | null>(() => {
+    const perfil = this.perfil();
+    return perfil ? { tipo: 'usuario', usuarioId: perfil.id } : null;
+  });
+  protected readonly escopoSalvas: EscopoFeed = { tipo: 'salvas' };
 
   constructor() {
     inject(ActivatedRoute)

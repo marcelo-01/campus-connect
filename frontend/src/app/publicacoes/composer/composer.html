@@ -1,0 +1,94 @@
+@if (destino(); as d) {
+  <div class="composer" [class.enviando]="enviando()">
+    <app-avatar [nome]="usuario()?.nomeCompleto" [fotoUrl]="usuario()?.fotoUrl" tamanho="md" />
+    <div class="composer-main">
+      <textarea
+        #campoTexto
+        rows="2"
+        aria-label="Texto da publicação"
+        [placeholder]="'Compartilhe algo com ' + d.nome + '…'"
+        [attr.maxlength]="tamanhoTexto"
+        [value]="texto()"
+        (input)="texto.set($any($event.target).value)"
+      ></textarea>
+
+      @if (imagens().length || video()) {
+        <div class="composer-anexos">
+          @for (anexo of imagens(); track anexo.previa) {
+            <div class="composer-anexo">
+              <img [src]="anexo.previa" alt="" />
+              <button type="button" class="remover" aria-label="Remover imagem" (click)="removerImagem(anexo)">
+                <app-icone nome="fechar" />
+              </button>
+            </div>
+          }
+          @if (video(); as v) {
+            <div class="composer-anexo composer-anexo-video">
+              <video [src]="v.previa" muted preload="metadata"></video>
+              <span class="composer-anexo-rotulo"><app-icone nome="video" /> Vídeo</span>
+              <button type="button" class="remover" aria-label="Remover vídeo" (click)="removerVideo()">
+                <app-icone nome="fechar" />
+              </button>
+            </div>
+          }
+        </div>
+      }
+
+      @if (mostrandoLink()) {
+        <div class="composer-link">
+          <app-icone nome="link" />
+          <input
+            type="url"
+            inputmode="url"
+            placeholder="Cole um link, como exemplo.com/pagina"
+            aria-label="Link"
+            [value]="link()"
+            (input)="link.set($any($event.target).value)"
+          />
+          @if (link().trim()) {
+            <span class="composer-link-dominio">{{ dominio(link()) }}</span>
+          }
+        </div>
+      }
+
+      <div class="composer-tools">
+        <div class="target">
+          <span class="bubble-dot" [style.width.px]="10" [style.height.px]="10" [style.background]="cor()"></span>
+          @if (bolhaFixa()) {
+            Postar em {{ d.nome }}
+          } @else {
+            <label class="target-escolha">
+              Postar em
+              <select aria-label="Bolha da publicação" [value]="escolhida()" (change)="escolhida.set($any($event.target).value)">
+                @for (bolha of minhas(); track bolha.id) {
+                  <option [value]="bolha.id" [selected]="bolha.id === escolhida()">{{ recuo(bolha.nivel) }}{{ bolha.nome }}</option>
+                }
+              </select>
+            </label>
+          }
+        </div>
+        <label class="tool-btn" title="Imagem" [class.desabilitado]="!!video()">
+          <app-icone nome="imagem" />
+          <input type="file" accept="image/jpeg,image/png" multiple hidden (change)="escolherImagens($event)" />
+        </label>
+        <label class="tool-btn" title="Vídeo" [class.desabilitado]="imagens().length > 0">
+          <app-icone nome="video" />
+          <input type="file" accept="video/mp4,video/webm" hidden (change)="escolherVideo($event)" />
+        </label>
+        <button type="button" class="tool-btn" title="Link" [class.ativo]="mostrandoLink()" (click)="alternarLink()">
+          <app-icone nome="link" />
+        </button>
+        <div class="spacer"></div>
+        <button
+          type="button"
+          class="btn btn-primary btn-sm"
+          [disabled]="!podePublicar()"
+          [style.opacity]="podePublicar() || enviando() ? null : 0.45"
+          (click)="publicar()"
+        >
+          {{ enviando() ? 'Publicando…' : 'Publicar' }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

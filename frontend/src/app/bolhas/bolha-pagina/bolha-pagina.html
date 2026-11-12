@@ -59,13 +59,24 @@
 
     @switch (aba()) {
       @case ('posts') {
-        <div class="empty-state">
-          <div class="empty-bubble" [style.background]="cor()">{{ sigla() }}</div>
-          <h3>Nada por aqui ainda em {{ b.nome }}</h3>
-          <p>
-            As publicações das bolhas chegam em breve. Quando chegarem, os posts desta bolha
-            aparecem aqui.
-          </p>
+        <div class="feed-coluna">
+          @if (b.membro) {
+            <app-composer [bolhaFixa]="b" (publicada)="aoPublicar($event)" />
+          }
+          @if (escopoPosts(); as escopo) {
+            <app-feed
+              [escopo]="escopo"
+              [versao]="b.membro"
+              [vazioTitulo]="'Nada por aqui ainda em ' + b.nome"
+              [vazioTexto]="
+                b.membro
+                  ? 'Seja a primeira pessoa a publicar nesta bolha — ou ajuste o filtro acima.'
+                  : 'Entre na bolha para ser a primeira pessoa a publicar.'
+              "
+              [vazioSigla]="sigla()"
+              [vazioCor]="cor() ?? 'var(--accent)'"
+            />
+          }
         </div>
       }
       @case ('subbolhas') {

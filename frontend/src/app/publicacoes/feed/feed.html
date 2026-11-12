@@ -1,0 +1,51 @@
+@if (comChips()) {
+  <div class="chips" style="margin-top: 4px">
+    <ng-content select="[filtro]" />
+    @for (chip of chips; track chip.ordem) {
+      <button type="button" class="chip" [class.active]="ordem() === chip.ordem" (click)="ordem.set(chip.ordem)">
+        {{ chip.rotulo }}
+      </button>
+    }
+  </div>
+}
+
+@if (carregando()) {
+  <div class="feed-aviso">Carregando publicações…</div>
+} @else if (falhou()) {
+  <div class="feed-aviso">
+    Não foi possível carregar as publicações.
+    <button type="button" class="btn btn-ghost btn-sm" (click)="tentarDeNovo()">Tentar de novo</button>
+  </div>
+} @else if (!itens().length) {
+  @if (estiloVazio() === 'cartao') {
+    <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">{{ vazioTexto() }}</div>
+  } @else {
+    <div class="empty-state">
+      <div class="empty-bubble" [style.background]="vazioCor()">{{ vazioSigla() }}</div>
+      <h3>{{ vazioTitulo() }}</h3>
+      @if (vazioTexto()) {
+        <p>{{ vazioTexto() }}</p>
+      }
+      <ng-content select="[vazio]" />
+    </div>
+  }
+} @else {
+  <div class="vstack" style="gap: 14px">
+    @for (item of itens(); track chave(item); let primeiro = $first) {
+      <app-publicacao-card
+        [publicacao]="item.publicacao"
+        [republicadaPor]="item.republicadaPor"
+        [prioritaria]="primeiro"
+        (mudou)="atualizar($event)"
+        (excluida)="remover($event)"
+      />
+    }
+  </div>
+  @if (proximo()) {
+    <div class="feed-mais" #fim>
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="carregandoMais()" (click)="carregarMais()">
+        {{ carregandoMais() ? 'Carregando…' : 'Ver mais' }}
+      </button>
+    </div>
+  }
+}
