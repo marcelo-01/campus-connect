@@ -1,10 +1,12 @@
 import {
   comentariosPorExtenso,
   dominio,
+  enderecoDasNovas,
   enderecoDoFeed,
   formularioDaPublicacao,
   problemaNaImagemDoPost,
   problemaNoVideo,
+  rotuloDasNovas,
 } from './publicacao.service';
 
 describe('funções das publicações', () => {
@@ -25,6 +27,25 @@ describe('funções das publicações', () => {
     expect(perfil.url).toBe('/api/publicacoes/usuario/u1');
     expect(perfil.parametros.has('ordem')).toBe(false);
     expect(enderecoDoFeed({ tipo: 'salvas' }, 'recentes', null).url).toBe('/api/publicacoes/salvas');
+  });
+
+  it('pergunta pelos posts novos ao lado do feed, com o mesmo filtro e o mesmo chip', () => {
+    const inicio = enderecoDasNovas({ tipo: 'inicio', bolhaId: 'b1' }, 'midia', 'm1');
+    expect(inicio.url).toBe('/api/publicacoes/feed/novas');
+    expect(inicio.parametros.get('bolhaId')).toBe('b1');
+    expect(inicio.parametros.get('ordem')).toBe('midia');
+    expect(inicio.parametros.get('desde')).toBe('m1');
+
+    const bolha = enderecoDasNovas({ tipo: 'bolha', bolhaId: 'b2' }, 'recentes', 'm2');
+    expect(bolha.url).toBe('/api/publicacoes/bolha/b2/novas');
+    expect(bolha.parametros.keys()).toEqual(['desde']);
+  });
+
+  it('escreve o aviso de posts novos, com "20+" quando passa do limite', () => {
+    const aviso = (total: number, mais = false) => rotuloDasNovas({ total, mais, autores: [] });
+    expect(aviso(1)).toBe('1 nova publicação');
+    expect(aviso(3)).toBe('3 novas publicações');
+    expect(aviso(20, true)).toBe('20+ novas publicações');
   });
 
   it('manda os dados como JSON e cada arquivo na sua parte', async () => {

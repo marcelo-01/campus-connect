@@ -1,5 +1,5 @@
 @if (comChips()) {
-  <div class="chips" style="margin-top: 4px">
+  <div class="chips feed-comeco" style="margin-top: 4px" #comeco>
     <ng-content select="[filtro]" />
     @for (chip of chips; track chip.ordem) {
       <button type="button" class="chip" [class.active]="ordem() === chip.ordem" (click)="ordem.set(chip.ordem)">
@@ -16,32 +16,53 @@
     Não foi possível carregar as publicações.
     <button type="button" class="btn btn-ghost btn-sm" (click)="tentarDeNovo()">Tentar de novo</button>
   </div>
-} @else if (!itens().length) {
-  @if (estiloVazio() === 'cartao') {
-    <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">{{ vazioTexto() }}</div>
-  } @else {
-    <div class="empty-state">
-      <div class="empty-bubble" [style.background]="vazioCor()">{{ vazioSigla() }}</div>
-      <h3>{{ vazioTitulo() }}</h3>
-      @if (vazioTexto()) {
-        <p>{{ vazioTexto() }}</p>
-      }
-      <ng-content select="[vazio]" />
-    </div>
-  }
 } @else {
-  <div class="vstack" style="gap: 14px">
-    @for (item of itens(); track chave(item); let primeiro = $first) {
-      <app-publicacao-card
-        [publicacao]="item.publicacao"
-        [republicadaPor]="item.republicadaPor"
-        [prioritaria]="primeiro"
-        (mudou)="atualizar($event)"
-        (excluida)="remover($event)"
-      />
+  <div class="feed-lista">
+    <div class="feed-novas" aria-live="polite">
+      @if (novas(); as n) {
+        <button type="button" class="feed-novas-botao" [disabled]="carregandoNovas()" (click)="verNovas()">
+          <app-icone nome="subir" />
+          @if (n.autores.length) {
+            <span class="feed-novas-autores" aria-hidden="true">
+              @for (autor of n.autores; track autor.id) {
+                <app-avatar [nome]="autor.nomeCompleto" [fotoUrl]="autor.fotoUrl" tamanho="sm" />
+              }
+            </span>
+          }
+          {{ rotuloDasNovas(n) }}
+        </button>
+      }
+    </div>
+
+    @if (!itens().length) {
+      @if (estiloVazio() === 'cartao') {
+        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">{{ vazioTexto() }}</div>
+      } @else {
+        <div class="empty-state">
+          <div class="empty-bubble" [style.background]="vazioCor()">{{ vazioSigla() }}</div>
+          <h3>{{ vazioTitulo() }}</h3>
+          @if (vazioTexto()) {
+            <p>{{ vazioTexto() }}</p>
+          }
+          <ng-content select="[vazio]" />
+        </div>
+      }
+    } @else {
+      <div class="vstack" style="gap: 14px">
+        @for (item of itens(); track chave(item); let primeiro = $first) {
+          <app-publicacao-card
+            [publicacao]="item.publicacao"
+            [republicadaPor]="item.republicadaPor"
+            [prioritaria]="primeiro"
+            (mudou)="atualizar($event)"
+            (excluida)="remover($event)"
+          />
+        }
+      </div>
     }
   </div>
-  @if (proximo()) {
+
+  @if (itens().length && proximo()) {
     <div class="feed-mais" #fim>
       <button type="button" class="btn btn-secondary btn-sm" [disabled]="carregandoMais()" (click)="carregarMais()">
         {{ carregandoMais() ? 'Carregando…' : 'Ver mais' }}

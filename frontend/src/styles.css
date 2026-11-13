@@ -1758,6 +1758,44 @@ select.chip {
 /* Avisos do feed (carregando, erro) e o "Ver mais". */
 .feed-aviso { text-align: center; color: var(--text-muted); font-size: 13.5px; padding: 28px 0; }
 .feed-mais { display: flex; justify-content: center; padding: 4px 0 16px; }
+
+/* Aviso de posts novos, como no X. A caixa tem altura zero e fica presa no alto da tela enquanto a
+   pessoa rola: o botão flutua sobre os posts sem empurrá-los. Parado, ele fica centrado na linha entre
+   os chips e o primeiro post; preso, 11px abaixo da barra do topo. O botão sobe metade da própria
+   altura (18px), daí os 29px. A barra tem 65px, ou mais quando a trilha quebra em linhas; quem mede é o
+   Topbar, em --altura-topbar. */
+.feed-novas {
+  position: sticky; top: calc(var(--altura-topbar, 65px) + 29px); z-index: 4;
+  height: 0;
+  display: flex; justify-content: center;
+}
+.feed-novas-botao {
+  display: inline-flex; align-items: center; gap: 8px;
+  height: 36px;
+  padding: 0 16px 0 12px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 13.5px; font-weight: 600;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-50%);
+  animation: feed-novas-chegar 0.2s ease-out;
+}
+.feed-novas-botao:hover { background: var(--accent-hover); }
+.feed-novas-botao:focus-visible { outline: none; box-shadow: var(--shadow-lg), 0 0 0 3px var(--accent-ring); }
+.feed-novas-botao:disabled { cursor: progress; opacity: 0.8; }
+.feed-novas-botao svg { width: 15px; height: 15px; }
+.feed-novas-autores { display: inline-flex; }
+.feed-novas-autores .avatar { width: 24px; height: 24px; font-size: 10px; border: 2px solid var(--accent); }
+.feed-novas-autores app-avatar + app-avatar .avatar { margin-left: -8px; }
+@keyframes feed-novas-chegar {
+  from { opacity: 0; transform: translateY(-100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .feed-novas-botao { animation: none; }
+}
+/* No clique no aviso, o feed rola até os chips, que param logo abaixo da barra do topo. */
+.feed-comeco { scroll-margin-top: calc(var(--altura-topbar, 65px) + 15px); }
 /* A aba Posts da bolha e do perfil, na largura de leitura do feed. */
 .feed-coluna { max-width: 680px; width: 100%; display: flex; flex-direction: column; gap: 18px; }
 

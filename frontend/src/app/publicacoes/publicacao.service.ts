@@ -62,6 +62,21 @@ export interface PaginaFeed {
   itens: ItemFeed[];
   /** Cursor da página seguinte; `null` na última. */
   proximo: string | null;
+  /**
+   * Marca do post mais novo, para perguntar depois se chegaram posts novos. Só vem na primeira página do
+   * Início e da bolha, e nunca no "Em alta", que não é por data.
+   */
+  topo: string | null;
+}
+
+/** O aviso de posts novos no topo do feed. */
+export interface NovasPublicacoes {
+  /** Quantos posts novos há, contados até 20. */
+  total: number;
+  /** Se passou de 20. */
+  mais: boolean;
+  /** Quem publicou, até 3, de quem publicou por último para quem publicou antes. */
+  autores: PessoaPublica[];
 }
 
 export interface Comentario {
@@ -114,6 +129,12 @@ export class PublicacaoService {
   pagina(escopo: EscopoFeed, ordem: OrdemFeed, cursor: string | null): Observable<PaginaFeed> {
     const { url, parametros } = enderecoDoFeed(escopo, ordem, cursor);
     return this.http.get<PaginaFeed>(url, { params: parametros });
+  }
+
+  /** Quantos posts chegaram ao feed depois de `desde`, a marca `topo` da primeira página. */
+  novas(escopo: EscopoFeed, ordem: OrdemFeed, desde: string): Observable<NovasPublicacoes> {
+    const { url, parametros } = enderecoDasNovas(escopo, ordem, desde);
+    return this.http.get<NovasPublicacoes>(url, { params: parametros });
   }
 
   buscar(id: string): Observable<Publicacao> {
@@ -194,6 +215,27 @@ export function enderecoDoFeed(
     case 'salvas':
       return { url: '/api/publicacoes/salvas', parametros };
   }
+}
+
+/**
+ * O aviso de posts novos fica ao lado do feed, em `/novas`, com o mesmo filtro e o mesmo chip. Só o Início
+ * e a bolha mandam a marca `topo`; nos outros feeds não há aviso.
+ */
+export function enderecoDasNovas(
+  escopo: EscopoFeed,
+  ordem: OrdemFeed,
+  desde: string,
+): { url: string; parametros: HttpParams } {
+  const { url, parametros } = enderecoDoFeed(escopo, ordem, null);
+  return { url: `${url}/novas`, parametros: parametros.set('desde', desde) };
+}
+
+/** "1 nova publicação", "3 novas publicações", "20+ novas publicações". */
+export function rotuloDasNovas(novas: NovasPublicacoes): string {
+  if (novas.mais) {
+    return `${novas.total}+ novas publicações`;
+  }
+  return novas.total === 1 ? '1 nova publicação' : `${novas.total} novas publicações`;
 }
 
 /**
