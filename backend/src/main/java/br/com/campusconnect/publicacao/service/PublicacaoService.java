@@ -16,6 +16,7 @@ import br.com.campusconnect.publicacao.repository.FeedRepository;
 import br.com.campusconnect.publicacao.repository.PublicacaoRepository;
 import br.com.campusconnect.publicacao.service.previa.PreviaLink;
 import br.com.campusconnect.publicacao.service.previa.PreviaLinkService;
+import br.com.campusconnect.usuario.service.UsuarioPublico;
 import br.com.campusconnect.usuario.service.UsuarioService;
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,8 +26,11 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
 import org.springframework.stereotype.Service;
@@ -34,7 +38,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
- * Publicar, editar, excluir e ler publicações, e os feeds.
+ * Publicar, editar, excluir e ler publicações, os feeds e o aviso de posts novos.
  *
  * <p>Quem vê um post é qualquer pessoa logada. Quem publica precisa ser membro da bolha. O que é
  * publicado numa bolha desce para as bolhas de dentro dela, mas não sobe: o feed de uma bolha mostra os
@@ -46,6 +50,10 @@ public class PublicacaoService {
 
     static final int TAMANHO_PAGINA = 20;
     static final Duration JANELA_EM_ALTA = Duration.ofDays(7);
+    /** Até quantos posts novos o aviso conta; acima disso ele mostra "20+". */
+    static final int LIMITE_NOVAS = 20;
+    /** Quantas fotos de quem publicou o aviso mostra. */
+    static final int AUTORES_NAS_NOVAS = 3;
 
     private final PublicacaoRepository publicacoes;
     private final FeedRepository feeds;
@@ -190,14 +198,39 @@ public class PublicacaoService {
     @Transactional(readOnly = true)
     public PaginaFeed feedUsuario(UUID quemVe, UUID usuarioId, @Nullable String cursor) {
         Cursor inicio = Cursor.ler(cursor);
-        return paginaPorData(feeds.doUsuario(usuarioId, inicio.em(), inicio.id(), TAMANHO_PAGINA + 1), quemVe);
+        return paginaPorData(feeds.doUsuario(usuarioId, inicio.em(), inicio.id(), TAMANHO_PAGINA + 1), quemVe, null);
     }
 
     /** Os posts que a pessoa salvou. Só ela vê. */
     @Transactional(readOnly = true)
     public PaginaFeed salvas(UUID quem, @Nullable String cursor) {
         Cursor inicio = Cursor.ler(cursor);
-        return paginaPorData(feeds.salvasPor(quem, inicio.em(), inicio.id(), TAMANHO_PAGINA + 1), quem);
+        return paginaPorData(feeds.salvasPor(quem, inicio.em(), inicio.id(), TAMANHO_PAGINA + 1), quem, null);
+    }
+
+    // ------------------------------------------------------------ posts novos
+
+    /**
+     * O aviso no topo do Início: quantos posts chegaram depois que o feed abriu, com o mesmo filtro e o
+     * mesmo chip do feed.
+     *
+     * @param desde a marca {@code topo} que veio na primeira página
+     */
+    @Transactional(readOnly = true)
+    public NovasPublicacoes novasNoInicio(UUID quemVe, @Nullable UUID bolhaId, @Nullable String ordem,
+            @Nullable String desde) {
+        Collection<UUID> origem = bolhaId != null ? List.of(bolhaId) : bolhas.idsDasBolhasDo(quemVe);
+        return novasDasBolhas(origem, ordem, desde, quemVe);
+    }
+
+    /**
+     * O aviso no topo do feed de uma bolha, que conta também os posts das bolhas acima.
+     *
+     * @throws br.com.campusconnect.bolha.service.BolhaNaoEncontradaException se a bolha não existir
+     */
+    @Transactional(readOnly = true)
+    public NovasPublicacoes novasNaBolha(UUID quemVe, UUID bolhaId, @Nullable String ordem, @Nullable String desde) {
+        return novasDasBolhas(bolhas.idsDoCaminho(bolhaId), ordem, desde, quemVe);
     }
 
     // ------------------------------------------------------------ apoio
@@ -209,20 +242,61 @@ public class PublicacaoService {
             boolean temMais = itens.size() > TAMANHO_PAGINA;
             List<FeedRepository.Item> pagina = temMais ? itens.subList(0, TAMANHO_PAGINA) : itens;
             return new PaginaFeed(montador.montar(pagina, quemVe),
-                    temMais ? Cursor.deslocado(inicio.deslocamento() + TAMANHO_PAGINA) : null);
+                    temMais ? Cursor.deslocado(inicio.deslocamento() + TAMANHO_PAGINA) : null, null);
         }
-        return paginaPorData(feeds.dasBolhas(origem, ordem == OrdemFeed.MIDIA, inicio.em(), inicio.id(),
-                TAMANHO_PAGINA + 1), quemVe);
+        List<FeedRepository.Item> itens = feeds.dasBolhas(origem, ordem == OrdemFeed.MIDIA, inicio.em(), inicio.id(),
+                TAMANHO_PAGINA + 1);
+        return paginaPorData(itens, quemVe, inicio.em() == null ? marcaDoTopo(itens) : null);
     }
 
     /** Recebe um item a mais que a página: se ele vier, há página seguinte, que começa depois do último. */
-    private PaginaFeed paginaPorData(List<FeedRepository.Item> itens, UUID quemVe) {
+    private PaginaFeed paginaPorData(List<FeedRepository.Item> itens, UUID quemVe, @Nullable String topo) {
         if (itens.size() <= TAMANHO_PAGINA) {
-            return new PaginaFeed(montador.montar(itens, quemVe), null);
+            return new PaginaFeed(montador.montar(itens, quemVe), null, topo);
         }
         List<FeedRepository.Item> pagina = itens.subList(0, TAMANHO_PAGINA);
         FeedRepository.Item ultimo = pagina.getLast();
-        return new PaginaFeed(montador.montar(pagina, quemVe), Cursor.depoisDe(ultimo.em(), ultimo.publicacaoId()));
+        return new PaginaFeed(montador.montar(pagina, quemVe), Cursor.depoisDe(ultimo.em(), ultimo.publicacaoId()),
+                topo);
+    }
+
+    /**
+     * O post mais novo da primeira página, mesmo que ele fique fora dela por ser de uma conta suspensa: o
+     * que vier depois dele é novo.
+     */
+    private static String marcaDoTopo(List<FeedRepository.Item> itens) {
+        if (itens.isEmpty()) {
+            return Cursor.MARCA_FEED_VAZIO;
+        }
+        FeedRepository.Item primeiro = itens.getFirst();
+        return Cursor.marca(primeiro.em(), primeiro.publicacaoId());
+    }
+
+    /**
+     * Busca um post a mais que o limite, para saber se passou dele. Como no feed, os posts de contas
+     * suspensas ou desativadas não contam.
+     */
+    private NovasPublicacoes novasDasBolhas(Collection<UUID> origem, @Nullable String ordem, @Nullable String desde,
+            UUID quemVe) {
+        OrdemFeed ordemFeed = OrdemFeed.de(ordem);
+        if (ordemFeed == OrdemFeed.ALTA) {
+            throw new CampoInvalidoException("ordem", "O aviso de posts novos vale só para recentes e midia.");
+        }
+        Cursor.Marca marca = Cursor.lerMarca(desde);
+        List<FeedRepository.Novidade> novas = feeds.novasDasBolhas(origem, ordemFeed == OrdemFeed.MIDIA, quemVe,
+                marca.em(), marca.id(), LIMITE_NOVAS + 1);
+        if (novas.isEmpty()) {
+            return new NovasPublicacoes(0, false, List.of());
+        }
+        Map<UUID, UsuarioPublico> autores = usuarios
+                .buscarPublicos(novas.stream().map(FeedRepository.Novidade::autorId).distinct().toList())
+                .stream().collect(Collectors.toMap(UsuarioPublico::id, Function.identity()));
+        List<FeedRepository.Novidade> visiveis = novas.stream()
+                .filter(nova -> autores.containsKey(nova.autorId())).toList();
+        List<UsuarioPublico> quemPublicou = visiveis.stream().map(FeedRepository.Novidade::autorId).distinct()
+                .limit(AUTORES_NAS_NOVAS).map(autores::get).toList();
+        return new NovasPublicacoes(Math.min(visiveis.size(), LIMITE_NOVAS), visiveis.size() > LIMITE_NOVAS,
+                quemPublicou);
     }
 
     private Publicacao carregarPublicada(UUID id) {

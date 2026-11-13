@@ -4,6 +4,7 @@ import br.com.campusconnect.arquivo.service.ImagemService;
 import br.com.campusconnect.publicacao.service.ComentarioService;
 import br.com.campusconnect.publicacao.service.ComentarioVista;
 import br.com.campusconnect.publicacao.service.InteracaoService;
+import br.com.campusconnect.publicacao.service.NovasPublicacoes;
 import br.com.campusconnect.publicacao.service.PaginaFeed;
 import br.com.campusconnect.publicacao.service.PublicacaoService;
 import br.com.campusconnect.publicacao.service.PublicacaoVista;
@@ -38,6 +39,10 @@ import org.springframework.web.multipart.MultipartFile;
  *
  * <p>Os feeds são paginados: cada página traz {@code proximo}, que o frontend devolve em {@code cursor}
  * para pedir a seguinte. {@code ordem} é um dos chips: {@code recentes}, {@code alta} ou {@code midia}.
+ *
+ * <p>A primeira página do Início e da bolha traz também {@code topo}, a marca do post mais novo. O
+ * frontend a devolve em {@code desde}, no {@code /novas} do mesmo feed, para saber se chegaram posts
+ * novos.
  */
 @RestController
 @RequestMapping("/api/publicacoes")
@@ -62,6 +67,21 @@ class PublicacaoController {
     PaginaFeed daBolha(@PathVariable UUID bolhaId, @RequestParam(required = false) String ordem,
             @RequestParam(required = false) String cursor, @AuthenticationPrincipal Jwt jwt) {
         return publicacoes.feedBolha(idDe(jwt), bolhaId, ordem, cursor);
+    }
+
+    /** Quantos posts chegaram ao Início depois de {@code desde}, com o mesmo filtro e o mesmo chip. */
+    @GetMapping("/feed/novas")
+    NovasPublicacoes novasNoFeed(@RequestParam(required = false) UUID bolhaId,
+            @RequestParam(required = false) String ordem, @RequestParam(required = false) String desde,
+            @AuthenticationPrincipal Jwt jwt) {
+        return publicacoes.novasNoInicio(idDe(jwt), bolhaId, ordem, desde);
+    }
+
+    /** Quantos posts chegaram à bolha, ou às bolhas acima dela, depois de {@code desde}. */
+    @GetMapping("/bolha/{bolhaId}/novas")
+    NovasPublicacoes novasNaBolha(@PathVariable UUID bolhaId, @RequestParam(required = false) String ordem,
+            @RequestParam(required = false) String desde, @AuthenticationPrincipal Jwt jwt) {
+        return publicacoes.novasNaBolha(idDe(jwt), bolhaId, ordem, desde);
     }
 
     /** Os posts de uma pessoa e os que ela republicou. */

@@ -15,8 +15,8 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 /**
- * As consultas que montam as páginas dos feeds. Cada uma devolve só a identificação e a data de cada
- * item, na ordem certa; o serviço carrega o resto em lote.
+ * As consultas que montam as páginas dos feeds e o aviso de posts novos. Cada uma devolve só o essencial
+ * de cada item, na ordem certa; o serviço carrega o resto em lote.
  *
  * <p>A paginação é por <em>keyset</em>: a página seguinte começa depois do último item da anterior, pela
  * data e pelo id. Assim um post novo não empurra os outros para a página seguinte e nada aparece duas
@@ -28,6 +28,12 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class FeedRepository {
 
+    /** O chip "Com mídia": só os posts com imagem ou vídeo. */
+    private static final String COM_MIDIA = """
+            and exists (select 1 from midia_publicacao m
+                        where m.publicacao_id = p.id and m.tipo in ('IMAGEM', 'VIDEO'))
+            """;
+
     private final NamedParameterJdbcTemplate jdbc;
 
     /**
@@ -37,6 +43,10 @@ public class FeedRepository {
      * @param em data que ordena o item: a da publicação, a da republicação ou a de quando foi salva
      */
     public record Item(UUID publicacaoId, @Nullable UUID republicadaPor, Instant em) {
+    }
+
+    /** Um post que chegou depois que o feed foi aberto, para o aviso no topo. */
+    public record Novidade(UUID publicacaoId, UUID autorId) {
     }
 
     /** Posts publicados nas bolhas dadas, do mais novo para o mais antigo. */
@@ -51,16 +61,45 @@ public class FeedRepository {
                 where p.status = 'PUBLICADA' and p.bolha_id in (:bolhas)
                 """);
         if (soComMidia) {
-            sql.append("""
-                    and exists (select 1 from midia_publicacao m
-                                where m.publicacao_id = p.id and m.tipo in ('IMAGEM', 'VIDEO'))
-                    """);
+            sql.append(COM_MIDIA);
         }
         MapSqlParameterSource parametros = new MapSqlParameterSource("bolhas", bolhas);
         depoisDe(sql, parametros, "(p.criado_em, p.id)", antesDe, antesDoId);
         sql.append(" order by p.criado_em desc, p.id desc limit :limite");
         parametros.addValue("limite", limite);
         return jdbc.query(sql.toString(), parametros, FeedRepository::item);
+    }
+
+    /**
+     * Posts publicados nas bolhas dadas depois da marca, que é a data e o id do post mais novo que o feed
+     * mostrou. Vêm do mais novo para o mais antigo, sem os de {@code excetoAutor}: o post de quem está
+     * vendo já entra no feed na hora em que é publicado.
+     */
+    public List<Novidade> novasDasBolhas(Collection<UUID> bolhas, boolean soComMidia, UUID excetoAutor,
+            Instant desde, UUID desdeId, int limite) {
+        if (bolhas.isEmpty()) {
+            return List.of();
+        }
+        // Cada feed aberto repete esta consulta de tempos em tempos. A comparação só pela data já está
+        // implícita na de data e id, mas é ela que deixa o índice (bolha_id, criado_em) delimitar a busca.
+        StringBuilder sql = new StringBuilder("""
+                select p.id, p.autor_id
+                from publicacao p
+                where p.status = 'PUBLICADA' and p.bolha_id in (:bolhas) and p.autor_id <> :excetoAutor
+                  and p.criado_em >= :desde and (p.criado_em, p.id) > (:desde, :desdeId)
+                """);
+        if (soComMidia) {
+            sql.append(COM_MIDIA);
+        }
+        sql.append(" order by p.criado_em desc, p.id desc limit :limite");
+        return jdbc.query(sql.toString(),
+                new MapSqlParameterSource("bolhas", bolhas)
+                        .addValue("excetoAutor", excetoAutor)
+                        .addValue("desde", data(desde))
+                        .addValue("desdeId", desdeId)
+                        .addValue("limite", limite),
+                (linha, numero) -> new Novidade(linha.getObject("id", UUID.class),
+                        linha.getObject("autor_id", UUID.class)));
     }
 
     /**

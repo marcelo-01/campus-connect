@@ -33,6 +33,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
+import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
 
 @Import(TestcontainersConfiguration.class)
@@ -311,6 +312,111 @@ class PublicacaoApiTest {
         comToken(get("/api/publicacoes/feed").param("ordem", "aleatorio"), ana).andExpect(status().isBadRequest());
     }
 
+    // ------------------------------------------------------------------ aviso de posts novos
+
+    @Test
+    void avisaQuantosPostsOsOutrosPublicaramDepoisQueOFeedAbriu() throws Exception {
+        entrar(ana, curso);
+        entrar(bia, curso);
+        Conta caio = cadastrar("Caio Lima", "caio");
+        entrar(caio, curso);
+        idDe(publicar(bia, curso, "Já estava aqui", null));
+        String topo = topo(comToken(get("/api/publicacoes/feed"), ana));
+
+        novas(get("/api/publicacoes/feed/novas"), topo, ana)
+                .andExpect(jsonPath("$.total").value(0))
+                .andExpect(jsonPath("$.mais").value(false))
+                .andExpect(jsonPath("$.autores", hasSize(0)));
+
+        // O post da própria Ana entra no feed dela na hora em que ela publica; o aviso não conta.
+        idDe(publicar(ana, curso, "Meu post", null));
+        String apagado = idDe(publicar(bia, curso, "Vou apagar", null));
+        idDe(publicar(bia, curso, "Novo da Bia", null));
+        idDe(publicar(caio, curso, "Novo do Caio", null));
+        comToken(delete("/api/publicacoes/" + apagado), bia).andExpect(status().isNoContent());
+
+        ResultActions aviso = novas(get("/api/publicacoes/feed/novas"), topo, ana)
+                .andExpect(jsonPath("$.total").value(2))
+                .andExpect(jsonPath("$.mais").value(false));
+        // Quem publicou por último vem primeiro.
+        assertThat(autores(aviso)).containsExactly("caio", "bia");
+
+        // Como no feed, o post de uma conta suspensa some do aviso.
+        jdbc.update("update usuario set status = 'SUSPENSO' where id = ?", caio.id());
+        aviso = novas(get("/api/publicacoes/feed/novas"), topo, ana).andExpect(jsonPath("$.total").value(1));
+        assertThat(autores(aviso)).containsExactly("bia");
+    }
+
+    @Test
+    void oAvisoSegueAHierarquiaOFiltroEOChipDoFeed() throws Exception {
+        entrar(ana, comunidade); // entra também no curso, no campus e na geral
+        entrar(bia, curso); // está no curso, no campus e na geral, mas não na comunidade
+        // Os feeds da Bia abrem vazios: tudo o que chegar depois é novo.
+        String inicio = topo(comToken(get("/api/publicacoes/feed"), bia));
+        String filtrado = topo(comToken(get("/api/publicacoes/feed").param("bolhaId", curso.toString()), bia));
+        String daBolha = topo(comToken(get("/api/publicacoes/bolha/" + curso), bia));
+        String comMidia = topo(comToken(get("/api/publicacoes/bolha/" + curso).param("ordem", "midia"), bia));
+
+        idDe(publicar(ana, geral, "Desce para o curso", null));
+        idDe(publicar(ana, comunidade, "Não sobe para o curso", null));
+        idDe(comToken(publicacao(curso, "Com foto", null).file(imagem("f.png")), ana));
+
+        novas(get("/api/publicacoes/feed/novas"), inicio, bia).andExpect(jsonPath("$.total").value(2));
+        // Filtrado pelo curso, o Início só conta o que foi feito no curso.
+        novas(get("/api/publicacoes/feed/novas").param("bolhaId", curso.toString()), filtrado, bia)
+                .andExpect(jsonPath("$.total").value(1));
+        // A bolha conta o que desce da geral, mas não o que foi feito na comunidade, que fica dentro dela.
+        novas(get("/api/publicacoes/bolha/" + curso + "/novas"), daBolha, bia).andExpect(jsonPath("$.total").value(2));
+        novas(get("/api/publicacoes/bolha/" + curso + "/novas").param("ordem", "midia"), comMidia, bia)
+                .andExpect(jsonPath("$.total").value(1));
+    }
+
+    @Test
+    void oAvisoContaAteVinteESoAPrimeiraPaginaPorDataTrazOTopo() throws Exception {
+        entrar(ana, curso);
+        entrar(bia, curso);
+        String vazio = topo(comToken(get("/api/publicacoes/feed"), ana));
+        for (int i = 1; i <= 21; i++) {
+            idDe(publicar(bia, curso, "Post " + i, null));
+        }
+
+        ResultActions aviso = novas(get("/api/publicacoes/feed/novas"), vazio, ana)
+                .andExpect(jsonPath("$.total").value(20))
+                .andExpect(jsonPath("$.mais").value(true));
+        assertThat(autores(aviso)).containsExactly("bia");
+
+        // Depois de ver os posts novos, a marca é outra e nada mais é novo.
+        String primeira = comToken(get("/api/publicacoes/feed"), ana)
+                .andExpect(jsonPath("$.topo").value(notNullValue()))
+                .andReturn().getResponse().getContentAsString();
+        novas(get("/api/publicacoes/feed/novas"), JsonPath.read(primeira, "$.topo"), ana)
+                .andExpect(jsonPath("$.total").value(0));
+
+        comToken(get("/api/publicacoes/feed").param("cursor", JsonPath.<String>read(primeira, "$.proximo")), ana)
+                .andExpect(jsonPath("$.topo").value(nullValue()));
+        comToken(get("/api/publicacoes/feed").param("ordem", "alta"), ana).andExpect(jsonPath("$.topo").value(nullValue()));
+        comToken(get("/api/publicacoes/usuario/" + bia.id()), ana).andExpect(jsonPath("$.topo").value(nullValue()));
+        comToken(get("/api/publicacoes/salvas"), ana).andExpect(jsonPath("$.topo").value(nullValue()));
+    }
+
+    @Test
+    void oAvisoRecusaMarcaInvalidaEmAltaEBolhaQueNaoExiste() throws Exception {
+        entrar(ana, curso);
+        String topo = topo(comToken(get("/api/publicacoes/feed"), ana));
+
+        comToken(get("/api/publicacoes/feed/novas"), ana)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros.desde").exists());
+        comToken(get("/api/publicacoes/feed/novas").param("desde", "lixo!"), ana)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros.desde").exists());
+        comToken(get("/api/publicacoes/feed/novas").param("desde", topo).param("ordem", "alta"), ana)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros.ordem").exists());
+        comToken(get("/api/publicacoes/bolha/" + UUID.randomUUID() + "/novas").param("desde", topo), ana)
+                .andExpect(status().isNotFound());
+    }
+
     // ------------------------------------------------------------------ editar e excluir
 
     @Test
@@ -446,5 +552,19 @@ class PublicacaoApiTest {
     private static List<String> ids(ResultActions resposta) throws Exception {
         return JsonPath.read(resposta.andExpect(status().isOk()).andReturn().getResponse().getContentAsString(),
                 "$.itens[*].publicacao.id");
+    }
+
+    /** A marca do post mais novo, que vem na primeira página do feed. */
+    private static String topo(ResultActions resposta) throws Exception {
+        return JsonPath.read(resposta.andExpect(status().isOk()).andReturn().getResponse().getContentAsString(),
+                "$.topo");
+    }
+
+    private ResultActions novas(MockHttpServletRequestBuilder requisicao, String desde, Conta conta) throws Exception {
+        return comToken(requisicao.param("desde", desde), conta).andExpect(status().isOk());
+    }
+
+    private static List<String> autores(ResultActions resposta) throws Exception {
+        return JsonPath.read(resposta.andReturn().getResponse().getContentAsString(), "$.autores[*].username");
     }
 }
