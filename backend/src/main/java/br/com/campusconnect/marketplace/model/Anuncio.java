@@ -15,6 +15,7 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 import lombok.AccessLevel;
@@ -78,5 +79,29 @@ public class Anuncio extends EntidadeAuditada {
         imagem.setOrdem((short) imagens.size());
         imagens.add(imagem);
         return imagem;
+    }
+
+    /**
+     * Troca as fotos na edição: ficam as mantidas, na ordem dada, e as novas entram no fim. A primeira é a
+     * capa. A lista em memória já sai na ordem nova, porque o {@code @OrderBy} só vale ao carregar.
+     *
+     * @param mantidas URLs de fotos que o anúncio já tem
+     * @return as URLs das fotos que saíram, para apagar do disco
+     */
+    public List<String> trocarImagens(List<String> mantidas, List<String> novas) {
+        List<String> removidas = new ArrayList<>();
+        imagens.removeIf(imagem -> {
+            boolean sai = !mantidas.contains(imagem.getUrl());
+            if (sai) {
+                removidas.add(imagem.getUrl());
+            }
+            return sai;
+        });
+        imagens.sort(Comparator.comparingInt(imagem -> mantidas.indexOf(imagem.getUrl())));
+        novas.forEach(url -> imagens.add(new ImagemAnuncio(this, url)));
+        for (int ordem = 0; ordem < imagens.size(); ordem++) {
+            imagens.get(ordem).setOrdem((short) ordem);
+        }
+        return removidas;
     }
 }

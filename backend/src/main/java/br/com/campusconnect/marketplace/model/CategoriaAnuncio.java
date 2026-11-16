@@ -3,6 +3,8 @@ package br.com.campusconnect.marketplace.model;
 import br.com.campusconnect.comum.EntidadeBase;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -33,6 +35,12 @@ public class CategoriaAnuncio extends EntidadeBase {
     @NonNull
     @Column(name = "slug", nullable = false, length = 80)
     private String slug;
+
+    /** Um anúncio só usa categorias do próprio tipo. */
+    @NonNull
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo", nullable = false, length = 20)
+    private TipoAnuncio tipo;
 
     @Column(name = "ativa", nullable = false)
     private boolean ativa = true;

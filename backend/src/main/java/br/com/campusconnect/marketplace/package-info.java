@@ -1,7 +1,7 @@
 /** Anúncios, avaliações, favoritos e impulsionamentos. */
 @ApplicationModule(
         displayName = "Marketplace",
-        allowedDependencies = {"comum", "bolha :: service", "usuario :: service"})
+        allowedDependencies = {"comum", "bolha :: service", "usuario :: service", "arquivo :: service"})
 package br.com.campusconnect.marketplace;
 
 import org.springframework.modulith.ApplicationModule;

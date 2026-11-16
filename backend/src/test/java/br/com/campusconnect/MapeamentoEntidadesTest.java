@@ -110,8 +110,8 @@ class MapeamentoEntidadesTest {
 
         em.persist(new MembroBolha(bolhaCurso, ana.getId(), PapelMembro.MODERADOR));
 
-        CategoriaAnuncio servicos = em.persist(new CategoriaAnuncio("Serviços", "servicos"));
-        CategoriaAnuncio aulas = new CategoriaAnuncio("Aulas", "aulas");
+        CategoriaAnuncio servicos = em.persist(new CategoriaAnuncio("Serviços", "servicos", TipoAnuncio.SERVICO));
+        CategoriaAnuncio aulas = new CategoriaAnuncio("Aulas", "aulas", TipoAnuncio.SERVICO);
         aulas.setCategoriaPai(servicos);
         em.persist(aulas);
 

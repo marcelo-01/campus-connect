@@ -13,7 +13,10 @@ public enum FormatoImagem {
     PUBLICACAO(1600, false),
 
     /** Imagem de destaque da prévia de um link: mantém a proporção, com no máximo 800 px no maior lado. */
-    PREVIA_LINK(800, false);
+    PREVIA_LINK(800, false),
+
+    /** Foto de um anúncio do marketplace: mantém a proporção, com no máximo 1600 px no maior lado. */
+    ANUNCIO(1600, false);
 
     private final int ladoMaximo;
     private final boolean quadrado;
