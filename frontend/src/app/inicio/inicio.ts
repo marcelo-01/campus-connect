@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, viewChild } from 
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { map } from 'rxjs';
-import { BolhaService, corDaBolha, siglaExibida } from '../bolhas/bolha.service';
+import { BolhaService, corDaBolha, recuoNoSelect, siglaExibida } from '../bolhas/bolha.service';
 import { Composer } from '../publicacoes/composer/composer';
 import { Feed } from '../publicacoes/feed/feed';
 import { EscopoFeed, Publicacao } from '../publicacoes/publicacao.service';
@@ -59,8 +59,7 @@ export class Inicio {
         };
   });
 
-  /** Recuo das sub-bolhas no seletor, como no menu lateral. Espaço comum some dentro de `<option>`. */
-  protected readonly recuo = (nivel: number) => ' '.repeat(nivel * 3);
+  protected readonly recuo = recuoNoSelect;
 
   protected filtrar(slug: string): void {
     void this.router.navigate([], { queryParams: { bolha: slug || null } });

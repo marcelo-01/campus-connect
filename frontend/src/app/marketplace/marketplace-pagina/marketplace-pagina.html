@@ -1,0 +1,100 @@
+<div class="content">
+  <div class="explorar-topo">
+    <div>
+      <h1 class="section-title">Marketplace</h1>
+      <p class="section-sub">Serviços e produtos oferecidos por estudantes — direto das suas bolhas.</p>
+    </div>
+    <a class="btn btn-market" routerLink="/marketplace/novo"><app-icone nome="mais" /> Anunciar</a>
+  </div>
+
+  <div class="marketplace-filtros">
+    <div class="scope-toggle" role="group" aria-label="Onde procurar">
+      <button type="button" [class.active]="escopo() === 'bolhas'" [attr.aria-pressed]="escopo() === 'bolhas'" (click)="escolherEscopo('bolhas')">
+        <span class="bubble-dot" style="width: 14px; height: 14px; background: var(--accent)"></span>
+        Minhas bolhas
+      </button>
+      <button type="button" [class.active]="escopo() === 'rede'" [attr.aria-pressed]="escopo() === 'rede'" (click)="escolherEscopo('rede')">
+        <app-icone nome="globo" /> Toda a rede
+      </button>
+      <button type="button" [class.active]="escopo() === 'favoritos'" [attr.aria-pressed]="escopo() === 'favoritos'" (click)="escolherEscopo('favoritos')">
+        <app-icone nome="coracao" /> Favoritos
+      </button>
+    </div>
+
+    @if (escopo() === 'bolhas' && minhas()?.length) {
+      <select class="chip chip-select" aria-label="Filtrar por bolha" (change)="escolherBolha($any($event.target).value)">
+        <option value="" [selected]="!bolha()">Todas as minhas bolhas</option>
+        @for (b of minhas(); track b.id) {
+          <option [value]="b.slug" [selected]="bolha()?.id === b.id">{{ recuo(b.nivel) }}{{ b.nome }}</option>
+        }
+      </select>
+    }
+
+    <div class="input-prefix busca-bolhas busca-anuncios">
+      <app-icone nome="busca" />
+      <input
+        type="search"
+        placeholder="Buscar no título e na descrição"
+        aria-label="Buscar anúncios"
+        maxlength="100"
+        [value]="digitado()"
+        (input)="digitar($event)"
+      />
+    </div>
+  </div>
+
+  <div class="chips">
+    <select class="chip chip-select" aria-label="Filtrar por tipo" (change)="escolherTipo($any($event.target).value)">
+      <option value="" [selected]="!tipo()">Serviços e produtos</option>
+      <option value="SERVICO" [selected]="tipo() === 'SERVICO'">Serviços</option>
+      <option value="PRODUTO" [selected]="tipo() === 'PRODUTO'">Produtos</option>
+    </select>
+    <button type="button" class="chip" [class.active]="!categoria()" (click)="escolherCategoria(null)">Todas</button>
+    @for (c of chipsDeCategoria(); track c.id) {
+      <button type="button" class="chip" [class.active]="categoria()?.id === c.id" (click)="escolherCategoria(c.slug)">
+        {{ c.nome }}
+      </button>
+    }
+  </div>
+
+  <div class="hstack" style="justify-content: space-between; gap: 12px">
+    <div class="muted" style="font-size: 13.5px" aria-live="polite">
+      @if (total() !== null) {
+        <b>{{ anunciosPorExtenso(total()!) }}</b> em {{ ondeCategoria() }}, <b>{{ ondeEscopo() }}</b>
+      }
+    </div>
+    <select class="chip" style="padding-right: 10px" aria-label="Ordenar" (change)="escolherOrdem($any($event.target).value)">
+      @for (o of ordens; track o.valor) {
+        <option [value]="o.valor" [selected]="ordem() === o.valor">{{ o.rotulo }}</option>
+      }
+    </select>
+  </div>
+
+  @if (semBolhas()) {
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--tangerina)">CC</div>
+      <h3>Entre numa bolha para ver os anúncios dela</h3>
+      <p>"Minhas bolhas" mostra o que é anunciado nas bolhas em que você está. Enquanto isso, veja toda a rede.</p>
+      <div class="hstack" style="gap: 8px; justify-content: center">
+        <a class="btn btn-secondary" routerLink="/bolhas">Explorar bolhas</a>
+        <button type="button" class="btn btn-market" (click)="escolherEscopo('rede')">Ver toda a rede</button>
+      </div>
+    </div>
+  } @else if (fonte(); as f) {
+    <app-lista-anuncios [fonte]="f" (total)="total.set($event)">
+      <div vazio class="empty-state">
+        <div class="empty-bubble" style="background: var(--tangerina)">CC</div>
+        @if (escopo() === 'favoritos' && !categoria() && !tipo() && !busca()) {
+          <h3>Nenhum favorito ainda</h3>
+          <p>Toque no coração de um anúncio para guardá-lo aqui.</p>
+        } @else {
+          <h3>Nenhum anúncio {{ ondeEscopo() }}</h3>
+          <p>Tente "Toda a rede", troque a categoria ou a busca — ou seja a primeira pessoa a anunciar.</p>
+          <a class="btn btn-market" routerLink="/marketplace/novo"><app-icone nome="mais" /> Anunciar</a>
+        }
+      </div>
+    </app-lista-anuncios>
+  } @else {
+    <div class="feed-aviso">Carregando…</div>
+  }
+</div>

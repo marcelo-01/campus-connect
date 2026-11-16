@@ -29,13 +29,14 @@ export type NomeIcone =
   | 'opcoes'
   | 'video'
   | 'fechar'
-  | 'subir';
+  | 'subir'
+  | 'estrela';
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
  * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `coracao`, `coracao-cheio`, `comentario`,
  * `republicar`, `compartilhar` e `opcoes` são os do card do post (`Heart`, `HeartFill`, `Comment`, `Repost`,
- * `Share`, `More`). `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
+ * `Share`, `More`); `estrela` é o `Icon.Star` da nota no marketplace. `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
  * pessoa atrás), `salvo` (o marcador preenchido), `video`, `fechar` e `subir` (a seta do aviso de posts
  * novos) não existiam lá e seguem o mesmo estilo. O elemento do componente não cria caixa
  * (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
@@ -132,6 +133,9 @@ export type NomeIcone =
       }
       @case ('subir') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg>
+      }
+      @case ('estrela') {
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.8l2.85 5.95 6.55.8-4.83 4.5 1.25 6.5L12 17.4l-5.82 3.15 1.25-6.5-4.83-4.5 6.55-.8z"/></svg>
       }
     }
   `,

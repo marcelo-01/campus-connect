@@ -55,7 +55,7 @@ export class Sidebar {
   protected readonly itens: ItemMenu[] = [
     { rotulo: 'Início', icone: 'inicio', rota: '/', exato: true },
     { rotulo: 'Explorar bolhas', icone: 'bolhas', rota: '/bolhas', exato: true },
-    { rotulo: 'Marketplace', icone: 'marketplace' },
+    { rotulo: 'Marketplace', icone: 'marketplace', rota: '/marketplace' },
     { rotulo: 'Mensagens', icone: 'mensagens' },
     { rotulo: 'Notificações', icone: 'notificacoes' },
     { rotulo: 'Salvos', icone: 'salvos', rota: '/salvos', exato: true },

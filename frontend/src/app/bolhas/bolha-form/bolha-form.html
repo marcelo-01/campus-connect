@@ -246,8 +246,8 @@
         </button>
       } @else if (!confirmandoExclusao()) {
         <p>
-          Os membros saem da bolha, as publicações dela são apagadas e ela some para todo mundo. Não dá
-          para desfazer.
+          Os membros saem da bolha, as publicações dela são apagadas, os anúncios deixam de aparecer nela e
+          ela some para todo mundo. Não dá para desfazer.
         </p>
         <button type="button" class="btn btn-danger" (click)="confirmandoExclusao.set(true)">
           <app-icone nome="lixeira" /> Excluir bolha
@@ -255,8 +255,8 @@
       } @else {
         <p>
           <b>Excluir {{ b.nome }}?</b> {{ membrosPorExtenso(b.totalMembros) }}
-          {{ b.totalMembros === 1 ? 'sai' : 'saem' }} da bolha, e as publicações dela são apagadas. Não dá
-          para desfazer.
+          {{ b.totalMembros === 1 ? 'sai' : 'saem' }} da bolha, as publicações dela são apagadas e os anúncios
+          deixam de aparecer nela. Não dá para desfazer.
         </p>
         <div class="hstack" style="gap: 8px">
           <button

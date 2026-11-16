@@ -6,6 +6,7 @@ import {
   exigeBolhaAcima,
   membrosPorExtenso,
   paisPermitidos,
+  recuoNoSelect,
   recuoPorNivel,
   siglaDaBolha,
   siglaExibida,
@@ -85,6 +86,12 @@ describe('funções de bolha', () => {
       'nested-3',
       'nested-3',
     ]);
+  });
+
+  it('recua dentro do select com espaços que não quebram, três por nível', () => {
+    expect(recuoNoSelect(0)).toBe('');
+    expect(recuoNoSelect(2)).toBe('\u00a0'.repeat(6));
+    expect(recuoNoSelect(-1)).toBe('');
   });
 
   it('escreve o total de membros no singular e no plural', () => {

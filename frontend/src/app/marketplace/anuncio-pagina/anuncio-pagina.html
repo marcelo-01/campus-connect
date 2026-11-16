@@ -1,0 +1,218 @@
+@if (anuncio(); as a) {
+  <div class="content content-detail">
+    <div class="backbar">
+      <button type="button" class="back-btn" aria-label="Voltar" (click)="voltar()"><app-icone nome="voltar" /></button>
+      <div class="backbar-title">
+        <h1>Marketplace</h1>
+        <span>{{ a.tipo === 'SERVICO' ? 'Detalhes do serviço' : 'Detalhes do produto' }}</span>
+      </div>
+    </div>
+
+    <div class="detail-layout">
+      <div class="detail-main">
+        @if (capa(); as c) {
+          <div class="detail-hero" [style.background]="c.url ? 'var(--surface-2)' : c.fundo">
+            @if (c.url) {
+              <img class="detail-hero-foto" [src]="c.url" [alt]="a.titulo" />
+            } @else {
+              <span class="detail-hero-label">{{ c.texto }}</span>
+            }
+            @if (a.status === 'PAUSADO') {
+              <span class="anuncio-selo">Pausado</span>
+            }
+          </div>
+        }
+        @if (a.imagens.length > 1) {
+          <div class="detail-miniaturas" role="group" aria-label="Fotos do anúncio">
+            @for (url of a.imagens; track url; let i = $index) {
+              <button
+                type="button"
+                [class.active]="fotoAtual() === i"
+                [attr.aria-label]="'Foto ' + (i + 1)"
+                [attr.aria-pressed]="fotoAtual() === i"
+                (click)="fotoAtual.set(i)"
+              >
+                <img [src]="url" alt="" />
+              </button>
+            }
+          </div>
+        }
+
+        <h1 class="detail-title">{{ a.titulo }}</h1>
+
+        <a class="detail-seller" [routerLink]="['/perfil', a.anunciante.username]">
+          <app-avatar [nome]="a.anunciante.nomeCompleto" [fotoUrl]="a.anunciante.fotoUrl" tamanho="md" />
+          <div>
+            <div class="name">{{ a.anunciante.nomeCompleto }}</div>
+            <div class="muted" style="font-size: 13px">&#64;{{ a.anunciante.username }}</div>
+          </div>
+          <div class="rating" style="margin-left: auto">
+            <span class="stars"><app-icone nome="estrela" /></span>
+            @if (a.media !== null) {
+              <b style="color: var(--text)">{{ notaPorExtenso(a.media) }}</b>
+              <span class="muted">({{ avaliacoesPorExtenso(a.totalAvaliacoes) }})</span>
+            } @else {
+              <span class="muted">Sem avaliações</span>
+            }
+          </div>
+        </a>
+
+        @if (a.bolhas.length) {
+          <div class="hstack" style="gap: 6px; flex-wrap: wrap">
+            @for (b of a.bolhas; track b.id) {
+              <a class="bubble-tag" [routerLink]="['/bolhas', b.slug]" [title]="'Anunciado em ' + b.nome">
+                <span class="bubble-dot" [style.background]="corDaBolha(b.tipo)"></span>{{ b.nome }}
+              </a>
+            }
+          </div>
+        }
+
+        <div class="detail-section">
+          <h3>{{ a.tipo === 'SERVICO' ? 'Sobre este serviço' : 'Sobre este produto' }}</h3>
+          <p class="anuncio-descricao">{{ a.descricao }}</p>
+        </div>
+
+        <div class="detail-meta-row">
+          <div class="detail-meta"><span class="muted">Tipo</span><b>{{ rotuloDoTipo(a.tipo) }}</b></div>
+          <div class="detail-meta"><span class="muted">Categoria</span><b>{{ a.categoria.nome }}</b></div>
+          <div class="detail-meta"><span class="muted">Publicado em</span><b>{{ publicadoEm() }}</b></div>
+        </div>
+
+        <div class="detail-section">
+          <h3>Avaliações ({{ a.totalAvaliacoes }})</h3>
+
+          @if (a.podeAvaliar) {
+            <div class="card avaliacao-form">
+              <div class="hstack" style="justify-content: space-between; gap: 12px">
+                <b>{{ a.minhaAvaliacao ? 'Sua avaliação' : 'Avalie este anúncio' }}</b>
+                <div class="estrelas-escolha" role="radiogroup" aria-label="Nota" (mouseleave)="notaSobMouse.set(0)">
+                  @for (n of estrelas; track n) {
+                    <button
+                      type="button"
+                      role="radio"
+                      [class.cheia]="n <= notaVisivel()"
+                      [attr.aria-checked]="nota() === n"
+                      [attr.aria-label]="n + (n === 1 ? ' estrela' : ' estrelas')"
+                      (mouseenter)="notaSobMouse.set(n)"
+                      (click)="nota.set(n)"
+                    >
+                      <app-icone nome="estrela" />
+                    </button>
+                  }
+                </div>
+              </div>
+              <textarea
+                class="form-input"
+                rows="2"
+                placeholder="Conte como foi (opcional)"
+                aria-label="Comentário da avaliação"
+                [attr.maxlength]="tamanhoComentario"
+                [value]="comentario()"
+                (input)="comentario.set($any($event.target).value)"
+              ></textarea>
+              @if (erroAvaliacao(); as erro) {
+                <p class="field-error" role="alert">{{ erro }}</p>
+              }
+              <div class="hstack" style="justify-content: flex-end; gap: 8px">
+                @if (a.minhaAvaliacao; as minha) {
+                  <button type="button" class="btn btn-ghost btn-sm" (click)="apagarAvaliacao(minha)">Apagar</button>
+                }
+                <button type="button" class="btn btn-primary btn-sm" [disabled]="salvandoAvaliacao()" (click)="salvarAvaliacao()">
+                  {{ salvandoAvaliacao() ? 'Salvando…' : a.minhaAvaliacao ? 'Atualizar' : 'Avaliar' }}
+                </button>
+              </div>
+            </div>
+          }
+
+          @if (avaliacoes().length) {
+            <div class="reviews">
+              @for (r of avaliacoes(); track r.id) {
+                <div class="review">
+                  <a [routerLink]="['/perfil', r.autor.username]" [attr.aria-label]="'Perfil de ' + r.autor.nomeCompleto">
+                    <app-avatar [nome]="r.autor.nomeCompleto" [fotoUrl]="r.autor.fotoUrl" tamanho="md" />
+                  </a>
+                  <div class="review-main">
+                    <div class="review-head">
+                      <a class="name" [routerLink]="['/perfil', r.autor.username]">{{ r.autor.nomeCompleto }}</a>
+                      <span class="review-stars" [attr.aria-label]="r.nota + ' de 5 estrelas'"
+                        >{{ cheias(r.nota) }}<span class="dim">{{ vazias(r.nota) }}</span></span
+                      >
+                      <span class="muted" style="font-size: 12.5px" [title]="dataCompleta(r.criadoEm)">· {{ tempoRelativo(r.criadoEm) }}</span>
+                      @if (r.podeExcluir) {
+                        <button type="button" class="review-apagar" (click)="apagarAvaliacao(r)">Excluir</button>
+                      }
+                    </div>
+                    @if (r.comentario) {
+                      <p>{{ r.comentario }}</p>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          } @else if (!a.podeAvaliar) {
+            <p class="muted" style="font-size: 14px">Ninguém avaliou este anúncio ainda.</p>
+          }
+        </div>
+      </div>
+
+      <aside class="detail-buy">
+        <div class="buy-card">
+          <div class="buy-price">{{ preco().valor }}@if (preco().sufixo) {<small>{{ preco().sufixo }}</small>}</div>
+
+          @if (a.podeEditar) {
+            @if (a.status === 'PAUSADO') {
+              <p class="buy-note" style="text-align: left">Pausado: só você vê este anúncio.</p>
+            }
+            <a class="btn btn-market btn-block" [routerLink]="['/marketplace', a.id, 'editar']">
+              <app-icone nome="editar" /> Editar anúncio
+            </a>
+            <button type="button" class="btn btn-secondary btn-block" [disabled]="alterandoPausa()" (click)="alternarPausa()">
+              {{ a.status === 'PAUSADO' ? 'Reativar anúncio' : 'Pausar anúncio' }}
+            </button>
+          } @else {
+            <a class="btn btn-market btn-block" [routerLink]="['/perfil', a.anunciante.username]">
+              <app-icone nome="perfil" /> Ver perfil de {{ primeiroNome() }}
+            </a>
+            <p class="buy-note">Valores e pagamento são combinados direto com quem anunciou, fora da plataforma.</p>
+            <button type="button" class="fav-text" [attr.aria-pressed]="a.favorito" (click)="favoritar()">
+              <app-icone [nome]="a.favorito ? 'coracao-cheio' : 'coracao'" /> {{ a.favorito ? 'Salvo' : 'Salvar' }}
+            </button>
+          }
+
+          <button type="button" class="fav-text" (click)="compartilhar()">
+            <app-icone nome="compartilhar" /> Compartilhar
+          </button>
+
+          @if (a.podeExcluir) {
+            @if (!confirmandoExclusao()) {
+              <button type="button" class="fav-text perigo" (click)="confirmandoExclusao.set(true)">
+                <app-icone nome="lixeira" /> Excluir anúncio
+              </button>
+            } @else {
+              <div class="post-confirmacao" role="alert">
+                <span>Excluir este anúncio? Não dá para desfazer.</span>
+                <div class="hstack" style="gap: 8px">
+                  <button type="button" class="btn btn-ghost btn-sm" [disabled]="excluindo()" (click)="confirmandoExclusao.set(false)">Cancelar</button>
+                  <button type="button" class="btn btn-danger btn-sm" [disabled]="excluindo()" (click)="excluir()">
+                    {{ excluindo() ? 'Excluindo…' : 'Excluir' }}
+                  </button>
+                </div>
+              </div>
+            }
+          }
+        </div>
+      </aside>
+    </div>
+  </div>
+} @else if (naoEncontrado()) {
+  <div class="content content-narrow">
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--text-subtle)">?</div>
+      <h3>Anúncio não encontrado</h3>
+      <p>Esse anúncio não existe mais, foi pausado ou excluído.</p>
+      <a class="btn btn-secondary" routerLink="/marketplace">Voltar ao marketplace</a>
+    </div>
+  </div>
+} @else {
+  <div class="feed-aviso">Carregando…</div>
+}

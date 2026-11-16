@@ -1,0 +1,24 @@
+@if (carregando()) {
+  <div class="feed-aviso">Carregando anúncios…</div>
+} @else if (falhou()) {
+  <div class="feed-aviso">
+    Não foi possível carregar os anúncios.
+    <button type="button" class="btn btn-ghost btn-sm" (click)="tentarDeNovo()">Tentar de novo</button>
+  </div>
+} @else if (!itens().length) {
+  <ng-content select="[vazio]" />
+} @else {
+  <div class="market-grid">
+    @for (anuncio of itens(); track anuncio.id) {
+      <app-anuncio-cartao [anuncio]="anuncio" (mudou)="atualizar($event)" />
+    }
+  </div>
+
+  @if (proximo()) {
+    <div class="feed-mais" #fim>
+      <button type="button" class="btn btn-secondary btn-sm" [disabled]="carregandoMais()" (click)="carregarMais()">
+        {{ carregandoMais() ? 'Carregando…' : 'Ver mais' }}
+      </button>
+    </div>
+  }
+}

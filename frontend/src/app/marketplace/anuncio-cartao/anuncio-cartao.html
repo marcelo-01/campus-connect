@@ -1,0 +1,55 @@
+@let a = estado();
+<article class="service-card" [class.anuncio-pausado]="a.status === 'PAUSADO'">
+  <div class="service-thumb">
+    @if (a.capaUrl) {
+      <img class="service-capa" [src]="a.capaUrl" alt="" loading="lazy" />
+    } @else {
+      <div class="ph" [style.background]="capa().fundo">{{ capa().texto || 'Seu anúncio' }}</div>
+    }
+    @if (a.status === 'PAUSADO') {
+      <span class="anuncio-selo">Pausado</span>
+    }
+    @if (!previa()) {
+      <button
+        type="button"
+        class="fav"
+        [class.active]="a.favorito"
+        [attr.aria-pressed]="a.favorito"
+        [attr.aria-label]="a.favorito ? 'Remover dos favoritos' : 'Salvar nos favoritos'"
+        [title]="a.favorito ? 'Remover dos favoritos' : 'Salvar nos favoritos'"
+        (click)="favoritar($event)"
+      >
+        <app-icone [nome]="a.favorito ? 'coracao-cheio' : 'coracao'" />
+      </button>
+    }
+  </div>
+  <div class="service-body">
+    @if (previa()) {
+      <div class="service-title">{{ a.titulo }}</div>
+    } @else {
+      <a class="service-title anuncio-link" [routerLink]="['/marketplace', a.id]">{{ a.titulo }}</a>
+    }
+    <div class="service-meta">
+      <app-avatar [nome]="a.anunciante.nomeCompleto" [fotoUrl]="a.anunciante.fotoUrl" tamanho="sm" />
+      <div class="name">
+        <b>{{ a.anunciante.nomeCompleto }}</b>
+        @if (bolha(); as nome) {
+          · {{ nome }}
+        }
+      </div>
+    </div>
+    <div class="service-foot">
+      <!-- Numa linha só: o "/h" cola no valor, como no MVP. -->
+      <div class="price">{{ preco().valor }}@if (preco().sufixo) {<small>{{ preco().sufixo }}</small>}</div>
+      <div class="rating">
+        <span class="stars"><app-icone nome="estrela" /></span>
+        @if (a.media !== null) {
+          <b style="color: var(--text)">{{ nota(a.media) }}</b>
+          <span>({{ a.totalAvaliacoes }})</span>
+        } @else {
+          <span>novo</span>
+        }
+      </div>
+    </div>
+  </div>
+</article>

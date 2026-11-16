@@ -1,0 +1,246 @@
+<div class="content content-form">
+  <div class="backbar">
+    <button type="button" class="back-btn" title="Voltar" (click)="cancelar()">
+      <app-icone nome="voltar" />
+    </button>
+    <div class="backbar-title">
+      <h1>{{ edicao ? 'Editar anúncio' : 'Anunciar' }}</h1>
+      <span>{{ edicao ? (original()?.titulo ?? '') : 'Transforme sua habilidade em renda' }}</span>
+    </div>
+    <button type="button" class="btn btn-market" [disabled]="salvando() || carregando()" (click)="salvar()">
+      {{ salvando() ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Publicar anúncio' }}
+    </button>
+  </div>
+
+  @if (erroGeral(); as erro) {
+    <div class="auth-alert" role="alert">{{ erro }}</div>
+  }
+
+  <div class="create-layout">
+    <form class="form-grid" [formGroup]="form" (ngSubmit)="salvar()">
+      <div class="field-group full">
+        <span class="rotulo-campo">O que você oferece</span>
+        <div class="scope-toggle" role="group" aria-label="Tipo do anúncio">
+          <button
+            type="button"
+            [class.active]="tipo() === 'SERVICO'"
+            [attr.aria-pressed]="tipo() === 'SERVICO'"
+            (click)="form.controls.tipo.setValue('SERVICO')"
+          >
+            Serviço
+          </button>
+          <button
+            type="button"
+            [class.active]="tipo() === 'PRODUTO'"
+            [attr.aria-pressed]="tipo() === 'PRODUTO'"
+            (click)="form.controls.tipo.setValue('PRODUTO')"
+          >
+            Produto
+          </button>
+        </div>
+      </div>
+
+      <div class="field-group full">
+        <label for="anuncio-titulo">
+          {{ tipo() === 'SERVICO' ? 'Título do serviço' : 'Título do produto' }}
+          <span class="counter">{{ form.controls.titulo.value.length }}/{{ tamanhoTitulo }}</span>
+        </label>
+        <input
+          id="anuncio-titulo"
+          class="form-input"
+          [class.invalid]="mostrarErro('titulo')"
+          formControlName="titulo"
+          [placeholder]="tipo() === 'SERVICO' ? 'Ex.: Site institucional em React (entrega 7 dias)' : 'Ex.: Apostila de Cálculo I, quase nova'"
+          [attr.maxlength]="tamanhoTitulo"
+        />
+        @if (mostrarErro('titulo')) {
+          <p class="field-error">{{ mensagem('titulo') }}</p>
+        }
+      </div>
+
+      <div class="field-group">
+        <label for="anuncio-categoria">Categoria</label>
+        <select
+          id="anuncio-categoria"
+          class="form-input"
+          [class.invalid]="mostrarErro('categoriaId')"
+          formControlName="categoriaId"
+        >
+          <option value="" disabled>Escolha a categoria</option>
+          @for (c of categoriasDoTipo(); track c.id) {
+            <option [value]="c.id">{{ c.nome }}</option>
+          }
+        </select>
+        @if (mostrarErro('categoriaId')) {
+          <p class="field-error">{{ mensagem('categoriaId') }}</p>
+        }
+      </div>
+
+      <div class="field-group">
+        <label for="anuncio-modalidade">Cobrança</label>
+        <select
+          id="anuncio-modalidade"
+          class="form-input"
+          [class.invalid]="mostrarErro('modalidadePreco')"
+          formControlName="modalidadePreco"
+        >
+          @for (m of modalidades; track m.valor) {
+            <option [value]="m.valor">{{ m.rotulo }}</option>
+          }
+        </select>
+      </div>
+
+      @if (mostraPreco()) {
+        <div class="field-group">
+          <label for="anuncio-preco">{{ valores().modalidadePreco === 'POR_HORA' ? 'Preço por hora (R$)' : 'Preço (R$)' }}</label>
+          <div class="input-prefix" [class.invalid]="mostrarErro('preco')">
+            <span>R$</span>
+            <input
+              id="anuncio-preco"
+              type="number"
+              inputmode="decimal"
+              min="0.01"
+              max="1000000"
+              step="0.01"
+              placeholder="0"
+              formControlName="preco"
+            />
+          </div>
+          @if (mostrarErro('preco')) {
+            <p class="field-error">{{ mensagem('preco') }}</p>
+          }
+        </div>
+      }
+
+      <div class="field-group full">
+        <label for="anuncio-descricao">
+          Descrição
+          <span class="counter">{{ form.controls.descricao.value.length }}/{{ tamanhoDescricao }}</span>
+        </label>
+        <textarea
+          id="anuncio-descricao"
+          class="form-input"
+          rows="5"
+          [class.invalid]="mostrarErro('descricao')"
+          formControlName="descricao"
+          [placeholder]="tipo() === 'SERVICO' ? 'O que está incluído, prazos, como você trabalha…' : 'Estado, detalhes, onde entregar…'"
+          [attr.maxlength]="tamanhoDescricao"
+        ></textarea>
+        @if (mostrarErro('descricao')) {
+          <p class="field-error">{{ mensagem('descricao') }}</p>
+        }
+      </div>
+
+      <div class="field-group full">
+        <span class="rotulo-campo">
+          Bolhas de destino
+          <span class="counter">{{ form.controls.bolhaIds.value.length }}/{{ maximoBolhas }}</span>
+        </span>
+        @if (minhas(); as lista) {
+          @if (lista.length) {
+            <div class="destino-lista" role="group" aria-label="Bolhas de destino">
+              @for (b of lista; track b.id) {
+                <label class="destino-item" [style.padding-left.px]="12 + b.nivel * 18">
+                  <input
+                    type="checkbox"
+                    [checked]="escolhidas().has(b.id)"
+                    [disabled]="!escolhidas().has(b.id) && escolhidas().size >= maximoBolhas"
+                    (change)="alternarBolha(b.id)"
+                  />
+                  {{ b.nome }}
+                </label>
+              }
+            </div>
+            @if (mostrarErro('bolhaIds')) {
+              <p class="field-error">{{ mensagem('bolhaIds') }}</p>
+            } @else {
+              <p class="field-hint">
+                O anúncio aparece para quem está nas bolhas escolhidas. Uma bolha ampla, como a da universidade,
+                alcança também quem está nas de dentro dela.
+              </p>
+            }
+          } @else {
+            <p class="field-hint">
+              Você ainda não está em nenhuma bolha. <a routerLink="/bolhas" style="color: var(--accent)">Entre numa bolha</a>
+              para anunciar nela.
+            </p>
+          }
+        } @else {
+          <p class="field-hint">Carregando suas bolhas…</p>
+        }
+      </div>
+
+      <div class="field-group full">
+        <span class="rotulo-campo">
+          Fotos
+          <span class="counter">{{ fotos().length }}/{{ maximoFotos }}</span>
+        </span>
+        @if (fotos().length) {
+          <div class="composer-anexos">
+            @for (foto of fotos(); track enderecoDa(foto); let i = $index) {
+              <div class="composer-anexo">
+                <img [src]="enderecoDa(foto)" alt="" />
+                @if (i === 0) {
+                  <span class="composer-anexo-rotulo">Capa</span>
+                } @else if (podeSerCapa(foto, i)) {
+                  <button type="button" class="composer-anexo-rotulo anexo-capa" (click)="usarComoCapa(foto)">Usar como capa</button>
+                }
+                <button type="button" class="remover" aria-label="Remover foto" (click)="removerFoto(foto)">
+                  <app-icone nome="fechar" />
+                </button>
+              </div>
+            }
+          </div>
+        }
+        @if (fotos().length < maximoFotos) {
+          <div>
+            <button type="button" class="btn btn-secondary btn-sm" (click)="arquivoFotos.click()">
+              <app-icone nome="imagem" /> {{ fotos().length ? 'Adicionar fotos' : 'Escolher fotos' }}
+            </button>
+          </div>
+        }
+        <input #arquivoFotos type="file" accept="image/jpeg,image/png" multiple hidden (change)="escolherFotos($event)" />
+        <p class="field-hint">Até {{ maximoFotos }} fotos JPG ou PNG, de até 5 MB cada. A primeira é a capa.</p>
+      </div>
+    </form>
+
+    <aside class="create-preview">
+      <div
+        class="muted"
+        style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 10px"
+      >
+        Pré-visualização
+      </div>
+      <app-anuncio-cartao [anuncio]="previa()" [previa]="true" />
+    </aside>
+  </div>
+
+  <div class="form-foot">
+    <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
+    <button type="button" class="btn btn-market" [disabled]="salvando() || carregando()" (click)="salvar()">
+      {{ salvando() ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Publicar anúncio' }}
+    </button>
+  </div>
+
+  @if (original()) {
+    <div class="card zona-exclusao">
+      <h3>Excluir anúncio</h3>
+      @if (!confirmandoExclusao()) {
+        <p>O anúncio some do marketplace, e as fotos e avaliações dele deixam de aparecer. Não dá para desfazer.</p>
+        <button type="button" class="btn btn-danger" (click)="confirmandoExclusao.set(true)">
+          <app-icone nome="lixeira" /> Excluir anúncio
+        </button>
+      } @else {
+        <p><b>Excluir este anúncio?</b> Não dá para desfazer. Se quiser só tirá-lo do ar por um tempo, pause-o na página dele.</p>
+        <div class="hstack" style="gap: 8px">
+          <button type="button" class="btn btn-ghost" [disabled]="excluindo()" (click)="confirmandoExclusao.set(false)">
+            Cancelar
+          </button>
+          <button type="button" class="btn btn-danger" [disabled]="excluindo()" (click)="excluir()">
+            {{ excluindo() ? 'Excluindo…' : 'Excluir definitivamente' }}
+          </button>
+        </div>
+      }
+    </div>
+  }
+</div>

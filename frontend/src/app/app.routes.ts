@@ -13,6 +13,9 @@ import { Explorar } from './bolhas/explorar/explorar';
 import { ConexoesPagina } from './conexoes/conexoes-pagina/conexoes-pagina';
 import { Inicio } from './inicio/inicio';
 import { Shell } from './layout/shell/shell';
+import { AnuncioForm } from './marketplace/anuncio-form/anuncio-form';
+import { AnuncioPagina } from './marketplace/anuncio-pagina/anuncio-pagina';
+import { MarketplacePagina } from './marketplace/marketplace-pagina/marketplace-pagina';
 import { EditarPerfil } from './perfil/editar-perfil/editar-perfil';
 import { PerfilPagina } from './perfil/perfil-pagina/perfil-pagina';
 import { PublicacaoPagina } from './publicacoes/publicacao-pagina/publicacao-pagina';
@@ -60,6 +63,33 @@ export const routes: Routes = [
         data: { trilha: ['Publicação'] },
       },
       { path: 'salvos', component: SalvosPagina, title: 'Salvos · CampusConnect', data: { trilha: ['Salvos'] } },
+      {
+        path: 'marketplace',
+        component: MarketplacePagina,
+        title: 'Marketplace · CampusConnect',
+        data: { trilha: ['Marketplace'] },
+      },
+      {
+        // Antes de ':id': "novo" não é um id de anúncio.
+        path: 'marketplace/novo',
+        component: AnuncioForm,
+        title: 'Anunciar · CampusConnect',
+        data: { trilha: ['Marketplace', 'Anunciar'] },
+      },
+      {
+        // Só quem anunciou edita; a página volta para o anúncio se for outra pessoa.
+        path: 'marketplace/:id/editar',
+        component: AnuncioForm,
+        title: 'Editar anúncio · CampusConnect',
+        data: { trilha: ['Marketplace', 'Editar anúncio'] },
+      },
+      {
+        // A página troca a trilha pelo título do anúncio depois de carregar.
+        path: 'marketplace/:id',
+        component: AnuncioPagina,
+        title: 'Anúncio · CampusConnect',
+        data: { trilha: ['Marketplace'] },
+      },
       {
         path: 'bolhas',
         component: Explorar,

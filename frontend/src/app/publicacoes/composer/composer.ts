@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '../../auth/auth.service';
 import { ProblemaApi } from '../../auth/sessao';
-import { BolhaService, MarcaDaBolha, corDaBolha } from '../../bolhas/bolha.service';
+import { BolhaService, MarcaDaBolha, corDaBolha, recuoNoSelect } from '../../bolhas/bolha.service';
 import { Avatar } from '../../shared/avatar';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
@@ -93,8 +93,7 @@ export class Composer {
 
   protected readonly tamanhoTexto = TAMANHO_TEXTO;
   protected readonly dominio = dominio;
-  /** Recuo das sub-bolhas no seletor, como no menu lateral. Espaço comum some dentro de `<option>`. */
-  protected readonly recuo = (nivel: number) => ' '.repeat(nivel * 3);
+  protected readonly recuo = recuoNoSelect;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.liberarPrevias());

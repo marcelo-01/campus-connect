@@ -193,6 +193,14 @@ export function recuoPorNivel(nivel: number): '' | 'nested' | 'nested-2' | 'nest
   return nivel <= 0 ? '' : nivel === 1 ? 'nested' : nivel === 2 ? 'nested-2' : 'nested-3';
 }
 
+/**
+ * Recuo das sub-bolhas num `<select>`, como no menu lateral. Dentro de `<option>` o CSS não vale e o espaço
+ * comum some, então o recuo é feito com espaços que não quebram.
+ */
+export function recuoNoSelect(nivel: number): string {
+  return '\u00a0'.repeat(Math.max(0, nivel) * 3);
+}
+
 /** Campus e curso precisam de bolha acima; geral não pode ter; comunidade escolhe. */
 export function exigeBolhaAcima(tipo: TipoBolha): boolean {
   return tipo === 'CAMPUS' || tipo === 'CURSO';

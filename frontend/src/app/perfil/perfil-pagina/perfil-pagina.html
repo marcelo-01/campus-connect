@@ -77,9 +77,18 @@
         }
       }
       @case ('market') {
-        <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
-          {{ p.proprio ? 'Você ainda não anunciou nenhum serviço. Seus anúncios aparecerão aqui.' : primeiroNome() + ' ainda não anunciou nenhum serviço.' }}
-        </div>
+        @if (fonteAnuncios(); as fonte) {
+          <app-lista-anuncios [fonte]="fonte">
+            <div vazio class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+              @if (p.proprio) {
+                <p style="margin: 0 0 14px">Você ainda não anunciou nada. Seus serviços e produtos aparecerão aqui.</p>
+                <a class="btn btn-market" routerLink="/marketplace/novo"><app-icone nome="mais" /> Anunciar</a>
+              } @else {
+                {{ primeiroNome() }} ainda não anunciou nada.
+              }
+            </div>
+          </app-lista-anuncios>
+        }
       }
       @case ('saved') {
         <div class="feed-coluna">
@@ -87,7 +96,7 @@
             [escopo]="escopoSalvas"
             [comChips]="false"
             estiloVazio="cartao"
-            vazioTexto="Você ainda não salvou nada. Os posts e serviços que você salvar aparecerão aqui."
+            vazioTexto="Você ainda não salvou nada. Os posts que você salvar aparecerão aqui."
           />
         </div>
       }
