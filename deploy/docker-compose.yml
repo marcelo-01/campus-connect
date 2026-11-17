@@ -2,8 +2,10 @@
 #   backend/, frontend/, deploy/   código, enviado pelo deploy/publicar.sh
 #   api.env                        DB_PASSWORD e JWT_SECRET (só no servidor)
 #   banco.env                      POSTGRES_PASSWORD, a mesma senha (só no servidor)
-# Nenhuma porta é publicada. O Caddy do app-promotoria (rede app-promotoria_estoque_network) faz o HTTPS de
-# campusconnect.maisvida.cloud e manda tudo para o web, que serve o Angular e repassa /api para a API.
+#   deploy/.env                    REDE_PROXY e os nomes do Caddy (só no servidor)
+# Nenhuma porta é publicada. Um Caddy de fora desta stack faz o HTTPS de campusconnect.maisvida.cloud e manda tudo
+# para o web, que serve o Angular e repassa /api para a API. O web entra na rede do Caddy, cujo nome vem do
+# deploy/.env.
 # Os serviços têm o mesmo nome dos contêineres para não criar apelidos genéricos ("web", "api") na rede
 # compartilhada, onde outras stacks já têm serviços com esses nomes.
 name: campus-connect
@@ -67,7 +69,7 @@ services:
 networks:
   edge:
     external: true
-    name: app-promotoria_estoque_network
+    name: ${REDE_PROXY:?defina REDE_PROXY no deploy/.env do servidor (veja deploy/README.md)}
   saida: {}
   banco:
     internal: true

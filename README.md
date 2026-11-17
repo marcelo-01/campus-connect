@@ -37,6 +37,7 @@ campus-connect/
 ├── backend/             API Spring Boot
 │   └── src/main/resources/db/migration/   migrations do Flyway (V1 a V20)
 ├── frontend/            app Angular (veja frontend/README.md)
+├── deploy/              publicação na VPS (veja deploy/README.md)
 └── docker-compose.yml   PostgreSQL de desenvolvimento
 ```
 
@@ -113,6 +114,12 @@ A API lê estas variáveis de ambiente. Os valores padrão servem para desenvolv
 
 O `docker-compose.yml` usa as mesmas `DB_NAME`, `DB_USER`, `DB_PASSWORD` e `DB_PORT`. Durações da sessão, limites
 de upload, limites de mensagens e o tempo das conexões SSE ficam em `backend/src/main/resources/application.yml`.
+
+## Publicação
+
+O app está em **https://campusconnect.maisvida.cloud**. Para publicar uma versão nova, rode os testes e, no Git
+Bash, `bash deploy/publicar.sh`. Como a VPS está montada e o que fazer quando algo dá errado estão em
+[`deploy/README.md`](deploy/README.md).
 
 ## Testes
 
