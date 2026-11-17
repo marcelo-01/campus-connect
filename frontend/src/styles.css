@@ -2006,3 +2006,96 @@ select.chip {
 .menu-flutuante.menu-confirmacao { width: 290px; padding: 14px; gap: 12px; }
 .menu-confirmacao p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-muted); white-space: normal; }
 .menu-confirmacao p b { color: var(--text); }
+
+/* ========================================================================
+   Aparência — adicionada no projeto Angular. O tema (data-theme) e a cor de
+   destaque (data-accent) ficam no <html>, postos pelo AparenciaService.
+   ======================================================================== */
+
+/* Barra de rolagem, campos de data e outros controles nativos acompanham o tema. */
+:root { color-scheme: light; }
+[data-theme="dark"] { color-scheme: dark; }
+
+/* Cores de destaque. Todas têm a luminância da Lavanda da marca, então dão o mesmo contraste
+   que ela nos dois temas: texto sobre o creme (4,4:1), sobre o indigo escuro (3,4:1) e o texto
+   branco do botão (4,7:1). O amarelo ficou de fora: nessa luminância ele vira mostarda.
+   O seletor não se prende ao <html> porque as amostras do menu usam o mesmo data-accent. */
+[data-accent="lavanda"] { --accent: #7B5BE6; }
+[data-accent="azul"] { --accent: #0475D1; }
+[data-accent="turquesa"] { --accent: #09808B; }
+[data-accent="verde"] { --accent: #038643; }
+[data-accent="rosa"] { --accent: #E0017D; }
+/* O par do gradiente (avatar sem foto) vira a Lavanda, senão ficaria laranja com laranja. */
+[data-accent="tangerina"] { --accent: #BF5400; --accent-2: #7B5BE6; }
+
+/* A Lavanda mantém os tons à mão da marca (:root e o tema escuro do MVP); as outras derivam os seus. */
+[data-accent]:not([data-accent="lavanda"]) {
+  --accent-hover: oklch(from var(--accent) calc(l - 0.05) c h);
+  --accent-soft: color-mix(in oklab, var(--accent) 11%, var(--surface));
+  --accent-ring: oklch(from var(--accent) l c h / 0.30);
+}
+[data-theme="dark"][data-accent]:not([data-accent="lavanda"]) {
+  --accent-soft: color-mix(in oklab, var(--accent) 20%, var(--surface));
+}
+
+/* No escuro, a parte de baixo do símbolo, quase preta, some no fundo. Em vez de uma versão negativa
+   da logo, o símbolo original fica sobre uma plaquinha creme, como um ícone de app. */
+[data-theme="dark"] .logo-mark {
+  background: #FAF7F2;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.visualmente-oculto {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* O painel do botão de aparência, na barra do topo. */
+.menu-flutuante.aparencia-painel { width: 292px; padding: 16px; gap: 16px; }
+.aparencia-grupo { border: 0; margin: 0; padding: 0; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.aparencia-grupo legend {
+  padding: 0; margin-bottom: 10px;
+  font-family: var(--font-mono); text-transform: uppercase;
+  font-size: 11px; font-weight: 700; letter-spacing: 0.08em;
+  color: var(--text-subtle);
+}
+.aparencia-temas { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+.aparencia-tema {
+  position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 10px 4px 9px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.aparencia-tema svg { width: 20px; height: 20px; }
+.aparencia-tema:hover { background: var(--surface-hover); color: var(--text); }
+.aparencia-tema:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+.aparencia-tema:has(input:focus-visible) { box-shadow: 0 0 0 3px var(--accent-ring); }
+.aparencia-cores { display: flex; justify-content: space-between; }
+.aparencia-cor {
+  position: relative;
+  width: 34px; height: 34px;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  display: grid; place-items: center;
+  cursor: pointer;
+  transition: transform 0.12s;
+}
+.aparencia-cor:hover { transform: scale(1.08); }
+.aparencia-cor svg { width: 18px; height: 18px; }
+.aparencia-cor:has(input:checked) { box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent); }
+.aparencia-cor:has(input:focus-visible) {
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--accent), 0 0 0 7px oklch(from var(--accent) l c h / 0.30);
+}
+.aparencia-dica { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-subtle); }

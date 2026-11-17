@@ -6,6 +6,19 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
+  <script>
+    // O tema e a cor do menu de aparência, aplicados antes de o Angular subir, para a página não abrir clara e
+    // depois escurecer. Daí em diante quem cuida é o AparenciaService: a chave e os valores têm de bater com os dele.
+    (function () {
+      var raiz = document.documentElement, escolha = {};
+      try { escolha = JSON.parse(localStorage.getItem('campusconnect.aparencia')) || {}; } catch (e) {}
+      var escuro = escolha.tema === 'escuro'
+        || (escolha.tema !== 'claro' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      raiz.setAttribute('data-theme', escuro ? 'dark' : 'light');
+      if (typeof escolha.cor === 'string') raiz.setAttribute('data-accent', escolha.cor);
+    })();
+  </script>
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">

@@ -13,11 +13,12 @@ import { AuthService } from '../../auth/auth.service';
 import { Avatar } from '../../shared/avatar';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
+import { MenuAparencia } from '../aparencia/menu-aparencia';
 
 /**
  * O `Topbar` do MVP. No MVP a trilha mostrava a hierarquia da bolha ativa; aqui ela faz isso na página de
  * uma bolha e, nas outras telas, mostra a tela atual. O ponto de "notificação nova" saiu porque não há
- * notificações ainda.
+ * notificações ainda. O botão de aparência (tema e cor de destaque) não existia no MVP.
  *
  * A trilha pode quebrar em mais linhas e deixar a barra mais alta. Como o aviso de posts novos do feed
  * fica preso logo abaixo dela, a altura da barra vai para o CSS em `--altura-topbar`.
@@ -25,7 +26,7 @@ import { ToastService } from '../../shared/toast.service';
 @Component({
   selector: 'app-topbar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, Icone],
+  imports: [RouterLink, Avatar, Icone, MenuAparencia],
   styles: ':host { display: contents; }',
   template: `
     <div class="topbar" #barra>
@@ -43,6 +44,7 @@ import { ToastService } from '../../shared/toast.service';
         <input placeholder="Buscar pessoas, bolhas, posts…" (keydown.enter)="emBreve('Busca')" />
         <span class="muted" style="font-size: 11px; padding: 2px 6px; background: var(--surface-2); border-radius: 6px">⌘K</span>
       </div>
+      <app-menu-aparencia />
       <button type="button" class="icon-btn" title="Notificações" (click)="emBreve('Notificações')">
         <app-icone nome="notificacoes" />
       </button>

@@ -12,6 +12,8 @@ import { TrilhaService } from '../trilha.service';
  * A moldura das telas logadas, igual ao `App` do MVP: menu lateral, barra do topo e o conteúdo. O painel
  * da direita (`RightRail`) do MVP não aparece: todas as telas usam o layout sem ele (`no-rail`).
  *
+ * O tema não fica aqui: o `AparenciaService` o põe no `<html>`, para valer também na tela de login.
+ *
  * Enquanto a moldura está na tela, a conexão ao vivo fica ligada para a conta logada.
  *
  * Cada rota informa a trilha da barra do topo em `data.trilha`; uma tela pode trocá-la pelo
@@ -23,7 +25,7 @@ import { TrilhaService } from '../trilha.service';
   imports: [RouterOutlet, Sidebar, Topbar],
   styles: ':host { display: contents; }',
   template: `
-    <div class="app no-rail" data-theme="light" data-density="comfortable">
+    <div class="app no-rail" data-density="comfortable">
       <app-sidebar />
       <div class="main">
         <app-topbar [trilha]="trilha()" />
