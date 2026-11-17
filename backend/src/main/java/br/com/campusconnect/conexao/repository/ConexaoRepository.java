@@ -30,6 +30,13 @@ public interface ConexaoRepository extends JpaRepository<Conexao, UUID> {
             """)
     Optional<EstadoDoPar> estadoDoPar(@Param("menor") UUID menor, @Param("maior") UUID maior);
 
+    /**
+     * Segura o par até o fim da transação. Bloquear e conectar passam por aqui antes de escrever: sem isso, um pedido
+     * criado ao mesmo tempo que o bloqueio, e ainda invisível para ele, ficaria pendente por baixo do bloqueio.
+     */
+    @Query(value = "select count(*) from pg_advisory_xact_lock(hashtextextended(:chave, 0))", nativeQuery = true)
+    long travarPar(@Param("chave") String chave);
+
     /** Cria o pedido. Devolve 0, sem fazer nada, se o par já tem um registro. */
     @Modifying
     @Query(value = """
@@ -38,6 +45,19 @@ public interface ConexaoRepository extends JpaRepository<Conexao, UUID> {
             on conflict (usuario_menor_id, usuario_maior_id) do nothing
             """, nativeQuery = true)
     int pedir(@Param("menor") UUID menor, @Param("maior") UUID maior, @Param("solicitante") UUID solicitante);
+
+    /**
+     * O pedido de quem foi bloqueado já nasce recusado: para quem pediu, ele continua enviado, e quem bloqueou não vê
+     * nada, como na recusa discreta.
+     */
+    @Modifying
+    @Query(value = """
+            insert into conexao (usuario_menor_id, usuario_maior_id, solicitante_id, status, respondido_em)
+            values (:menor, :maior, :solicitante, 'RECUSADA', now())
+            on conflict (usuario_menor_id, usuario_maior_id) do nothing
+            """, nativeQuery = true)
+    int pedirJaRecusado(@Param("menor") UUID menor, @Param("maior") UUID maior,
+            @Param("solicitante") UUID solicitante);
 
     /** O pedido do {@code solicitante}, pendente ou recusado em silêncio, vira conexão. */
     @Modifying
@@ -75,6 +95,12 @@ public interface ConexaoRepository extends JpaRepository<Conexao, UUID> {
             where usuario_menor_id = :menor and usuario_maior_id = :maior and status = 'ACEITA'
             """, nativeQuery = true)
     int desfazer(@Param("menor") UUID menor, @Param("maior") UUID maior);
+
+    /** O bloqueio leva junto o que houver entre as duas pessoas: conexão, pedido ou recusa. */
+    @Modifying
+    @Query(value = "delete from conexao where usuario_menor_id = :menor and usuario_maior_id = :maior",
+            nativeQuery = true)
+    int apagarPar(@Param("menor") UUID menor, @Param("maior") UUID maior);
 
     interface EstadoDoPar {
 

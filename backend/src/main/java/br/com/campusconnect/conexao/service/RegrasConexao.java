@@ -23,13 +23,16 @@ final class RegrasConexao {
             case ACEITA -> SituacaoConexao.CONECTADOS;
             case PENDENTE -> pediu ? SituacaoConexao.PEDIDO_ENVIADO : SituacaoConexao.PEDIDO_RECEBIDO;
             case RECUSADA -> pediu ? SituacaoConexao.PEDIDO_ENVIADO : SituacaoConexao.NENHUMA;
-            // O bloqueio ainda não existe; quando existir, cada lado vai ver uma coisa diferente.
-            case BLOQUEADA -> SituacaoConexao.NENHUMA;
         };
     }
 
     /** As duas pessoas na ordem do CHECK {@code usuario_menor_id < usuario_maior_id}. */
     record Par(UUID menor, UUID maior) {
+
+        /** O mesmo texto para os dois lados, usado para travar o par no banco. */
+        String chave() {
+            return menor + ":" + maior;
+        }
 
         /** @throws ConexaoConsigoMesmoException se as duas forem a mesma pessoa */
         static Par de(UUID quem, UUID outro) {

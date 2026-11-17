@@ -11,5 +11,10 @@ public enum SituacaoConexao {
     PEDIDO_ENVIADO,
     /** A outra pessoa fez o pedido, e quem vê ainda não respondeu. */
     PEDIDO_RECEBIDO,
-    CONECTADOS
+    CONECTADOS,
+    /**
+     * Quem vê bloqueou a outra pessoa: o botão oferece "Desbloquear". Quem foi bloqueado nunca vê esta situação; para
+     * ele, um pedido feito depois do bloqueio fica como enviado, como na recusa discreta.
+     */
+    BLOQUEADA
 }

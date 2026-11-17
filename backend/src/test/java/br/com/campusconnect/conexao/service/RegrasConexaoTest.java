@@ -1,7 +1,6 @@
 package br.com.campusconnect.conexao.service;
 
 import static br.com.campusconnect.conexao.model.StatusConexao.ACEITA;
-import static br.com.campusconnect.conexao.model.StatusConexao.BLOQUEADA;
 import static br.com.campusconnect.conexao.model.StatusConexao.PENDENTE;
 import static br.com.campusconnect.conexao.model.StatusConexao.RECUSADA;
 import static br.com.campusconnect.conexao.service.RegrasConexao.vistaPor;
@@ -30,10 +29,6 @@ class RegrasConexaoTest {
 
         assertThat(vistaPor(ANA, ACEITA, ANA)).isEqualTo(SituacaoConexao.CONECTADOS);
         assertThat(vistaPor(BIA, ACEITA, ANA)).isEqualTo(SituacaoConexao.CONECTADOS);
-
-        // O bloqueio ainda não existe.
-        assertThat(vistaPor(ANA, BLOQUEADA, ANA)).isEqualTo(SituacaoConexao.NENHUMA);
-        assertThat(vistaPor(BIA, BLOQUEADA, ANA)).isEqualTo(SituacaoConexao.NENHUMA);
     }
 
     @Test

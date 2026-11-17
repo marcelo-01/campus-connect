@@ -8,6 +8,8 @@ import br.com.campusconnect.bolha.model.MembroBolha;
 import br.com.campusconnect.bolha.model.MembroBolhaId;
 import br.com.campusconnect.bolha.model.PapelMembro;
 import br.com.campusconnect.bolha.model.TipoBolha;
+import br.com.campusconnect.conexao.model.Bloqueio;
+import br.com.campusconnect.conexao.model.BloqueioId;
 import br.com.campusconnect.conexao.model.Conexao;
 import br.com.campusconnect.conexao.model.StatusConexao;
 import br.com.campusconnect.conversa.model.Conversa;
@@ -48,6 +50,7 @@ import br.com.campusconnect.usuario.model.RefreshToken;
 import br.com.campusconnect.usuario.model.StatusUsuario;
 import br.com.campusconnect.usuario.model.Usuario;
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -89,6 +92,7 @@ class MapeamentoEntidadesTest {
                 Instant.parse("2026-12-01T03:00:00Z")));
 
         Conexao conexao = em.persist(Conexao.solicitar(ana.getId(), joao.getId()));
+        em.persist(new Bloqueio(joao.getId(), ana.getId()));
 
         Notificacao notificacao = new Notificacao(joao.getId(), TipoNotificacao.SOLICITACAO_CONEXAO);
         notificacao.setOrigemId(ana.getId());
@@ -171,6 +175,10 @@ class MapeamentoEntidadesTest {
         em.persist(denuncia);
 
         em.flush();
+        // A data da última mensagem é gravada por SQL, como a aplicação faz ao enviar.
+        Instant ultimaMensagem = Instant.parse("2026-11-16T22:30:00Z");
+        jdbc.update("update conversa set ultima_mensagem_em = ? where id = ?", Timestamp.from(ultimaMensagem),
+                direta.getId());
         em.clear();
 
         // Toda tabela do schema recebeu ao menos uma linha: nenhuma entidade ficou de fora.
@@ -179,7 +187,7 @@ class MapeamentoEntidadesTest {
                 where table_schema = 'public' and table_type = 'BASE TABLE'
                   and table_name <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(tabelas).hasSize(24).allSatisfy(tabela -> assertThat(
+        assertThat(tabelas).hasSize(25).allSatisfy(tabela -> assertThat(
                 jdbc.queryForObject("select count(*) from " + tabela, Long.class)).as(tabela).isPositive());
 
         Usuario anaLida = em.find(Usuario.class, ana.getId());
@@ -196,6 +204,7 @@ class MapeamentoEntidadesTest {
         assertThat(refreshTokenLido.getCriadoEm()).isNotNull();
 
         assertThat(em.find(Conexao.class, conexao.getId()).getStatus()).isEqualTo(StatusConexao.PENDENTE);
+        assertThat(em.find(Bloqueio.class, new BloqueioId(joao.getId(), ana.getId())).getCriadoEm()).isNotNull();
         assertThat(em.find(Notificacao.class, notificacao.getId()).getReferenciaId()).isEqualTo(conexao.getId());
 
         Bolha bolhaLida = em.find(Bolha.class, bolhaCurso.getId());
@@ -248,10 +257,13 @@ class MapeamentoEntidadesTest {
         assertThat(reacaoLida.getPublicacao()).isNull();
         assertThat(reacaoLida.getComentario().getId()).isEqualTo(comentario.getId());
 
-        assertThat(em.find(Conversa.class, direta.getId()).getTipo()).isEqualTo(TipoConversa.DIRETA);
+        Conversa diretaLida = em.find(Conversa.class, direta.getId());
+        assertThat(diretaLida.getTipo()).isEqualTo(TipoConversa.DIRETA);
+        assertThat(diretaLida.getUltimaMensagemEm()).isEqualTo(ultimaMensagem);
         Conversa grupoLido = em.find(Conversa.class, grupo.getId());
         assertThat(grupoLido.getTipo()).isEqualTo(TipoConversa.GRUPO);
         assertThat(grupoLido.getUsuarioMenorId()).isNull();
+        assertThat(grupoLido.getUltimaMensagemEm()).isNull();
 
         assertThat(em.find(ParticipanteConversa.class, new ParticipanteConversaId(direta.getId(), ana.getId()))
                 .isArquivada()).isFalse();
@@ -298,6 +310,34 @@ class MapeamentoEntidadesTest {
 
         assertThatThrownBy(() -> Conexao.solicitar(ana, ana)).isInstanceOf(IllegalArgumentException.class);
         assertThatThrownBy(() -> Conversa.direta(ana, null)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void recusaBloquearAPropriaConta() {
+        UUID ana = usuario("ana").getId();
+
+        assertThatThrownBy(() -> new Bloqueio(ana, ana)).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    /** Apagar uma mensagem tira o texto do banco: uma mensagem apagada com texto não passa. */
+    @Test
+    void oBancoRejeitaMensagemApagadaComTexto() {
+        Usuario ana = usuario("ana");
+        Conversa conversa = em.persist(Conversa.direta(ana.getId(), usuario("bia").getId()));
+        em.flush();
+
+        // Antes da falha: depois dela, a transação do teste não aceita mais nada.
+        jdbc.update("""
+                insert into mensagem (conversa_id, remetente_id, conteudo, removido_em)
+                values (?, ?, null, now())
+                """, conversa.getId(), ana.getId());
+
+        assertThatThrownBy(() -> jdbc.update("""
+                insert into mensagem (conversa_id, remetente_id, conteudo, removido_em)
+                values (?, ?, 'Oi', now())
+                """, conversa.getId(), ana.getId()))
+                .isInstanceOf(DataIntegrityViolationException.class)
+                .hasMessageContaining("ck_mensagem_apagada_sem_texto");
     }
 
     @Test

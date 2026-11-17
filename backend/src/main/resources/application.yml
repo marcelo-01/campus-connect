@@ -40,3 +40,13 @@ campusconnect:
   arquivos:
     # Pasta das imagens enviadas (fotos e capas). Relativa a pasta em que a aplicacao sobe.
     diretorio: ${ARQUIVOS_DIR:uploads}
+  aovivo:
+    # Eventos ao vivo (SSE). A conexao nunca passa da validade do JWT que a abriu.
+    duracao-maxima: 30m
+    # Comentario vazio que mantem a conexao viva em proxies que cortam conexoes paradas.
+    pulso: 25s
+    maximo-por-pessoa: 5
+  conversa:
+    # Limite contra spam nas mensagens privadas.
+    mensagens-por-minuto: 30
+    conversas-novas-por-dia: 20

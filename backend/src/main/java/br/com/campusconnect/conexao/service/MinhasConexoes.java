@@ -9,7 +9,8 @@ import java.util.List;
  * @param recebidos pedidos que a pessoa ainda não respondeu; os que ela recusou não voltam
  * @param enviados pedidos que a pessoa fez e que ainda não viraram conexão, inclusive os recusados, porque a recusa
  *     é discreta
+ * @param bloqueadas pessoas que quem está logado bloqueou, com a data do bloqueio
  */
 public record MinhasConexoes(List<PessoaNaConexao> conexoes, List<PessoaNaConexao> recebidos,
-        List<PessoaNaConexao> enviados) {
+        List<PessoaNaConexao> enviados, List<PessoaNaConexao> bloqueadas) {
 }

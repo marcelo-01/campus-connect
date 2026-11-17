@@ -10,9 +10,9 @@ class ArquiteturaModularTest {
     private static final ApplicationModules MODULOS = ApplicationModules.of(CampusConnectApplication.class);
 
     @Test
-    void reconheceOsDezModulos() {
+    void reconheceOsOnzeModulos() {
         assertThat(MODULOS.stream().map(modulo -> modulo.getIdentifier().toString())).containsExactlyInAnyOrder(
-                "arquivo", "bolha", "comum", "conexao", "conversa", "marketplace", "moderacao", "notificacao",
+                "aovivo", "arquivo", "bolha", "comum", "conexao", "conversa", "marketplace", "moderacao", "notificacao",
                 "publicacao", "usuario");
     }
 

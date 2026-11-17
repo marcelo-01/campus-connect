@@ -40,6 +40,10 @@ public class Conversa extends EntidadeBase {
     @Column(name = "criado_em", nullable = false, updatable = false)
     private Instant criadoEm;
 
+    /** Nula enquanto a conversa está vazia. A aplicação grava por SQL, a cada mensagem enviada. */
+    @Column(name = "ultima_mensagem_em", insertable = false, updatable = false)
+    private Instant ultimaMensagemEm;
+
     public static Conversa direta(UUID umId, UUID outroId) {
         boolean umVemAntes = OrdemUuid.vemAntes(umId, outroId);
 

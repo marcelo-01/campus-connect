@@ -1,5 +1,6 @@
 package br.com.campusconnect.usuario.seguranca;
 
+import jakarta.servlet.DispatcherType;
 import java.security.SecureRandom;
 import java.util.Base64;
 import javax.crypto.SecretKey;
@@ -51,6 +52,9 @@ class SegurancaConfig {
                 .requestCache(AbstractHttpConfigurer::disable)
                 .sessionManagement(sessao -> sessao.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(rotas -> rotas
+                        // O despacho assíncrono (o fim de uma conexão ao vivo) e o de erro só nascem de uma
+                        // requisição que já passou por aqui.
+                        .dispatcherTypeMatchers(DispatcherType.ASYNC, DispatcherType.ERROR).permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/**").permitAll()
                         // A tag <img> não manda o JWT; o nome aleatório do arquivo é a proteção.
                         .requestMatchers(HttpMethod.GET, "/api/arquivos/**").permitAll()

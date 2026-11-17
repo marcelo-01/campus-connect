@@ -4,13 +4,16 @@ import br.com.campusconnect.comum.CampoDuplicadoException;
 import br.com.campusconnect.usuario.model.StatusUsuario;
 import br.com.campusconnect.usuario.model.Usuario;
 import br.com.campusconnect.usuario.repository.UsuarioRepository;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.jspecify.annotations.Nullable;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -67,5 +70,26 @@ public class UsuarioService {
                 .filter(usuario -> usuario != null && usuario.podeEntrar())
                 .map(UsuarioPublico::de)
                 .toList();
+    }
+
+    /**
+     * Entre os ids, os das contas que aparecem para outras pessoas (as mesmas de {@link #buscarPublicos}) e, se houver
+     * termo, cujo nome ou username o contém, sem diferenciar maiúsculas. O {@code @} da frente é ignorado, e
+     * {@code %} e {@code _} valem como texto.
+     *
+     * <p>Serve para filtrar uma lista antes de paginar, para nenhuma página vir curta.
+     */
+    @Transactional(readOnly = true)
+    public Set<UUID> publicosEntre(Collection<UUID> ids, @Nullable String termo) {
+        if (ids.isEmpty()) {
+            return Set.of();
+        }
+        String busca = termo == null ? "" : termo.strip().replaceFirst("^@", "");
+        String padrao = busca.isEmpty() ? "%" : "%" + semCuringas(busca) + "%";
+        return Set.copyOf(usuarios.idsPublicosQueCasam(Set.copyOf(ids), padrao));
+    }
+
+    private static String semCuringas(String texto) {
+        return texto.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
     }
 }

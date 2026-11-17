@@ -64,6 +64,17 @@ class ConexaoController {
         return new Situacao(conexoes.desfazer(idDe(jwt), usuarioId));
     }
 
+    /** Bloqueia a pessoa e desfaz o que houver entre as duas. */
+    @PostMapping("/com/{usuarioId}/bloqueio")
+    Situacao bloquear(@PathVariable UUID usuarioId, @AuthenticationPrincipal Jwt jwt) {
+        return new Situacao(conexoes.bloquear(idDe(jwt), usuarioId));
+    }
+
+    @DeleteMapping("/com/{usuarioId}/bloqueio")
+    Situacao desbloquear(@PathVariable UUID usuarioId, @AuthenticationPrincipal Jwt jwt) {
+        return new Situacao(conexoes.desbloquear(idDe(jwt), usuarioId));
+    }
+
     private static UUID idDe(Jwt jwt) {
         return UUID.fromString(jwt.getSubject());
     }

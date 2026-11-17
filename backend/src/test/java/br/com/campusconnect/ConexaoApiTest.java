@@ -171,6 +171,106 @@ class ConexaoApiTest {
         assertThat(statusDosRegistros()).containsExactlyInAnyOrder("ACEITA", "PENDENTE");
     }
 
+    // ------------------------------------------------------------ bloqueio
+
+    @Test
+    void bloquearDesfazAConexaoEOPedido() throws Exception {
+        conectar(ana, bia);
+        conectar(bia, ana);
+        conectar(caio, ana);
+
+        bloquear(ana, bia).andExpect(status().isOk()).andExpect(situacao("BLOQUEADA"));
+        bloquear(ana, caio).andExpect(situacao("BLOQUEADA"));
+
+        assertThat(statusDosRegistros()).isEmpty();
+        minhas(ana)
+                .andExpect(jsonPath("$.conexoes").isEmpty())
+                .andExpect(jsonPath("$.recebidos").isEmpty())
+                .andExpect(jsonPath("$.bloqueadas[*].username").value(contains("caio", "bia")))
+                .andExpect(jsonPath("$.bloqueadas[0].desde").isNotEmpty());
+        minhas(bia)
+                .andExpect(jsonPath("$.conexoes").isEmpty())
+                .andExpect(jsonPath("$.bloqueadas").isEmpty());
+    }
+
+    @Test
+    void quemBloqueouNaoConectaEQuemFoiBloqueadoNaoFicaSabendo() throws Exception {
+        bloquear(ana, bia);
+
+        conectar(ana, bia).andExpect(situacao("BLOQUEADA"));
+        assertThat(statusDosRegistros()).isEmpty();
+
+        // Para a Bia, o pedido sai como enviado; para a Ana, ele nunca aparece.
+        conectar(bia, ana).andExpect(situacao("PEDIDO_ENVIADO"));
+        conectar(bia, ana).andExpect(situacao("PEDIDO_ENVIADO"));
+        minhas(bia).andExpect(jsonPath("$.enviados[*].username").value(contains("ana.bc")));
+        minhas(ana).andExpect(jsonPath("$.recebidos").isEmpty());
+        assertThat(statusDosRegistros()).containsExactly("RECUSADA");
+
+        // Depois do desbloqueio, continua como uma recusa discreta: a Ana pode se conectar, e a conexão sai na hora.
+        desbloquear(ana, bia).andExpect(situacao("NENHUMA"));
+        minhas(ana)
+                .andExpect(jsonPath("$.recebidos").isEmpty())
+                .andExpect(jsonPath("$.bloqueadas").isEmpty());
+        conectar(ana, bia).andExpect(situacao("CONECTADOS"));
+    }
+
+    @Test
+    void cadaLadoBloqueiaPorContaPropria() throws Exception {
+        bloquear(ana, bia);
+        bloquear(bia, ana).andExpect(situacao("BLOQUEADA"));
+        bloquear(bia, ana).andExpect(situacao("BLOQUEADA"));
+
+        desbloquear(ana, bia).andExpect(situacao("NENHUMA"));
+
+        // O bloqueio da Bia continua: a Ana pede, mas o pedido não aparece para ela.
+        conectar(ana, bia).andExpect(situacao("PEDIDO_ENVIADO"));
+        minhas(bia)
+                .andExpect(jsonPath("$.recebidos").isEmpty())
+                .andExpect(jsonPath("$.bloqueadas[*].username").value(contains("ana.bc")));
+        assertThat(conexoes.haBloqueio(ana.id(), bia.id())).isTrue();
+        assertThat(conexoes.bloqueou(ana.id(), bia.id())).isFalse();
+        assertThat(conexoes.bloqueou(bia.id(), ana.id())).isTrue();
+    }
+
+    @Test
+    void desbloquearQuemNaoFoiBloqueadoNaoMudaNada() throws Exception {
+        conectar(ana, bia);
+
+        desbloquear(ana, bia).andExpect(situacao("PEDIDO_ENVIADO"));
+        desbloquear(bia, ana).andExpect(situacao("PEDIDO_RECEBIDO"));
+    }
+
+    @Test
+    void naoBloqueiaAPropriaContaNemQuemNaoAparece() throws Exception {
+        bloquear(ana, ana).andExpect(status().isBadRequest());
+        comToken(post("/api/conexoes/com/" + UUID.randomUUID() + "/bloqueio"), ana).andExpect(status().isNotFound());
+
+        bloquear(ana, caio);
+        jdbc.update("update usuario set status = 'SUSPENSO' where id = ?", caio.id());
+        bloquear(ana, bia).andExpect(status().isOk());
+        // A conta suspensa some da lista, mas o bloqueio feito antes ainda pode ser desfeito.
+        minhas(ana).andExpect(jsonPath("$.bloqueadas[*].username").value(contains("bia")));
+        desbloquear(ana, caio).andExpect(status().isOk());
+        assertThat(conexoes.bloqueou(ana.id(), caio.id())).isFalse();
+    }
+
+    /** O pedido criado ao mesmo tempo que o bloqueio nunca fica pendente por baixo dele. */
+    @Test
+    void bloquearEPedirAoMesmoTempoNaoDeixaPedidoVisivel() throws Exception {
+        for (int rodada = 0; rodada < 10; rodada++) {
+            jdbc.update("delete from conexao");
+            jdbc.update("delete from bloqueio");
+
+            aoMesmoTempo(
+                    () -> conexoes.bloquear(ana.id(), bia.id()),
+                    () -> conexoes.conectar(bia.id(), ana.id()));
+
+            assertThat(statusDosRegistros()).isSubsetOf("RECUSADA");
+            assertThat(conexoes.minhas(ana.id()).recebidos()).isEmpty();
+        }
+    }
+
     // ------------------------------------------------------------ erros
 
     @Test
@@ -341,6 +441,14 @@ class ConexaoApiTest {
 
     private ResultActions desfazer(Conta quem, Conta outro) throws Exception {
         return comToken(delete("/api/conexoes/com/" + outro.id()), quem);
+    }
+
+    private ResultActions bloquear(Conta quem, Conta outro) throws Exception {
+        return comToken(post("/api/conexoes/com/" + outro.id() + "/bloqueio"), quem);
+    }
+
+    private ResultActions desbloquear(Conta quem, Conta outro) throws Exception {
+        return comToken(delete("/api/conexoes/com/" + outro.id() + "/bloqueio"), quem);
     }
 
     private ResultActions minhas(Conta quem) throws Exception {
