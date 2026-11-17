@@ -1,0 +1,79 @@
+# CampusConnect na VPS. Tudo fica em /opt/campus-connect (veja deploy/README.md):
+#   backend/, frontend/, deploy/   código, enviado pelo deploy/publicar.sh
+#   api.env                        DB_PASSWORD e JWT_SECRET (só no servidor)
+#   banco.env                      POSTGRES_PASSWORD, a mesma senha (só no servidor)
+# Nenhuma porta é publicada. O Caddy do app-promotoria (rede app-promotoria_estoque_network) faz o HTTPS de
+# campusconnect.maisvida.cloud e manda tudo para o web, que serve o Angular e repassa /api para a API.
+# Os serviços têm o mesmo nome dos contêineres para não criar apelidos genéricos ("web", "api") na rede
+# compartilhada, onde outras stacks já têm serviços com esses nomes.
+name: campus-connect
+services:
+  campusconnect_api:
+    build: ../backend
+    image: campus-connect-api
+    container_name: campusconnect_api
+    restart: unless-stopped
+    env_file: ../api.env
+    environment:
+      DB_HOST: campusconnect_banco
+      DB_PORT: "5432"
+      DB_NAME: campusconnect
+      DB_USER: campusconnect
+      COOKIE_SEGURO: "true"
+      ARQUIVOS_DIR: /dados/uploads
+      TZ: America/Bahia
+    volumes:
+      - uploads:/dados/uploads
+    mem_limit: 1g
+    depends_on:
+      campusconnect_banco:
+        condition: service_healthy
+    # "saida" tem acesso à internet, para a prévia de links. O banco fica só na rede "banco", que é interna.
+    networks: [saida, banco]
+    logging: &log
+      driver: json-file
+      options: {max-size: "10m", max-file: "3"}
+
+  campusconnect_web:
+    build: ../frontend
+    image: campus-connect-web
+    container_name: campusconnect_web
+    restart: unless-stopped
+    mem_limit: 64m
+    networks: [edge, saida]
+    logging: *log
+
+  campusconnect_banco:
+    image: postgres:18-alpine
+    container_name: campusconnect_banco
+    restart: unless-stopped
+    env_file: ../banco.env
+    environment:
+      POSTGRES_DB: campusconnect
+      POSTGRES_USER: campusconnect
+    command: postgres -c shared_buffers=64MB -c max_connections=30
+    volumes:
+      # Na imagem 18 o volume é /var/lib/postgresql (os dados ficam em 18/docker dentro dele).
+      - banco_dados:/var/lib/postgresql
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U campusconnect -d campusconnect"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [banco]
+    logging: *log
+
+networks:
+  edge:
+    external: true
+    name: app-promotoria_estoque_network
+  saida: {}
+  banco:
+    internal: true
+
+volumes:
+  banco_dados:
+    name: campusconnect_banco_dados
+  uploads:
+    name: campusconnect_uploads

@@ -36,3 +36,7 @@ build/
 
 *.pdf
 campusconnect*.sql
+
+# Segredos de produção (só existem na VPS, em /opt/campus-connect)
+api.env
+banco.env

@@ -1,0 +1,9 @@
+# CampusConnect (stack separada em /opt/campus-connect)
+campusconnect.maisvida.cloud {
+	# Sem "encode": o nginx do campusconnect_web já comprime, e assim os eventos SSE de /api/aovivo
+	# passam direto, sem buffer no caminho.
+	reverse_proxy campusconnect_web:80 {
+		# IP real de quem acessa, nos logs do nginx e da API.
+		header_up X-Forwarded-For {remote_host}
+	}
+}
