@@ -1,13 +1,4 @@
 # CampusConnect — frontend (Angular)
-
-O visual é o do MVP (`marcelo-01/Campus-Connect-mvp`). O `src/styles.css` é o `styles.css` do MVP sem
-alterações, mais seções no final: "Estados de formulário", com os estilos de erro que o MVP não tinha, e
-"Ajustes sobre o MVP".
-
-A `public/assets/logo.png` tem fundo transparente; no MVP o fundo creme fazia parte da imagem. O painel roxo
-do login mostra só o nome "campusconnect.", sem o símbolo, porque o símbolo (índigo e tinta) não tem
-contraste ali.
-
 ## Como rodar
 
 A partir da raiz do projeto (`campus-connect/`), em três terminais:
