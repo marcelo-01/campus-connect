@@ -6,12 +6,13 @@ import { normalizarBusca } from '../bolhas/bolha.service';
 
 /**
  * Como quem está logado enxerga a relação com outra pessoa. A recusa é discreta: quem pediu continua vendo
- * `PEDIDO_ENVIADO`, e quem recusou passa a ver `NENHUMA`.
+ * `PEDIDO_ENVIADO`, e quem recusou passa a ver `NENHUMA`. `BLOQUEADA` só aparece para quem bloqueou: quem foi
+ * bloqueado continua vendo `NENHUMA`, e um pedido dele fica como enviado, como numa recusa.
  */
-export type SituacaoConexao = 'NENHUMA' | 'PEDIDO_ENVIADO' | 'PEDIDO_RECEBIDO' | 'CONECTADOS';
+export type SituacaoConexao = 'NENHUMA' | 'PEDIDO_ENVIADO' | 'PEDIDO_RECEBIDO' | 'CONECTADOS' | 'BLOQUEADA';
 
 /** O que o botão de conexão faz; cada ação tem o seu endereço na API. */
-export type AcaoConexao = 'conectar' | 'recusar' | 'cancelarPedido' | 'desfazer';
+export type AcaoConexao = 'conectar' | 'recusar' | 'cancelarPedido' | 'desfazer' | 'bloquear' | 'desbloquear';
 
 /** Uma pessoa numa lista de conexões ou de pedidos. Não traz e-mail. */
 export interface PessoaNaConexao {
@@ -30,6 +31,8 @@ export interface MinhasConexoes {
   recebidos: PessoaNaConexao[];
   /** Pedidos que ainda não viraram conexão, inclusive os recusados (a recusa é discreta). */
   enviados: PessoaNaConexao[];
+  /** Quem a pessoa bloqueou; `desde` é a data do bloqueio. */
+  bloqueadas: PessoaNaConexao[];
 }
 
 interface Carregadas {
@@ -129,6 +132,15 @@ export class ConexaoService {
     return this.agir(this.http.delete<RespostaDaAcao>(`/api/conexoes/com/${usuarioId}`));
   }
 
+  /** Bloqueia a pessoa e desfaz o que houver entre as duas: conexão ou pedido. */
+  bloquear(usuarioId: string): Observable<SituacaoConexao> {
+    return this.agir(this.http.post<RespostaDaAcao>(`/api/conexoes/com/${usuarioId}/bloqueio`, null));
+  }
+
+  desbloquear(usuarioId: string): Observable<SituacaoConexao> {
+    return this.agir(this.http.delete<RespostaDaAcao>(`/api/conexoes/com/${usuarioId}/bloqueio`));
+  }
+
   /** O servidor responde como a relação ficou; as listas são recarregadas para todas as telas se acertarem. */
   private agir(requisicao: Observable<RespostaDaAcao>): Observable<SituacaoConexao> {
     return requisicao.pipe(
@@ -143,6 +155,7 @@ export function situacoesPorPessoa(minhas: MinhasConexoes): ReadonlyMap<string, 
   const situacoes = new Map<string, SituacaoConexao>();
   minhas.conexoes.forEach((pessoa) => situacoes.set(pessoa.id, 'CONECTADOS'));
   minhas.recebidos.forEach((pessoa) => situacoes.set(pessoa.id, 'PEDIDO_RECEBIDO'));
+  minhas.bloqueadas.forEach((pessoa) => situacoes.set(pessoa.id, 'BLOQUEADA'));
   minhas.enviados.forEach((pessoa) => situacoes.set(pessoa.id, 'PEDIDO_ENVIADO'));
   return situacoes;
 }
@@ -175,6 +188,8 @@ const RECADO_SEM_RELACAO: Record<AcaoConexao, string> = {
   desfazer: 'Conexão desfeita',
   // Só acontece se a outra pessoa sumir no meio do caminho.
   conectar: 'Não foi possível enviar o pedido. Tente de novo.',
+  bloquear: 'Não foi possível bloquear. Tente de novo.',
+  desbloquear: 'Desbloqueado',
 };
 
 /**
@@ -182,7 +197,12 @@ const RECADO_SEM_RELACAO: Record<AcaoConexao, string> = {
  * estar desatualizada (por exemplo, a outra pessoa aceitou o pedido que ia ser cancelado).
  */
 export function recadoDaAcao(acao: AcaoConexao, situacao: SituacaoConexao, nome: string): string {
+  if (acao === 'desbloquear' && situacao !== 'BLOQUEADA') {
+    return `Você desbloqueou ${nome}`;
+  }
   switch (situacao) {
+    case 'BLOQUEADA':
+      return acao === 'bloquear' ? `Você bloqueou ${nome}` : `Você bloqueou ${nome}. Desbloqueie para continuar.`;
     case 'CONECTADOS':
       return acao === 'conectar'
         ? `Conexão feita com ${nome}`

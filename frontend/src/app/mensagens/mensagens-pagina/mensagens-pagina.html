@@ -1,0 +1,78 @@
+<div class="content conteudo-mensagens">
+  <div class="messages-layout">
+    <div class="thread-list">
+      <div class="thread-list-head">
+        <h2>Mensagens</h2>
+        <div class="thread-search">
+          <app-icone nome="busca" />
+          <input
+            type="search"
+            placeholder="Buscar conversas…"
+            aria-label="Buscar conversas pelo nome da pessoa"
+            [value]="busca()"
+            (input)="digitar($event)"
+          />
+        </div>
+        <div class="chips" style="gap: 6px" role="group" aria-label="Quais conversas mostrar">
+          <button type="button" class="chip chip-mini" [class.active]="!soNaoLidas()" (click)="filtrar(false)">
+            Todas
+          </button>
+          <button type="button" class="chip chip-mini" [class.active]="soNaoLidas()" (click)="filtrar(true)">
+            Não lidas
+          </button>
+        </div>
+      </div>
+
+      <div class="threads">
+        @if (conversas(); as lista) {
+          @for (conversa of lista; track conversa.id) {
+            <a
+              class="thread"
+              [class.active]="conversa.id === painel.ativa()"
+              [class.unread]="conversa.naoLida"
+              [routerLink]="['/mensagens', conversa.id]"
+              [attr.aria-current]="conversa.id === painel.ativa() ? 'page' : null"
+              [attr.aria-label]="conversa.pessoa.nomeCompleto + (conversa.naoLida ? ', não lida' : '')"
+            >
+              <app-avatar [nome]="conversa.pessoa.nomeCompleto" [fotoUrl]="conversa.pessoa.fotoUrl" tamanho="md" />
+              <div class="thread-info">
+                <div class="row">
+                  <span class="name">{{ conversa.pessoa.nomeCompleto }}</span>
+                  <span class="time" [title]="dataCompleta(conversa.ultima.enviadaEm)">
+                    {{ tempoRelativo(conversa.ultima.enviadaEm) }}
+                  </span>
+                </div>
+                <div class="preview" [class.apagada]="conversa.ultima.apagada">{{ previa(conversa) }}</div>
+              </div>
+            </a>
+          } @empty {
+            <div class="threads-vazio">
+              @if (busca().trim()) {
+                Nenhuma conversa com “{{ busca().trim() }}”.
+              } @else if (soNaoLidas()) {
+                Nenhuma conversa não lida.
+              } @else {
+                <b>Nenhuma conversa ainda.</b>
+                Abra o perfil de alguém e toque em Mensagem.
+              }
+            </div>
+          }
+          @if (proximo()) {
+            <button type="button" class="btn btn-ghost btn-sm threads-mais" [disabled]="carregandoMais()" (click)="carregarMais()">
+              {{ carregandoMais() ? 'Carregando…' : 'Carregar mais' }}
+            </button>
+          }
+        } @else if (erro()) {
+          <div class="threads-vazio">
+            Não foi possível carregar as conversas.
+            <button type="button" class="btn btn-ghost btn-sm" (click)="tentarDeNovo()">Tentar de novo</button>
+          </div>
+        } @else {
+          <div class="threads-vazio">Carregando conversas…</div>
+        }
+      </div>
+    </div>
+
+    <router-outlet />
+  </div>
+</div>

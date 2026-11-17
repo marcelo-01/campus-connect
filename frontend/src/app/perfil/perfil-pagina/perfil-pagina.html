@@ -17,7 +17,11 @@
           <button type="button" class="btn btn-primary" (click)="compartilhar(p)">Compartilhar</button>
         } @else {
           <app-botao-conexao [pessoa]="p" (mudou)="recarregarTotal(p)" />
+          @if (situacao() !== 'BLOQUEADA') {
+            <app-botao-mensagem [usuarioId]="p.id" />
+          }
           <button type="button" class="btn btn-secondary" (click)="compartilhar(p)">Compartilhar</button>
+          <app-menu-pessoa [pessoa]="p" (mudou)="recarregarTotal(p)" />
         }
       </div>
     </div>

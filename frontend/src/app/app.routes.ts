@@ -16,6 +16,8 @@ import { Shell } from './layout/shell/shell';
 import { AnuncioForm } from './marketplace/anuncio-form/anuncio-form';
 import { AnuncioPagina } from './marketplace/anuncio-pagina/anuncio-pagina';
 import { MarketplacePagina } from './marketplace/marketplace-pagina/marketplace-pagina';
+import { ConversaAberta } from './mensagens/conversa-aberta/conversa-aberta';
+import { MensagensPagina, SemConversa } from './mensagens/mensagens-pagina/mensagens-pagina';
 import { EditarPerfil } from './perfil/editar-perfil/editar-perfil';
 import { PerfilPagina } from './perfil/perfil-pagina/perfil-pagina';
 import { PublicacaoPagina } from './publicacoes/publicacao-pagina/publicacao-pagina';
@@ -89,6 +91,21 @@ export const routes: Routes = [
         component: AnuncioPagina,
         title: 'Anúncio · CampusConnect',
         data: { trilha: ['Marketplace'] },
+      },
+      {
+        // A lista de conversas fica na tela; só a conversa aberta, à direita, troca.
+        path: 'mensagens',
+        component: MensagensPagina,
+        children: [
+          { path: '', component: SemConversa, title: 'Mensagens · CampusConnect', data: { trilha: ['Mensagens'] } },
+          {
+            // A página troca a trilha pelo nome da outra pessoa depois de carregar.
+            path: ':id',
+            component: ConversaAberta,
+            title: 'Mensagens · CampusConnect',
+            data: { trilha: ['Mensagens'] },
+          },
+        ],
       },
       {
         path: 'bolhas',

@@ -1669,16 +1669,20 @@ a.bubble-tag:hover { background: oklch(from var(--accent) l c h / 0.16); }
   border-radius: var(--radius);
   box-shadow: var(--shadow-lg);
 }
-.menu-flutuante button {
+/* Só os itens do menu (filhos diretos): os botões de uma confirmação dentro dele mantêm o estilo de .btn. */
+.menu-flutuante > button,
+.menu-flutuante > a {
   display: flex; align-items: center; gap: 10px;
   padding: 9px 12px;
   border-radius: var(--radius-sm);
   font-size: 13.5px; font-weight: 500;
   color: var(--text);
   text-align: left;
+  white-space: nowrap;
 }
-.menu-flutuante button:hover { background: var(--surface-hover); }
-.menu-flutuante button.perigo { color: var(--danger); }
+.menu-flutuante > button:hover,
+.menu-flutuante > a:hover { background: var(--surface-hover); }
+.menu-flutuante > button.perigo { color: var(--danger); }
 .menu-flutuante svg { width: 16px; height: 16px; }
 
 /* A pílula "Postar em" vira um seletor no Início. */
@@ -1914,3 +1918,91 @@ select.chip {
 @media (max-width: 560px) {
   .market-grid { grid-template-columns: 1fr; }
 }
+
+/* ========================================================================
+   Mensagens — adicionados no projeto Angular
+   O MVP tinha a tela (.messages-layout, .thread-*, .bubble-msg, .day-sep,
+   .thread-input, .send-btn). Daqui para baixo: a altura medida pela barra
+   do topo, os estados (carregando, vazio, bloqueio), a ação de apagar, a
+   mensagem pendente e a apagada, o "Visto" e o menu de bloqueio.
+   ======================================================================== */
+
+/* A tela ocupa a altura abaixo da barra do topo: o rodapé de 80px do .content sai, e a lista e a conversa
+   rolam por dentro. */
+.content.conteudo-mensagens { padding-bottom: 24px; }
+.conteudo-mensagens .messages-layout {
+  height: calc(100vh - var(--altura-topbar, 65px) - 40px);
+  min-height: 420px;
+  grid-template-rows: minmax(0, 1fr);
+}
+/* O <router-outlet> fica entre as duas colunas e não pode virar uma célula da grade. */
+.messages-layout > router-outlet { display: none; }
+.thread-list,
+.thread-view { min-height: 0; }
+
+.chip.chip-mini { padding: 4px 10px; font-size: 12px; }
+.thread-info .preview.apagada { font-style: italic; }
+.threads-vazio {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 24px 12px;
+  text-align: center; font-size: 13.5px; color: var(--text-muted);
+}
+.threads-vazio b { color: var(--text); }
+.threads-mais { display: block; margin: 8px auto 0; }
+
+.thread-vazia {
+  align-items: center; justify-content: center; gap: 8px;
+  padding: 32px; text-align: center; color: var(--text-muted);
+}
+.thread-vazia .empty-bubble { background: var(--accent); }
+.thread-vazia h3 { margin: 0; font-family: var(--font-display); font-size: 18px; color: var(--text); }
+.thread-vazia p { margin: 0; max-width: 320px; font-size: 13.5px; }
+
+.thread-head .meta a.name:hover { text-decoration: underline; }
+
+.mensagens-anteriores { align-self: center; }
+.conversa-comeco {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  margin: auto 0; text-align: center; font-size: 13.5px; color: var(--text-muted);
+}
+.conversa-comeco p { margin: 0; max-width: 340px; }
+
+/* Cada mensagem numa linha, com a ação de apagar ao lado da própria mensagem. */
+.msg-linha { display: flex; align-items: center; gap: 6px; max-width: 70%; }
+.msg-linha.mine { align-self: flex-end; flex-direction: row-reverse; }
+.msg-linha.theirs { align-self: flex-start; }
+.msg-linha .bubble-msg { max-width: 100%; white-space: pre-wrap; }
+.msg-acao {
+  width: 28px; height: 28px; flex-shrink: 0;
+  border-radius: 999px;
+  display: grid; place-items: center;
+  color: var(--text-subtle);
+  opacity: 0; transition: opacity 0.15s;
+}
+.msg-acao svg { width: 15px; height: 15px; }
+.msg-linha:hover .msg-acao,
+.msg-acao:focus-visible { opacity: 1; }
+.msg-acao:hover { color: var(--danger); background: var(--surface-hover); }
+.msg-confirmacao { align-self: flex-end; display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--text-muted); }
+
+.bubble-msg.apagada {
+  background: transparent; color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+  font-style: italic;
+}
+.bubble-msg.pendente { opacity: 0.6; }
+.bubble-msg.pendente.falhou { opacity: 1; background: var(--surface-2); color: var(--text); border: 1px solid var(--danger); }
+.msg-falhou { align-self: flex-end; font-size: 12px; color: var(--danger); }
+.msg-falhou button { color: var(--danger); font-weight: 600; text-decoration: underline; }
+.msg-visto { align-self: flex-end; margin-top: -4px; font-size: 11.5px; color: var(--text-subtle); }
+
+.msg-contador { flex-shrink: 0; font-size: 11.5px; color: var(--text-subtle); }
+.msg-contador.excedido { color: var(--danger); font-weight: 600; }
+.send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.send-btn:disabled:hover { background: var(--accent); }
+.thread-bloqueada { justify-content: center; gap: 12px; font-size: 13.5px; color: var(--text-muted); }
+
+/* A confirmação do bloqueio aparece no lugar dos itens do menu "…". */
+.menu-flutuante.menu-confirmacao { width: 290px; padding: 14px; gap: 12px; }
+.menu-confirmacao p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text-muted); white-space: normal; }
+.menu-confirmacao p b { color: var(--text); }

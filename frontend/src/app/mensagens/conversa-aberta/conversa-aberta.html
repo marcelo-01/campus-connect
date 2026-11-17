@@ -1,0 +1,140 @@
+@if (conversa(); as c) {
+  <div class="thread-view">
+    <div class="thread-head">
+      <a [routerLink]="['/perfil', c.pessoa.username]" tabindex="-1" aria-hidden="true">
+        <app-avatar [nome]="c.pessoa.nomeCompleto" [fotoUrl]="c.pessoa.fotoUrl" tamanho="md" />
+      </a>
+      <div class="meta">
+        <a class="name" [routerLink]="['/perfil', c.pessoa.username]">{{ c.pessoa.nomeCompleto }}</a>
+        <div class="sub">&#64;{{ c.pessoa.username }}</div>
+      </div>
+      <app-menu-pessoa [pessoa]="c.pessoa" comPerfil (mudou)="aoMudarBloqueio()" />
+    </div>
+
+    <div class="thread-body" #corpo aria-live="polite">
+      @if (proximo()) {
+        <button
+          type="button"
+          class="btn btn-ghost btn-sm mensagens-anteriores"
+          [disabled]="carregandoAnteriores()"
+          (click)="carregarAnteriores()"
+        >
+          {{ carregandoAnteriores() ? 'Carregando…' : 'Mensagens anteriores' }}
+        </button>
+      }
+
+      @if (!mensagens().length && !pendentes().length) {
+        <div class="conversa-comeco">
+          <app-avatar [nome]="c.pessoa.nomeCompleto" [fotoUrl]="c.pessoa.fotoUrl" tamanho="lg" />
+          <p>
+            Esta é a sua conversa com <b>{{ c.pessoa.nomeCompleto }}</b>. As mensagens são privadas: só quem está
+            na conversa vê.
+          </p>
+        </div>
+      }
+
+      @for (grupo of grupos(); track grupo.dia) {
+        <div class="day-sep">{{ grupo.dia }}</div>
+        @for (mensagem of grupo.mensagens; track mensagem.id) {
+          @let minha = mensagem.remetenteId === eu();
+          <div class="msg-linha" [class.mine]="minha" [class.theirs]="!minha">
+            <div
+              class="bubble-msg"
+              [class.mine]="minha"
+              [class.theirs]="!minha"
+              [class.apagada]="mensagem.apagada"
+              [title]="dataCompleta(mensagem.enviadoEm)"
+            >
+              {{ mensagem.apagada ? 'Mensagem apagada' : mensagem.conteudo }}
+            </div>
+            @if (minha && !mensagem.apagada) {
+              <button
+                type="button"
+                class="msg-acao"
+                title="Apagar mensagem"
+                aria-label="Apagar mensagem"
+                (click)="confirmandoApagar.set(mensagem.id)"
+              >
+                <app-icone nome="lixeira" />
+              </button>
+            }
+          </div>
+          @if (confirmandoApagar() === mensagem.id) {
+            <div class="msg-confirmacao" role="group" aria-label="Apagar a mensagem para todos?">
+              Apagar para todos?
+              <button type="button" class="btn btn-danger btn-sm" (click)="apagar(mensagem)">Apagar</button>
+              <button type="button" class="btn btn-ghost btn-sm" (click)="confirmandoApagar.set(null)">Cancelar</button>
+            </div>
+          }
+        }
+      }
+
+      @if (visto()) {
+        <div class="msg-visto">Visto</div>
+      }
+
+      @if (pendentes().length) {
+        @if (!temHoje()) {
+          <div class="day-sep">Hoje</div>
+        }
+        @for (pendente of pendentes(); track pendente.chave) {
+          <div class="msg-linha mine">
+            <div class="bubble-msg mine pendente" [class.falhou]="pendente.falhou">{{ pendente.conteudo }}</div>
+          </div>
+          @if (pendente.falhou) {
+            <div class="msg-falhou">
+              Não enviada ·
+              <button type="button" (click)="tentarDeNovo(pendente)">Tentar de novo</button>
+              ·
+              <button type="button" (click)="descartar(pendente)">Descartar</button>
+            </div>
+          }
+        }
+      }
+    </div>
+
+    @if (c.podeEnviar) {
+      <form class="thread-input" (submit)="enviar($event)">
+        <div class="field">
+          <input
+            #campo
+            type="text"
+            autocomplete="off"
+            placeholder="Escreva uma mensagem…"
+            [attr.aria-label]="'Mensagem para ' + c.pessoa.nomeCompleto"
+            [value]="texto()"
+            (input)="texto.set($any($event.target).value)"
+          />
+          @if (tamanho() > avisoDeTamanho) {
+            <span class="msg-contador" [class.excedido]="tamanho() > maximo">{{ tamanho() }}/{{ maximo }}</span>
+          }
+        </div>
+        <button type="submit" class="send-btn" aria-label="Enviar" [disabled]="!podeMandar()">
+          <app-icone nome="enviar" />
+        </button>
+      </form>
+    } @else {
+      <div class="thread-input thread-bloqueada">
+        @if (c.bloqueei) {
+          <span>Você bloqueou {{ nome() }}.</span>
+          <button type="button" class="btn btn-secondary btn-sm" (click)="desbloquear()">Desbloquear</button>
+        } @else {
+          <span>Não é possível enviar mensagens para esta pessoa.</span>
+        }
+      </div>
+    }
+  </div>
+} @else if (naoEncontrada()) {
+  <div class="thread-view thread-vazia">
+    <h3>Conversa não encontrada</h3>
+    <p>Ela não existe, ou a outra conta não está mais disponível.</p>
+    <a class="btn btn-secondary btn-sm" routerLink="/mensagens">Voltar às conversas</a>
+  </div>
+} @else if (erro()) {
+  <div class="thread-view thread-vazia">
+    <p>Não foi possível carregar a conversa.</p>
+    <button type="button" class="btn btn-ghost btn-sm" (click)="tentarCarregar()">Tentar de novo</button>
+  </div>
+} @else {
+  <div class="thread-view thread-vazia"><p>Carregando conversa…</p></div>
+}

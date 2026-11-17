@@ -36,6 +36,7 @@ const LISTAS: MinhasConexoes = {
   conexoes: [pessoa('bia')],
   recebidos: [pessoa('caio'), pessoa('davi')],
   enviados: [pessoa('eva')],
+  bloqueadas: [pessoa('fabio')],
 };
 
 describe('funções de conexão', () => {
@@ -45,6 +46,7 @@ describe('funções de conexão', () => {
     expect(situacoes.get('bia')).toBe('CONECTADOS');
     expect(situacoes.get('caio')).toBe('PEDIDO_RECEBIDO');
     expect(situacoes.get('eva')).toBe('PEDIDO_ENVIADO');
+    expect(situacoes.get('fabio')).toBe('BLOQUEADA');
     expect(situacoes.get('zeca')).toBeUndefined();
   });
 
@@ -75,6 +77,13 @@ describe('funções de conexão', () => {
       'Ana já tinha aceitado: a conexão está feita',
     );
     expect(recadoDaAcao('desfazer', 'PEDIDO_RECEBIDO', 'Ana')).toBe('Ana enviou um pedido para você');
+  });
+
+  it('avisa do bloqueio e do desbloqueio', () => {
+    expect(recadoDaAcao('bloquear', 'BLOQUEADA', 'Ana')).toBe('Você bloqueou Ana');
+    expect(recadoDaAcao('desbloquear', 'NENHUMA', 'Ana')).toBe('Você desbloqueou Ana');
+    // A tela estava desatualizada: a pessoa já tinha bloqueado a Ana.
+    expect(recadoDaAcao('conectar', 'BLOQUEADA', 'Ana')).toBe('Você bloqueou Ana. Desbloqueie para continuar.');
   });
 });
 
@@ -141,6 +150,8 @@ describe('ConexaoService', () => {
       { chamar: () => servico.recusar('bia'), metodo: 'POST', url: '/api/conexoes/com/bia/recusa' },
       { chamar: () => servico.cancelarPedido('bia'), metodo: 'DELETE', url: '/api/conexoes/com/bia/pedido' },
       { chamar: () => servico.desfazer('bia'), metodo: 'DELETE', url: '/api/conexoes/com/bia' },
+      { chamar: () => servico.bloquear('bia'), metodo: 'POST', url: '/api/conexoes/com/bia/bloqueio' },
+      { chamar: () => servico.desbloquear('bia'), metodo: 'DELETE', url: '/api/conexoes/com/bia/bloqueio' },
     ];
 
     for (const acao of acoes) {

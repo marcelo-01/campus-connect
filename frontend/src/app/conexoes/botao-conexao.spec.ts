@@ -30,6 +30,7 @@ describe('BotaoConexao', () => {
     recusar: ReturnType<typeof vi.fn<Acao>>;
     cancelarPedido: ReturnType<typeof vi.fn<Acao>>;
     desfazer: ReturnType<typeof vi.fn<Acao>>;
+    desbloquear: ReturnType<typeof vi.fn<Acao>>;
   };
   let toast: { mostrar: ReturnType<typeof vi.fn<(mensagem: string) => void>> };
 
@@ -41,6 +42,7 @@ describe('BotaoConexao', () => {
       recusar: vi.fn<Acao>(),
       cancelarPedido: vi.fn<Acao>(),
       desfazer: vi.fn<Acao>(),
+      desbloquear: vi.fn<Acao>(),
     };
     toast = { mostrar: vi.fn() };
     TestBed.configureTestingModule({
@@ -101,6 +103,23 @@ describe('BotaoConexao', () => {
     situacoes.set(new Map([['bia', 'CONECTADOS']]));
     await fixture.whenStable();
     expect(textos(fixture)).toEqual(['Conectado']);
+
+    situacoes.set(new Map([['bia', 'BLOQUEADA']]));
+    await fixture.whenStable();
+    expect(textos(fixture)).toEqual(['Desbloquear']);
+    expect(botoes(fixture)[0].getAttribute('aria-label')).toBe('Desbloquear Bia Souza');
+  });
+
+  it('desbloqueia sem pedir confirmação', async () => {
+    situacoes.set(new Map([['bia', 'BLOQUEADA']]));
+    servico.desbloquear.mockReturnValue(of('NENHUMA'));
+    const fixture = await montar();
+
+    await clicar(fixture, 'Desbloquear');
+
+    expect(servico.desbloquear).toHaveBeenCalledWith('bia');
+    expect(toast.mostrar).toHaveBeenCalledWith('Você desbloqueou Bia');
+    expect(textos(fixture)).toEqual(['Conectar']);
   });
 
   it('fica desabilitado enquanto envia e mostra a situação que o servidor devolveu', async () => {

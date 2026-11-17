@@ -34,7 +34,8 @@ export interface PessoaDoBotao {
 }
 
 /**
- * O botão de conexão com uma pessoa: "Conectar", "Aceitar" e "Recusar", "Pedido enviado" ou "Conectado". É o
+ * O botão de conexão com uma pessoa: "Conectar", "Aceitar" e "Recusar", "Pedido enviado", "Conectado" ou, para quem
+ * bloqueou, "Desbloquear". É o
  * botão da linha de pessoa do MVP ("Seguir" / "Seguindo"), trocado pelo modelo de conexões.
  *
  * Cancelar um pedido e desfazer uma conexão pedem confirmação ali mesmo, como a exclusão de bolha, porque o MVP não
@@ -84,6 +85,18 @@ export interface PessoaDoBotao {
               {{ agindo() === 'recusar' ? 'Enviando…' : 'Recusar' }}
             </button>
           </span>
+        }
+        @case ('BLOQUEADA') {
+          <button
+            type="button"
+            class="btn btn-secondary"
+            [class.btn-sm]="compacto()"
+            [disabled]="agindo() !== null"
+            [attr.aria-label]="'Desbloquear ' + pessoa().nomeCompleto"
+            (click)="agir('desbloquear')"
+          >
+            {{ agindo() ? 'Enviando…' : 'Desbloquear' }}
+          </button>
         }
         @default {
           @if (confirmando()) {
@@ -223,6 +236,10 @@ export class BotaoConexao {
         return this.conexoes.cancelarPedido(usuarioId);
       case 'desfazer':
         return this.conexoes.desfazer(usuarioId);
+      case 'bloquear':
+        return this.conexoes.bloquear(usuarioId);
+      case 'desbloquear':
+        return this.conexoes.desbloquear(usuarioId);
     }
   }
 }

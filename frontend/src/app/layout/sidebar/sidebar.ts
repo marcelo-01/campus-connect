@@ -13,6 +13,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
 import { BolhaService, recuoPorNivel } from '../../bolhas/bolha.service';
 import { ConexaoService } from '../../conexoes/conexao.service';
+import { MensagemService } from '../../mensagens/mensagem.service';
 import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone, NomeIcone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
@@ -33,7 +34,8 @@ interface ItemMenu {
 /**
  * O `Sidebar` do MVP. Os itens de telas que ainda não existem mostram "em breve", como o MVP fazia com
  * Notificações e Salvos. As contagens fictícias do MVP (o "3" em Mensagens, o "Novo") e os atalhos de
- * hashtag saíram: aqui só aparece dado real, como os pedidos de conexão esperando resposta.
+ * hashtag saíram: aqui só aparece dado real, como os pedidos de conexão esperando resposta e as conversas não
+ * lidas, que se atualizam pela conexão ao vivo.
  *
  * "Minhas bolhas" desenha a árvore como o MVP: cada bolha logo abaixo da que a contém, com recuo. O "+"
  * de nova bolha só aparece para administradores.
@@ -50,13 +52,20 @@ export class Sidebar {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly conexoes = inject(ConexaoService);
+  private readonly mensagens = inject(MensagemService);
   protected readonly bolhas = inject(BolhaService);
 
   protected readonly itens: ItemMenu[] = [
     { rotulo: 'Início', icone: 'inicio', rota: '/', exato: true },
     { rotulo: 'Explorar bolhas', icone: 'bolhas', rota: '/bolhas', exato: true },
     { rotulo: 'Marketplace', icone: 'marketplace', rota: '/marketplace' },
-    { rotulo: 'Mensagens', icone: 'mensagens' },
+    {
+      rotulo: 'Mensagens',
+      icone: 'mensagens',
+      rota: '/mensagens',
+      contador: this.mensagens.naoLidas,
+      descreverContador: (total) => `${total} ${total === 1 ? 'conversa não lida' : 'conversas não lidas'}`,
+    },
     { rotulo: 'Notificações', icone: 'notificacoes' },
     { rotulo: 'Salvos', icone: 'salvos', rota: '/salvos', exato: true },
     {
@@ -82,6 +91,7 @@ export class Sidebar {
         untracked(() => {
           this.bolhas.recarregarMinhas();
           this.conexoes.recarregarMinhas();
+          this.mensagens.recarregarNaoLidas();
         });
       }
     });

@@ -27,13 +27,14 @@ import { PessoaLinha } from '../pessoa-linha';
 
 type Aba = keyof MinhasConexoes;
 
-const ABAS: readonly Aba[] = ['conexoes', 'recebidos', 'enviados'];
+const ABAS: readonly Aba[] = ['conexoes', 'recebidos', 'enviados', 'bloqueadas'];
 
 /** A situação de quem está em cada aba. Quem muda de situação depois de uma ação sai da aba na hora. */
 const SITUACAO_DA_ABA: Record<Aba, SituacaoConexao> = {
   conexoes: 'CONECTADOS',
   recebidos: 'PEDIDO_RECEBIDO',
   enviados: 'PEDIDO_ENVIADO',
+  bloqueadas: 'BLOQUEADA',
 };
 
 function ehAba(valor: string | null): valor is Aba {
@@ -49,7 +50,8 @@ interface OutraPessoa {
  * O `ConnectionsScreen` do MVP com o modelo de conexões. As abas "Seguidores" e "Seguindo" deram lugar aos pedidos
  * recebidos e enviados, que só a própria pessoa vê. Nas conexões de outra pessoa aparece só a lista.
  *
- * Em `/conexoes` a página é de quem está logado; `?aba=recebidos` ou `?aba=enviados` abre direto na aba. Sem o
+ * Em `/conexoes` a página é de quem está logado; `?aba=recebidos`, `?aba=enviados` ou `?aba=bloqueadas` abre direto
+ * na aba. Sem o
  * parâmetro, abre nos recebidos quando há pedido esperando resposta. Em `/perfil/:username/conexoes` a página é de
  * outra pessoa (a própria é levada para `/conexoes` pelo guard).
  */
@@ -112,6 +114,7 @@ export class ConexoesPagina {
       conexoes: contar(minhas.conexoes),
       recebidos: contar(minhas.recebidos),
       enviados: contar(minhas.enviados),
+      bloqueadas: contar(minhas.bloqueadas),
     };
   });
 
@@ -162,10 +165,13 @@ export class ConexoesPagina {
     this.busca.set((evento.target as HTMLInputElement).value);
   }
 
-  /** "conexão desde fev 2026", ou "pedido em fev 2026" nas abas de pedidos. */
+  /** "conexão desde fev 2026", "pedido em fev 2026" nas abas de pedidos ou "bloqueio em fev 2026". */
   protected detalhe(pessoa: PessoaNaConexao): string {
     const quando = mesEAno(pessoa.desde);
-    return this.propria() && this.aba() !== 'conexoes' ? `pedido em ${quando}` : `conexão desde ${quando}`;
+    if (!this.propria() || this.aba() === 'conexoes') {
+      return `conexão desde ${quando}`;
+    }
+    return this.aba() === 'bloqueadas' ? `bloqueio em ${quando}` : `pedido em ${quando}`;
   }
 
   /** Na própria página, quem aceitou, recusou, cancelou ou desfez sai da aba sem esperar a recarga. */

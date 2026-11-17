@@ -1,14 +1,18 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, untracked } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, NavigationStart, Router, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
+import { AuthService } from '../../auth/auth.service';
+import { AoVivoService } from '../../shared/aovivo/aovivo.service';
 import { Sidebar } from '../sidebar/sidebar';
 import { Topbar } from '../topbar/topbar';
 import { TrilhaService } from '../trilha.service';
 
 /**
  * A moldura das telas logadas, igual ao `App` do MVP: menu lateral, barra do topo e o conteúdo. O painel
- * da direita (`RightRail`) do MVP só aparece no feed, no explorar e no marketplace, que ainda não existem.
+ * da direita (`RightRail`) do MVP não aparece: todas as telas usam o layout sem ele (`no-rail`).
+ *
+ * Enquanto a moldura está na tela, a conexão ao vivo fica ligada para a conta logada.
  *
  * Cada rota informa a trilha da barra do topo em `data.trilha`; uma tela pode trocá-la pelo
  * {@link TrilhaService} depois de carregar.
@@ -48,6 +52,14 @@ export class Shell {
   protected readonly trilha = computed(() => this.trilhas.atual() ?? this.trilhaDaRota());
 
   constructor() {
+    const aoVivo = inject(AoVivoService);
+    const auth = inject(AuthService);
+    effect(() => {
+      const usuarioId = auth.usuario()?.id ?? null;
+      untracked(() => aoVivo.conectarComo(usuarioId));
+    });
+    inject(DestroyRef).onDestroy(() => aoVivo.conectarComo(null));
+
     this.router.events
       .pipe(
         filter((evento) => evento instanceof NavigationStart),

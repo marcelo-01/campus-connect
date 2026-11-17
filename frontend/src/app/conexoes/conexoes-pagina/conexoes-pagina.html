@@ -26,6 +26,9 @@
         <button type="button" [class.active]="aba() === 'enviados'" (click)="aba.set('enviados')">
           Pedidos enviados<span class="tab-count">{{ totais()?.enviados }}</span>
         </button>
+        <button type="button" [class.active]="aba() === 'bloqueadas'" (click)="aba.set('bloqueadas')">
+          Bloqueadas<span class="tab-count">{{ totais()?.bloqueadas }}</span>
+        </button>
       </div>
     }
 
@@ -72,6 +75,9 @@
           }
           @case ('enviados') {
             <div class="muted" style="text-align: center; padding: 24px">Você não tem pedidos enviados.</div>
+          }
+          @case ('bloqueadas') {
+            <div class="muted" style="text-align: center; padding: 24px">Você não bloqueou ninguém.</div>
           }
         }
       }

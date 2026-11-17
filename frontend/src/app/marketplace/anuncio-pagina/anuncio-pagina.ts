@@ -7,6 +7,7 @@ import { Subject, catchError, forkJoin, map, merge, of, switchMap, tap } from 'r
 import { ProblemaApi } from '../../auth/sessao';
 import { corDaBolha } from '../../bolhas/bolha.service';
 import { primeiroNome } from '../../conexoes/conexao.service';
+import { BotaoMensagem } from '../../mensagens/botao-mensagem';
 import { TrilhaService } from '../../layout/trilha.service';
 import { Avatar } from '../../shared/avatar';
 import { Icone } from '../../shared/icone';
@@ -27,14 +28,14 @@ import { gradienteDaCapa, notaPorExtenso, precoPorExtenso, textoDaCapa } from '.
  * avaliações e o card de compra.
  *
  * Do MVP saíram os pacotes, o prazo de entrega e as revisões, que o anúncio não tem; no lugar deles, a
- * linha de detalhes mostra o tipo, a categoria e a data. Enquanto não há mensagens, o "Conversar com" do MVP
- * leva ao perfil de quem anunciou. Para quem anunciou, o card de compra vira o de gerenciar: editar, pausar
- * e excluir.
+ * linha de detalhes mostra o tipo, a categoria e a data. O "Conversar com" abre a conversa com quem anunciou,
+ * com um texto sobre o anúncio já no campo (não é enviado sozinho). Para quem anunciou, o card de compra vira o
+ * de gerenciar: editar, pausar e excluir.
  */
 @Component({
   selector: 'app-anuncio-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, Icone],
+  imports: [RouterLink, Avatar, Icone, BotaoMensagem],
   styles: ':host { display: contents; }',
   templateUrl: './anuncio-pagina.html',
 })
@@ -90,6 +91,10 @@ export class AnuncioPagina {
     };
   });
   protected readonly primeiroNome = computed(() => primeiroNome(this.anuncio()?.anunciante.nomeCompleto ?? ''));
+  /** O texto que já vem no campo da conversa aberta pelo "Conversar com". */
+  protected readonly rascunho = computed(
+    () => `Oi, ${this.primeiroNome()}! Vi seu anúncio "${this.anuncio()?.titulo ?? ''}" no marketplace.`,
+  );
   protected readonly publicadoEm = computed(() => {
     const quando = this.anuncio()?.publicadoEm;
     return quando

@@ -30,13 +30,16 @@ export type NomeIcone =
   | 'video'
   | 'fechar'
   | 'subir'
-  | 'estrela';
+  | 'estrela'
+  | 'enviar'
+  | 'bloquear';
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
  * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `coracao`, `coracao-cheio`, `comentario`,
  * `republicar`, `compartilhar` e `opcoes` são os do card do post (`Heart`, `HeartFill`, `Comment`, `Repost`,
- * `Share`, `More`); `estrela` é o `Icon.Star` da nota no marketplace. `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
+ * `Share`, `More`); `estrela` é o `Icon.Star` da nota no marketplace; `enviar` é o `Icon.Send` do campo de
+ * mensagem. `bloquear` (um círculo cortado) não existia lá e segue o mesmo estilo. `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
  * pessoa atrás), `salvo` (o marcador preenchido), `video`, `fechar` e `subir` (a seta do aviso de posts
  * novos) não existiam lá e seguem o mesmo estilo. O elemento do componente não cria caixa
  * (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
@@ -55,6 +58,12 @@ export type NomeIcone =
       }
       @case ('marketplace') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18l-1.5 11a2 2 0 0 1-2 1.7H6.5a2 2 0 0 1-2-1.7L3 7z"/><path d="M8 7V5a4 4 0 0 1 8 0v2"/></svg>
+      }
+      @case ('enviar') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4z"/></svg>
+      }
+      @case ('bloquear') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></svg>
       }
       @case ('mensagens') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.5 8.5 0 0 1-12.6 7.4L3 20.5l1.6-5.4A8.5 8.5 0 1 1 21 11.5z"/></svg>

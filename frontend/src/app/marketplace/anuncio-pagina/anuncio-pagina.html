@@ -170,9 +170,12 @@
               {{ a.status === 'PAUSADO' ? 'Reativar anúncio' : 'Pausar anúncio' }}
             </button>
           } @else {
-            <a class="btn btn-market btn-block" [routerLink]="['/perfil', a.anunciante.username]">
-              <app-icone nome="perfil" /> Ver perfil de {{ primeiroNome() }}
-            </a>
+            <app-botao-mensagem
+              [usuarioId]="a.anunciante.id"
+              [rotulo]="'Conversar com ' + primeiroNome()"
+              classe="btn btn-market btn-block"
+              [rascunho]="rascunho()"
+            />
             <p class="buy-note">Valores e pagamento são combinados direto com quem anunciou, fora da plataforma.</p>
             <button type="button" class="fav-text" [attr.aria-pressed]="a.favorito" (click)="favoritar()">
               <app-icone [nome]="a.favorito ? 'coracao-cheio' : 'coracao'" /> {{ a.favorito ? 'Salvo' : 'Salvar' }}

@@ -6,6 +6,8 @@ import { catchError, forkJoin, map, of, switchMap, tap } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
 import { BolhaResumo, BolhaService, membrosPorExtenso } from '../../bolhas/bolha.service';
 import { BotaoConexao } from '../../conexoes/botao-conexao';
+import { MenuPessoa } from '../../conexoes/menu-pessoa';
+import { BotaoMensagem } from '../../mensagens/botao-mensagem';
 import { ConexaoService } from '../../conexoes/conexao.service';
 import { FonteAnuncios } from '../../marketplace/anuncio.service';
 import { ListaAnuncios } from '../../marketplace/lista-anuncios/lista-anuncios';
@@ -31,7 +33,7 @@ type Aba = 'posts' | 'market' | 'saved' | 'about';
 @Component({
   selector: 'app-perfil-pagina',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, BolhaMarca, BotaoConexao, Icone, Feed, ListaAnuncios],
+  imports: [RouterLink, Avatar, BolhaMarca, BotaoConexao, BotaoMensagem, Icone, MenuPessoa, Feed, ListaAnuncios],
   styles: ':host { display: contents; }',
   templateUrl: './perfil-pagina.html',
 })
@@ -55,6 +57,11 @@ export class PerfilPagina {
     return perfil ? mesEAno(perfil.membroDesde) : '';
   });
   protected readonly primeiroNome = computed(() => this.perfil()?.nomeCompleto.split(/\s+/)[0] ?? '');
+  /** Com quem bloqueou, o "Mensagem" some: o botão de conexão vira "Desbloquear". */
+  protected readonly situacao = computed(() => {
+    const perfil = this.perfil();
+    return perfil ? (this.conexoes.situacoes()?.get(perfil.id) ?? 'NENHUMA') : 'NENHUMA';
+  });
   protected readonly escopoPosts = computed<EscopoFeed | null>(() => {
     const perfil = this.perfil();
     return perfil ? { tipo: 'usuario', usuarioId: perfil.id } : null;
