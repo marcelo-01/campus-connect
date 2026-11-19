@@ -1,7 +1,10 @@
-<aside class="sidebar">
+<aside class="sidebar" id="menu-lateral" #gaveta>
   <div class="logo">
     <img class="logo-mark" src="assets/logo.png" alt="CampusConnect" />
     <span class="logo-word">campusconnect<span class="logo-dot">.</span></span>
+    <button type="button" class="icon-btn menu-fechar" aria-label="Fechar menu" #botaoFechar (click)="fechar.emit()">
+      <app-icone nome="fechar" />
+    </button>
   </div>
 
   <nav class="nav">

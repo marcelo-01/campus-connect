@@ -105,7 +105,7 @@
         </div>
       }
       @case ('about') {
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px">
+        <div class="perfil-sobre">
           <div class="card">
             <h3>Formação</h3>
             <p class="vazio-discreto">Nenhuma formação informada.</p>
@@ -122,7 +122,7 @@
               <p class="vazio-discreto">Nenhuma habilidade informada.</p>
             }
           </div>
-          <div class="card" style="grid-column: span 2">
+          <div class="card perfil-sobre-inteiro">
             <h3>Bolhas que participo</h3>
             @if (bolhas().length) {
               <div class="vstack" style="gap: 4px">

@@ -1,6 +1,9 @@
 @if (conversa(); as c) {
   <div class="thread-view">
     <div class="thread-head">
+      <a class="back-btn thread-voltar" routerLink="/mensagens" aria-label="Voltar às conversas">
+        <app-icone nome="voltar" />
+      </a>
       <a [routerLink]="['/perfil', c.pessoa.username]" tabindex="-1" aria-hidden="true">
         <app-avatar [nome]="c.pessoa.nomeCompleto" [fotoUrl]="c.pessoa.fotoUrl" tamanho="md" />
       </a>

@@ -7,7 +7,7 @@
       <h1>{{ edicao ? 'Editar anúncio' : 'Anunciar' }}</h1>
       <span>{{ edicao ? (original()?.titulo ?? '') : 'Transforme sua habilidade em renda' }}</span>
     </div>
-    <button type="button" class="btn btn-market" [disabled]="salvando() || carregando()" (click)="salvar()">
+    <button type="button" class="btn btn-market backbar-acoes" [disabled]="salvando() || carregando()" (click)="salvar()">
       {{ salvando() ? 'Salvando…' : edicao ? 'Salvar alterações' : 'Publicar anúncio' }}
     </button>
   </div>

@@ -9,7 +9,7 @@
         <span>&#64;{{ p.username }}</span>
       }
     </div>
-    <div class="hstack" style="gap: 8px">
+    <div class="hstack backbar-acoes" style="gap: 8px">
       <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
       <button type="button" class="btn btn-primary" [disabled]="salvando() || !perfil()" (click)="salvar()">
         {{ salvando() ? 'Salvando…' : 'Salvar alterações' }}

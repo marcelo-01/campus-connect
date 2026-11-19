@@ -23,7 +23,8 @@ import {
 import { PainelMensagens } from '../painel-mensagens';
 
 /**
- * O `MessagesScreen` do MVP: a lista de conversas à esquerda e a conversa aberta à direita (rota filha).
+ * O `MessagesScreen` do MVP: a lista de conversas à esquerda e a conversa aberta à direita (rota filha). No
+ * celular cabe uma coluna só: a lista em `/mensagens` e a conversa em `/mensagens/:id`, com um botão de voltar.
  *
  * Do MVP saíram o "● online" (não há presença), os chips "Bolhas" e "Marketplace" (não há dado para eles) e o botão
  * de emoji, que não fazia nada. A busca procura no nome e no username da outra pessoa, no servidor.

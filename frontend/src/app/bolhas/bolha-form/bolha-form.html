@@ -7,7 +7,7 @@
       <h1>{{ edicao ? 'Editar bolha' : 'Nova bolha' }}</h1>
       <span>{{ edicao ? (original()?.nome ?? '') : 'Só administradores criam bolhas' }}</span>
     </div>
-    <div class="hstack" style="gap: 8px">
+    <div class="hstack backbar-acoes" style="gap: 8px">
       <button type="button" class="btn btn-ghost" (click)="cancelar()">Cancelar</button>
       <button
         type="button"

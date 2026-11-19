@@ -3,11 +3,14 @@ import {
   Component,
   DOCUMENT,
   DestroyRef,
+  ElementRef,
   Signal,
   computed,
   effect,
   inject,
+  output,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
@@ -39,12 +42,16 @@ interface ItemMenu {
  *
  * "Minhas bolhas" desenha a árvore como o MVP: cada bolha logo abaixo da que a contém, com recuo. O "+"
  * de nova bolha só aparece para administradores.
+ *
+ * Nas telas estreitas o menu vira a gaveta do {@link Shell}. Ele pede para fechar no botão "×", que só aparece
+ * ali, e no toque em qualquer link: tocar no link da página atual não gera navegação, e a gaveta ficaria aberta.
  */
 @Component({
   selector: 'app-sidebar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, RouterLinkActive, Icone, BolhaMarca],
   styles: ':host { display: contents; }',
+  host: { '(click)': 'aoClicar($event)' },
   templateUrl: './sidebar.html',
 })
 export class Sidebar {
@@ -54,6 +61,12 @@ export class Sidebar {
   private readonly conexoes = inject(ConexaoService);
   private readonly mensagens = inject(MensagemService);
   protected readonly bolhas = inject(BolhaService);
+
+  /** Pedido para fechar a gaveta. Nas telas largas o {@link Shell} recebe e não muda nada. */
+  readonly fechar = output();
+
+  private readonly gaveta = viewChild.required<ElementRef<HTMLElement>>('gaveta');
+  private readonly botaoFechar = viewChild.required<ElementRef<HTMLButtonElement>>('botaoFechar');
 
   protected readonly itens: ItemMenu[] = [
     { rotulo: 'Início', icone: 'inicio', rota: '/', exato: true },
@@ -105,6 +118,21 @@ export class Sidebar {
     };
     documento.addEventListener('visibilitychange', aoVoltarParaAAba);
     inject(DestroyRef).onDestroy(() => documento.removeEventListener('visibilitychange', aoVoltarParaAAba));
+  }
+
+  /** Põe o foco no "×" da gaveta, logo depois de ela abrir. */
+  focar(): void {
+    this.botaoFechar().nativeElement.focus();
+  }
+
+  contemFoco(): boolean {
+    return this.gaveta().nativeElement.contains(this.gaveta().nativeElement.ownerDocument.activeElement);
+  }
+
+  protected aoClicar(evento: MouseEvent): void {
+    if (evento.target instanceof Element && evento.target.closest('a')) {
+      this.fechar.emit();
+    }
   }
 
   /** "Conexões, 2 pedidos recebidos" para leitores de tela; sem número, fica o próprio texto do item. */
