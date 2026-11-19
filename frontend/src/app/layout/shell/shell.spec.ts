@@ -6,6 +6,7 @@ import { UsuarioResumo } from '../../auth/sessao';
 import { BolhaService } from '../../bolhas/bolha.service';
 import { ConexaoService } from '../../conexoes/conexao.service';
 import { MensagemService } from '../../mensagens/mensagem.service';
+import { NotificacaoService } from '../../notificacoes/notificacao.service';
 import { AoVivoService } from '../../shared/aovivo/aovivo.service';
 import { Shell } from './shell';
 
@@ -29,6 +30,7 @@ describe('Shell', () => {
         { provide: BolhaService, useValue: { minhas: signal(null), recarregarMinhas: vi.fn() } },
         { provide: ConexaoService, useValue: { totalRecebidos: signal(2), recarregarMinhas: vi.fn() } },
         { provide: MensagemService, useValue: { naoLidas: signal(0), recarregarNaoLidas: vi.fn() } },
+        { provide: NotificacaoService, useValue: { naoLidas: signal(3), recarregarNaoLidas: vi.fn() } },
       ],
     });
     fixture = TestBed.createComponent(Shell);
@@ -106,5 +108,15 @@ describe('Shell', () => {
 
     expect(conexoes.querySelector('.badge')?.textContent?.trim()).toBe('2');
     expect(conexoes.getAttribute('aria-label')).toBe('Conexões, 2 pedidos recebidos');
+  });
+
+  it('mostra as notificações novas no menu lateral e o ponto no sino', () => {
+    const item = raiz.querySelector<HTMLAnchorElement>('.sidebar a[href="/notificacoes"]')!;
+    const sino = raiz.querySelector<HTMLAnchorElement>('.topbar a[href="/notificacoes"]')!;
+
+    expect(item.querySelector('.badge')?.textContent?.trim()).toBe('3');
+    expect(item.getAttribute('aria-label')).toBe('Notificações, 3 notificações novas');
+    expect(sino.querySelector('.dot')).not.toBeNull();
+    expect(sino.getAttribute('aria-label')).toBe('Notificações, 3 novas');
   });
 });

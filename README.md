@@ -21,6 +21,7 @@ bolhas, as pessoas publicam, conversam, se conectam e anunciam serviços e produ
 | RF07 · Hierarquia | Tipos Geral, Campus, Curso e Comunidade. Só administradores criam, editam e excluem bolhas |
 | RF08 · Direcionar posts | O post desce pela hierarquia e nunca sobe: um post na Geral aparece em todas as sub-bolhas. No Início dá para filtrar por bolha |
 | RF09 a RF12 · Marketplace | Anúncios de serviço ou produto em 1 a 5 bolhas, até 6 fotos, categorias, favoritos, avaliações e pausa |
+| Notificações | Pedido de conexão e aceite, comentário, resposta, curtida, republicação e avaliação de anúncio, em tempo real. Curtidas e republicações do mesmo alvo vêm juntas ("Ana e mais 3 pessoas curtiram") |
 
 
 ## Tecnologias
@@ -35,7 +36,7 @@ bolhas, as pessoas publicam, conversam, se conectam e anunciam serviços e produ
 ```
 campus-connect/
 ├── backend/             API Spring Boot
-│   └── src/main/resources/db/migration/   migrations do Flyway (V1 a V20)
+│   └── src/main/resources/db/migration/   migrations do Flyway (V1 a V21)
 ├── frontend/            app Angular (veja frontend/README.md)
 ├── deploy/              publicação na VPS (veja deploy/README.md)
 └── docker-compose.yml   PostgreSQL de desenvolvimento
@@ -54,8 +55,8 @@ outro. O teste `ArquiteturaModularTest` falha se alguém furar essas fronteiras.
 | `conversa` | Conversas e mensagens privadas |
 | `marketplace` | Anúncios, categorias, avaliações, favoritos e impulsionamentos |
 | `arquivo` | Imagens e vídeos enviados: validação, gravação em disco e entrega |
-| `aovivo` | Eventos em tempo real por SSE, hoje usados pelas mensagens |
-| `notificacao` | Notificações (só o modelo, por enquanto) |
+| `aovivo` | Eventos em tempo real por SSE, usados pelas mensagens e pelas notificações |
+| `notificacao` | Notificações, criadas a partir dos eventos dos módulos de conexões, publicações e marketplace |
 | `moderacao` | Denúncias (só o modelo, por enquanto) |
 | `comum` | Tipos base e tratamento de erros compartilhados |
 

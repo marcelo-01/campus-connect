@@ -17,15 +17,14 @@ import { AuthService } from '../../auth/auth.service';
 import { BolhaService, recuoPorNivel } from '../../bolhas/bolha.service';
 import { ConexaoService } from '../../conexoes/conexao.service';
 import { MensagemService } from '../../mensagens/mensagem.service';
+import { NotificacaoService } from '../../notificacoes/notificacao.service';
 import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone, NomeIcone } from '../../shared/icone';
-import { ToastService } from '../../shared/toast.service';
 
 interface ItemMenu {
   rotulo: string;
   icone: NomeIcone;
-  /** Rota pronta; sem ela, o item avisa que a tela vem depois. */
-  rota?: string;
+  rota: string;
   /** Só fica ativo na rota exata: "Explorar bolhas" não acende junto com a página de uma bolha. */
   exato?: boolean;
   /** O número no canto do item (a `.badge` do MVP). Some quando é zero. */
@@ -35,10 +34,10 @@ interface ItemMenu {
 }
 
 /**
- * O `Sidebar` do MVP. Os itens de telas que ainda não existem mostram "em breve", como o MVP fazia com
- * Notificações e Salvos. As contagens fictícias do MVP (o "3" em Mensagens, o "Novo") e os atalhos de
- * hashtag saíram: aqui só aparece dado real, como os pedidos de conexão esperando resposta e as conversas não
- * lidas, que se atualizam pela conexão ao vivo.
+ * O `Sidebar` do MVP. No MVP, Notificações e Salvos só mostravam um aviso de rascunho; aqui todos os itens têm
+ * tela. As contagens fictícias do MVP (o "3" em Mensagens, o "Novo") e os atalhos de hashtag saíram: aqui só
+ * aparece dado real, como os pedidos de conexão esperando resposta, as conversas não lidas e as notificações
+ * novas, que se atualizam pela conexão ao vivo.
  *
  * "Minhas bolhas" desenha a árvore como o MVP: cada bolha logo abaixo da que a contém, com recuo. O "+"
  * de nova bolha só aparece para administradores.
@@ -57,9 +56,9 @@ interface ItemMenu {
 export class Sidebar {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
   private readonly conexoes = inject(ConexaoService);
   private readonly mensagens = inject(MensagemService);
+  private readonly notificacoes = inject(NotificacaoService);
   protected readonly bolhas = inject(BolhaService);
 
   /** Pedido para fechar a gaveta. Nas telas largas o {@link Shell} recebe e não muda nada. */
@@ -79,7 +78,14 @@ export class Sidebar {
       contador: this.mensagens.naoLidas,
       descreverContador: (total) => `${total} ${total === 1 ? 'conversa não lida' : 'conversas não lidas'}`,
     },
-    { rotulo: 'Notificações', icone: 'notificacoes' },
+    {
+      rotulo: 'Notificações',
+      icone: 'notificacoes',
+      rota: '/notificacoes',
+      exato: true,
+      contador: this.notificacoes.naoLidas,
+      descreverContador: (total) => `${total} ${total === 1 ? 'notificação nova' : 'notificações novas'}`,
+    },
     { rotulo: 'Salvos', icone: 'salvos', rota: '/salvos', exato: true },
     {
       // Sem `exato`: com ele o item apagaria em '/conexoes?aba=enviados'.
@@ -105,6 +111,7 @@ export class Sidebar {
           this.bolhas.recarregarMinhas();
           this.conexoes.recarregarMinhas();
           this.mensagens.recarregarNaoLidas();
+          this.notificacoes.recarregarNaoLidas();
         });
       }
     });
@@ -143,10 +150,6 @@ export class Sidebar {
 
   protected novaBolha(): void {
     void this.router.navigateByUrl('/bolhas/nova');
-  }
-
-  protected emBreve(recurso: string): void {
-    this.toast.mostrar(`${recurso} — em breve`);
   }
 
   protected async sair(): Promise<void> {

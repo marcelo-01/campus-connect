@@ -1,0 +1,84 @@
+<div class="content">
+  <div #comeco>
+    <h1 class="section-title">Notificações</h1>
+    <div class="section-sub">Curtidas, comentários, republicações, conexões e avaliações dos seus anúncios.</div>
+  </div>
+
+  @if (carregando()) {
+    <div class="feed-aviso">Carregando notificações…</div>
+  } @else if (falhou()) {
+    <div class="feed-aviso">
+      Não foi possível carregar as notificações.
+      <button type="button" class="btn btn-ghost btn-sm" (click)="tentarDeNovo()">Tentar de novo</button>
+    </div>
+  } @else {
+    <div class="feed-lista">
+      <div class="feed-novas" aria-live="polite">
+        @if (temNovas()) {
+          <button type="button" class="feed-novas-botao" [disabled]="recarregando()" (click)="verNovas()">
+            <app-icone nome="subir" />
+            Ver notificações novas
+          </button>
+        }
+      </div>
+
+      @if (!itens().length) {
+        <div class="empty-state">
+          <div class="empty-bubble" style="background: var(--accent)"><app-icone nome="notificacoes" /></div>
+          <h3>Nenhuma notificação ainda</h3>
+          <p>Quando alguém curtir, comentar, republicar ou pedir para se conectar com você, aparece aqui.</p>
+        </div>
+      } @else {
+        <div class="card notificacoes">
+          @for (notificacao of itens(); track notificacao.id) {
+            <a
+              class="notificacao"
+              [class.nova]="destacada(notificacao)"
+              [routerLink]="destino(notificacao).link"
+              [queryParams]="destino(notificacao).query"
+            >
+              <span class="notificacao-icone" [attr.data-cor]="corDoIcone(notificacao)">
+                <app-icone [nome]="icone(notificacao)" />
+              </span>
+              <div class="notificacao-corpo">
+                <div class="notificacao-pessoas" aria-hidden="true">
+                  @for (pessoa of notificacao.pessoas; track pessoa.id) {
+                    <app-avatar [nome]="pessoa.nomeCompleto" [fotoUrl]="pessoa.fotoUrl" tamanho="sm" />
+                  }
+                </div>
+                <!-- Cada pedaço vai num elemento: os espaços entre eles estão no texto, e não no template. -->
+                <p class="notificacao-texto">
+                  @if (destacada(notificacao)) {
+                    <span class="visualmente-oculto">{{ 'Nova: ' }}</span>
+                  }
+                  @for (parte of frase(notificacao); track $index) {
+                    @if (parte.nome) {
+                      <strong>{{ parte.texto }}</strong>
+                    } @else {
+                      <span>{{ parte.texto }}</span>
+                    }
+                  }
+                  <span class="notificacao-tempo">{{ ' · ' }}</span>
+                  <time class="notificacao-tempo" [attr.datetime]="notificacao.em" [title]="dataCompleta(notificacao.em)">{{
+                    tempo(notificacao.em)
+                  }}</time>
+                </p>
+                @if (notificacao.trecho) {
+                  <p class="notificacao-trecho">{{ notificacao.trecho }}</p>
+                }
+              </div>
+            </a>
+          }
+        </div>
+      }
+    </div>
+
+    @if (itens().length && proximo()) {
+      <div class="feed-mais" #fim>
+        <button type="button" class="btn btn-secondary btn-sm" [disabled]="carregandoMais()" (click)="carregarMais()">
+          {{ carregandoMais() ? 'Carregando…' : 'Ver mais' }}
+        </button>
+      </div>
+    }
+  }
+</div>

@@ -16,7 +16,8 @@ interface Atalho {
 
 /**
  * A barra de baixo das telas estreitas, como nos apps de celular: os atalhos que mais se usa, a um toque. O resto
- * (Salvos, Notificações, as bolhas da pessoa, Sair) fica na gaveta do menu, e o Perfil, no avatar da barra do topo.
+ * (Salvos, as bolhas da pessoa, Sair) fica na gaveta do menu, e as Notificações e o Perfil, no sino e no avatar da
+ * barra do topo.
  * Nas telas largas o CSS a esconde, e o menu lateral faz esse papel.
  *
  * Os números são os mesmos do menu lateral, que é quem os recarrega.

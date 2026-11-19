@@ -18,6 +18,7 @@ import { AnuncioPagina } from './marketplace/anuncio-pagina/anuncio-pagina';
 import { MarketplacePagina } from './marketplace/marketplace-pagina/marketplace-pagina';
 import { ConversaAberta } from './mensagens/conversa-aberta/conversa-aberta';
 import { MensagensPagina, SemConversa } from './mensagens/mensagens-pagina/mensagens-pagina';
+import { NotificacoesPagina } from './notificacoes/notificacoes-pagina/notificacoes-pagina';
 import { EditarPerfil } from './perfil/editar-perfil/editar-perfil';
 import { PerfilPagina } from './perfil/perfil-pagina/perfil-pagina';
 import { PublicacaoPagina } from './publicacoes/publicacao-pagina/publicacao-pagina';
@@ -65,6 +66,13 @@ export const routes: Routes = [
         data: { trilha: ['Publicação'] },
       },
       { path: 'salvos', component: SalvosPagina, title: 'Salvos · CampusConnect', data: { trilha: ['Salvos'] } },
+      {
+        // O sino da barra do topo e o item "Notificações" do menu levam para cá.
+        path: 'notificacoes',
+        component: NotificacoesPagina,
+        title: 'Notificações · CampusConnect',
+        data: { trilha: ['Notificações'] },
+      },
       {
         path: 'marketplace',
         component: MarketplacePagina,

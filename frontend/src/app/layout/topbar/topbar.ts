@@ -3,6 +3,7 @@ import {
   Component,
   DOCUMENT,
   ElementRef,
+  computed,
   effect,
   inject,
   input,
@@ -11,6 +12,7 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
+import { NotificacaoService } from '../../notificacoes/notificacao.service';
 import { Avatar } from '../../shared/avatar';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
@@ -18,8 +20,8 @@ import { MenuAparencia } from '../aparencia/menu-aparencia';
 
 /**
  * O `Topbar` do MVP. No MVP a trilha mostrava a hierarquia da bolha ativa; aqui ela faz isso na página de
- * uma bolha e, nas outras telas, mostra a tela atual. O ponto de "notificação nova" saiu porque não há
- * notificações ainda. O botão de aparência (tema e cor de destaque) não existia no MVP.
+ * uma bolha e, nas outras telas, mostra a tela atual. O sino leva às notificações, com o ponto do MVP quando há
+ * alguma nova; o número fica no item do menu. O botão de aparência (tema e cor de destaque) não existia no MVP.
  *
  * A trilha pode quebrar em mais linhas e deixar a barra mais alta. Como o aviso de posts novos do feed
  * fica preso logo abaixo dela, a altura da barra vai para o CSS em `--altura-topbar`.
@@ -60,9 +62,12 @@ import { MenuAparencia } from '../aparencia/menu-aparencia';
         <span class="search-atalho">⌘K</span>
       </div>
       <app-menu-aparencia />
-      <button type="button" class="icon-btn" title="Notificações" (click)="emBreve('Notificações')">
+      <a class="icon-btn" routerLink="/notificacoes" title="Notificações" [attr.aria-label]="rotuloDoSino()">
         <app-icone nome="notificacoes" />
-      </button>
+        @if (notificacoes.naoLidas()) {
+          <span class="dot"></span>
+        }
+      </a>
       <a class="topbar-avatar" routerLink="/perfil" title="Meu perfil">
         <app-avatar [nome]="auth.usuario()?.nomeCompleto" [fotoUrl]="auth.usuario()?.fotoUrl" tamanho="md" />
       </a>
@@ -71,12 +76,18 @@ import { MenuAparencia } from '../aparencia/menu-aparencia';
 })
 export class Topbar {
   protected readonly auth = inject(AuthService);
+  protected readonly notificacoes = inject(NotificacaoService);
   private readonly toast = inject(ToastService);
 
   readonly trilha = input<string[]>(['Início']);
   /** Se a gaveta do menu está aberta, para o `aria-expanded` do botão de menu. */
   readonly menuAberto = input(false);
   readonly abrirMenu = output();
+
+  protected readonly rotuloDoSino = computed(() => {
+    const total = this.notificacoes.naoLidas();
+    return total ? `Notificações, ${total} ${total === 1 ? 'nova' : 'novas'}` : 'Notificações';
+  });
 
   private readonly barra = viewChild<ElementRef<HTMLElement>>('barra');
   private readonly botaoMenu = viewChild.required<ElementRef<HTMLButtonElement>>('botaoMenu');

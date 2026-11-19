@@ -2167,6 +2167,55 @@ select.chip {
 .aparencia-dica { margin: 0; font-size: 12px; line-height: 1.4; color: var(--text-subtle); }
 
 /* ========================================================================
+   Notificações — adicionado no projeto Angular
+   O MVP não tinha esta tela: o sino e o item do menu só mostravam um aviso.
+   Cada notificação é uma linha do cartão, como no X: à esquerda o ícone do
+   que aconteceu, e ao lado as fotos de quem fez, o texto e o trecho do que
+   foi curtido ou comentado. As novas ficam com o fundo da cor de destaque
+   enquanto a pessoa está na tela.
+   ======================================================================== */
+.card.notificacoes { padding: 0; overflow: hidden; }
+.notificacao {
+  display: flex; gap: 14px;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--border);
+  color: inherit;
+}
+.notificacao:last-child { border-bottom: none; }
+.notificacao:hover { background: var(--surface-hover); }
+.notificacao:focus-visible { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+/* O fundo suave some no tema preto, onde ele é quase preto: a barra à esquerda marca a nova nos dois temas. */
+.notificacao.nova { background: var(--accent-soft); box-shadow: inset 3px 0 0 var(--accent); }
+.notificacao.nova:hover { background: color-mix(in oklch, var(--accent-soft) 85%, var(--accent)); }
+.notificacao.nova:focus-visible { box-shadow: inset 3px 0 0 var(--accent), inset 0 0 0 2px var(--accent); }
+.notificacao-icone {
+  flex-shrink: 0;
+  width: 28px;
+  display: flex; justify-content: center;
+  padding-top: 2px;
+  color: var(--accent);
+}
+.notificacao-icone svg { width: 24px; height: 24px; }
+.notificacao-icone[data-cor="curtida"] { color: var(--tangerina); }
+.notificacao-icone[data-cor="avaliacao"] { color: oklch(0.78 0.18 80); }
+.notificacao-corpo { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.notificacao-pessoas { display: flex; gap: 4px; }
+.notificacao-texto { margin: 0; font-size: 14.5px; line-height: 1.45; overflow-wrap: anywhere; }
+.notificacao-texto strong { font-weight: 700; }
+.notificacao-tempo { color: var(--text-subtle); }
+.notificacao-trecho {
+  margin: 0;
+  font-size: 14px; line-height: 1.45;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; line-clamp: 3;
+  overflow: hidden;
+}
+@media (max-width: 560px) {
+  .notificacao { gap: 12px; padding: 12px 14px; }
+}
+
+/* ========================================================================
    Telas estreitas (RNF01) — adicionado no projeto Angular
    O MVP era só para desktop: a moldura tinha largura mínima de 1100px, e no
    celular a página inteira encolhia ou rolava para o lado. Abaixo de 1024px
