@@ -41,15 +41,16 @@ export function notaPorExtenso(media: number): string {
 }
 
 /**
- * Capas de quem anuncia sem foto: o `.ph` do MVP, que mostrava o começo do título sobre um gradiente. São
- * tons claros da paleta (lavanda, tangerina, creme), para o texto do `.ph` continuar legível.
+ * Capas de quem anuncia sem foto: o `.ph` do MVP, que mostrava o começo do título sobre um gradiente. Os
+ * gradientes ficam no `styles.css` (`--capa-1` a `--capa-5`): tons claros da paleta (lavanda, tangerina, creme)
+ * no tema claro e os mesmos matizes, fundos, no escuro, para a capa não saltar do preto.
  */
 export const GRADIENTES_DA_CAPA = [
-  'linear-gradient(135deg, oklch(0.93 0.04 290), oklch(0.97 0.015 85))',
-  'linear-gradient(135deg, oklch(0.93 0.05 58), oklch(0.97 0.02 85))',
-  'linear-gradient(135deg, oklch(0.91 0.05 286), oklch(0.93 0.05 58))',
-  'linear-gradient(135deg, oklch(0.95 0.015 282), oklch(0.89 0.05 290))',
-  'linear-gradient(135deg, oklch(0.96 0.03 70), oklch(0.91 0.05 40))',
+  'var(--capa-1)',
+  'var(--capa-2)',
+  'var(--capa-3)',
+  'var(--capa-4)',
+  'var(--capa-5)',
 ];
 
 /** Sempre o mesmo gradiente para o mesmo anúncio (pelo id) ou, na prévia, para o mesmo título. */

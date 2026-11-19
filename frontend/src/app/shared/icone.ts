@@ -33,10 +33,7 @@ export type NomeIcone =
   | 'estrela'
   | 'enviar'
   | 'bloquear'
-  | 'aparencia'
-  | 'sol'
-  | 'lua'
-  | 'automatico';
+  | 'aparencia';
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
@@ -45,9 +42,9 @@ export type NomeIcone =
  * `Share`, `More`); `estrela` é o `Icon.Star` da nota no marketplace; `enviar` é o `Icon.Send` do campo de
  * mensagem. `bloquear` (um círculo cortado) não existia lá e segue o mesmo estilo. `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
  * pessoa atrás), `salvo` (o marcador preenchido), `video`, `fechar` e `subir` (a seta do aviso de posts
- * novos) não existiam lá e seguem o mesmo estilo, como `aparencia` (a paleta do menu de tema), `sol`, `lua` e
- * `automatico` (o círculo meio cheio do tema que segue o aparelho). O elemento do componente não cria caixa
- * (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua valendo.
+ * novos) não existiam lá e seguem o mesmo estilo, como `aparencia` (a paleta do menu de tema). O elemento
+ * do componente não cria caixa (`display: contents`), então o CSS do MVP que dimensiona o `<svg>` continua
+ * valendo.
  */
 @Component({
   selector: 'app-icone',
@@ -153,15 +150,6 @@ export type NomeIcone =
       }
       @case ('aparencia') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 0 0 0 18c1 0 1.7-.8 1.7-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7h2.1A4.5 4.5 0 0 0 21 10.7C21 6.4 17 3 12 3z"/><circle cx="7.5" cy="11.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="10" cy="7.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="14.5" cy="7.5" r="1.3" fill="currentColor" stroke="none"/><circle cx="17" cy="11.5" r="1.3" fill="currentColor" stroke="none"/></svg>
-      }
-      @case ('sol') {
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6L6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></svg>
-      }
-      @case ('lua') {
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z"/></svg>
-      }
-      @case ('automatico') {
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor"/></svg>
       }
     }
   `,

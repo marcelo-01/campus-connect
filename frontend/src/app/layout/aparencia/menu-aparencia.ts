@@ -7,6 +7,7 @@ import { AparenciaService, CORES, TEMAS } from './aparencia.service';
  * "Exibição" do X. A escolha vale na hora, sem botão de salvar.
  *
  * As opções são rádios de verdade, escondidos atrás do desenho, para as setas do teclado trocarem a opção.
+ * Cada tema mostra uma prévia do próprio fundo, com as cores fixas no CSS: ela não muda com o tema da tela.
  * Cada amostra de cor recebe o próprio `data-accent`, então o tom vem do mesmo CSS que pinta o resto da tela.
  */
 @Component({
@@ -38,7 +39,7 @@ import { AparenciaService, CORES, TEMAS } from './aparencia.service';
             <legend>Tema</legend>
             <div class="aparencia-temas">
               @for (tema of temas; track tema.valor) {
-                <label class="aparencia-tema">
+                <label class="aparencia-tema" [attr.data-tema]="tema.valor">
                   <input
                     type="radio"
                     name="aparencia-tema"
@@ -47,7 +48,13 @@ import { AparenciaService, CORES, TEMAS } from './aparencia.service';
                     [checked]="aparencia.tema() === tema.valor"
                     (change)="aparencia.escolherTema(tema.valor)"
                   />
-                  <app-icone [nome]="tema.icone" />
+                  <span class="aparencia-previa" aria-hidden="true">
+                    @if (tema.valor === 'automatico') {
+                      <span class="metade-clara">Aa</span><span class="metade-escura">Aa</span>
+                    } @else {
+                      <span>Aa</span>
+                    }
+                  </span>
                   {{ tema.rotulo }}
                 </label>
               }

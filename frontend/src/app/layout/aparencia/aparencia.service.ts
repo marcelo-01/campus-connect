@@ -1,14 +1,13 @@
 import { DOCUMENT, DestroyRef, Injectable, InjectionToken, computed, effect, inject, signal } from '@angular/core';
-import { NomeIcone } from '../../shared/icone';
 
 export type Tema = 'claro' | 'escuro' | 'automatico';
 
 export type CorDestaque = 'lavanda' | 'azul' | 'turquesa' | 'verde' | 'rosa' | 'tangerina';
 
-export const TEMAS: readonly { valor: Tema; rotulo: string; icone: NomeIcone }[] = [
-  { valor: 'claro', rotulo: 'Claro', icone: 'sol' },
-  { valor: 'escuro', rotulo: 'Escuro', icone: 'lua' },
-  { valor: 'automatico', rotulo: 'Automático', icone: 'automatico' },
+export const TEMAS: readonly { valor: Tema; rotulo: string }[] = [
+  { valor: 'claro', rotulo: 'Claro' },
+  { valor: 'escuro', rotulo: 'Escuro' },
+  { valor: 'automatico', rotulo: 'Automático' },
 ];
 
 /** A ordem do seletor. O tom de cada uma fica no `styles.css`, na seção "Aparência". */

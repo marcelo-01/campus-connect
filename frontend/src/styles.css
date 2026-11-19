@@ -2016,8 +2016,52 @@ select.chip {
 :root { color-scheme: light; }
 [data-theme="dark"] { color-scheme: dark; }
 
+/* Tema escuro preto, como o "Apagar luzes" do X. Substitui o escuro Tinta + Indigo do MVP (o bloco
+   [data-theme="dark"] do começo do arquivo), que puxava para o azul-roxo: aqui os cinzas são
+   neutros e só a cor de destaque tem matiz. Os cartões têm o mesmo preto do fundo e se separam
+   pela borda, como no X. Contraste sobre o preto: texto 17:1, secundário 6,5:1, discreto 4,6:1. */
+[data-theme="dark"] {
+  --bg: #000000;
+  --surface: #000000;
+  --surface-2: #16181C;
+  --surface-hover: #1D1F23;
+  --border: #2F3336;
+  --border-strong: #474B4F;
+  --text: #E7E9EA;
+  --text-muted: #8B9096;
+  --text-subtle: #71767B;
+  --tangerina-ink: #F4A862;
+
+  --danger: #F4212E;
+  --danger-soft: #2A0A0D;
+
+  /* Sombra escura não aparece no preto. Os cartões ficam só com a borda, e o que flutua
+     (menus, aviso de posts novos, toast) ganha o brilho claro dos menus do X. */
+  --shadow-sm: none;
+  --shadow: none;
+  --shadow-lg: 0 0 15px rgb(255 255 255 / 0.16), 0 0 3px 1px rgb(255 255 255 / 0.12);
+}
+
+/* Capas dos anúncios sem foto (preco.ts escolhe uma pelo id). No escuro, os mesmos matizes, fundos. */
+:root {
+  --capa-1: linear-gradient(135deg, oklch(0.93 0.04 290), oklch(0.97 0.015 85));
+  --capa-2: linear-gradient(135deg, oklch(0.93 0.05 58), oklch(0.97 0.02 85));
+  --capa-3: linear-gradient(135deg, oklch(0.91 0.05 286), oklch(0.93 0.05 58));
+  --capa-4: linear-gradient(135deg, oklch(0.95 0.015 282), oklch(0.89 0.05 290));
+  --capa-5: linear-gradient(135deg, oklch(0.96 0.03 70), oklch(0.91 0.05 40));
+}
+[data-theme="dark"] {
+  --capa-1: linear-gradient(135deg, oklch(0.30 0.08 290), oklch(0.19 0.02 85));
+  --capa-2: linear-gradient(135deg, oklch(0.31 0.07 58), oklch(0.19 0.02 85));
+  --capa-3: linear-gradient(135deg, oklch(0.29 0.08 286), oklch(0.27 0.06 58));
+  --capa-4: linear-gradient(135deg, oklch(0.20 0.02 282), oklch(0.31 0.09 290));
+  --capa-5: linear-gradient(135deg, oklch(0.21 0.03 70), oklch(0.31 0.08 40));
+}
+/* O rótulo da capa na página do anúncio: no escuro, vidro escuro em vez de branco. */
+[data-theme="dark"] .detail-hero-label { color: var(--text); background: oklch(0 0 0 / 0.45); }
+
 /* Cores de destaque. Todas têm a luminância da Lavanda da marca, então dão o mesmo contraste
-   que ela nos dois temas: texto sobre o creme (4,4:1), sobre o indigo escuro (3,4:1) e o texto
+   que ela nos dois temas: texto sobre o creme (4,4:1), sobre o preto (4,5:1) e o texto
    branco do botão (4,7:1). O amarelo ficou de fora: nessa luminância ele vira mostarda.
    O seletor não se prende ao <html> porque as amostras do menu usam o mesmo data-accent. */
 [data-accent="lavanda"] { --accent: #7B5BE6; }
@@ -2028,14 +2072,17 @@ select.chip {
 /* O par do gradiente (avatar sem foto) vira a Lavanda, senão ficaria laranja com laranja. */
 [data-accent="tangerina"] { --accent: #BF5400; --accent-2: #7B5BE6; }
 
-/* A Lavanda mantém os tons à mão da marca (:root e o tema escuro do MVP); as outras derivam os seus. */
+/* No claro, a Lavanda mantém os tons à mão da marca (:root); as outras derivam os seus. */
 [data-accent]:not([data-accent="lavanda"]) {
   --accent-hover: oklch(from var(--accent) calc(l - 0.05) c h);
   --accent-soft: color-mix(in oklab, var(--accent) 11%, var(--surface));
   --accent-ring: oklch(from var(--accent) l c h / 0.30);
 }
-[data-theme="dark"][data-accent]:not([data-accent="lavanda"]) {
-  --accent-soft: color-mix(in oklab, var(--accent) 20%, var(--surface));
+/* No preto, todas derivam o fundo suave, a Lavanda também: o tom à mão dela era para o indigo.
+   O seletor sem data-accent cobre o instante antes de o Angular pôr a cor. */
+[data-theme="dark"],
+[data-theme="dark"][data-accent] {
+  --accent-soft: color-mix(in oklab, var(--accent) 18%, var(--bg));
 }
 
 /* No escuro, a parte de baixo do símbolo, quase preta, some no fundo. Em vez de uma versão negativa
@@ -2069,7 +2116,7 @@ select.chip {
 .aparencia-tema {
   position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
-  padding: 10px 4px 9px;
+  padding: 6px 6px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   font-size: 12.5px; font-weight: 600;
@@ -2077,7 +2124,23 @@ select.chip {
   cursor: pointer;
   transition: background 0.12s, border-color 0.12s, color 0.12s;
 }
-.aparencia-tema svg { width: 20px; height: 20px; }
+.aparencia-previa {
+  width: 100%; height: 40px;
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  overflow: hidden;
+  font-family: var(--font-display); font-size: 14px; font-weight: 700;
+}
+.aparencia-previa > span { flex: 1; display: grid; place-items: center; }
+.aparencia-previa .metade-clara,
+.aparencia-previa .metade-escura { font-size: 12px; }
+/* As cores de cada tema, fixas: a prévia não acompanha o tema que está na tela. */
+.aparencia-tema[data-tema="claro"] .aparencia-previa,
+.aparencia-previa .metade-clara { background: #FAF7F2; color: #14132A; }
+.aparencia-tema[data-tema="escuro"] .aparencia-previa,
+.aparencia-previa .metade-escura { background: #000000; color: #E7E9EA; }
+.aparencia-tema:has(input:checked) .aparencia-previa { border-color: var(--accent); }
 .aparencia-tema:hover { background: var(--surface-hover); color: var(--text); }
 .aparencia-tema:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
 .aparencia-tema:has(input:focus-visible) { box-shadow: 0 0 0 3px var(--accent-ring); }
