@@ -1,12 +1,29 @@
 @if (perfil(); as p) {
   <div class="content">
-    <div
-      class="profile-cover"
-      [class.com-imagem]="p.capaUrl"
-      [style.background-image]="p.capaUrl ? 'url(' + p.capaUrl + ')' : null"
-    ></div>
+    @if (p.capaUrl) {
+      <button
+        type="button"
+        class="profile-cover com-imagem"
+        [style.background-image]="'url(' + p.capaUrl + ')'"
+        [attr.aria-label]="'Ampliar a capa do perfil de ' + p.nomeCompleto"
+        (click)="verCapa(p)"
+      ></button>
+    } @else {
+      <div class="profile-cover"></div>
+    }
     <div class="profile-head">
-      <app-avatar [nome]="p.nomeCompleto" [fotoUrl]="p.fotoUrl" tamanho="xl" />
+      @if (p.fotoUrl) {
+        <button
+          type="button"
+          class="profile-foto"
+          [attr.aria-label]="'Ampliar a foto de perfil de ' + p.nomeCompleto"
+          (click)="verFoto(p)"
+        >
+          <app-avatar [nome]="p.nomeCompleto" [fotoUrl]="p.fotoUrl" tamanho="xl" />
+        </button>
+      } @else {
+        <app-avatar [nome]="p.nomeCompleto" [fotoUrl]="p.fotoUrl" tamanho="xl" />
+      }
       <div class="profile-id">
         <h1>{{ p.nomeCompleto }}</h1>
         <div class="handle">&#64;{{ p.username }} · entrou em {{ membroDesde() }}</div>

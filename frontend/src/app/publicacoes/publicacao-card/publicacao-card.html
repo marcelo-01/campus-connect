@@ -81,14 +81,16 @@
   }
 
   @if (imagens().length) {
-    <div
-      class="post-media post-galeria"
-      [class.clicavel]="navegavel()"
-      [attr.data-quantidade]="imagens().length"
-      (click)="abrir()"
-    >
-      @for (imagem of imagens(); track imagem.url) {
-        <img [src]="imagem.url" alt="" [attr.loading]="prioritaria() ? 'eager' : 'lazy'" />
+    <div class="post-media post-galeria" [attr.data-quantidade]="imagens().length">
+      @for (imagem of imagens(); track imagem.url; let i = $index) {
+        <button
+          type="button"
+          class="post-galeria-foto"
+          [attr.aria-label]="rotuloDaImagem(i)"
+          (click)="verImagem(i)"
+        >
+          <img [src]="imagem.url" alt="" [attr.loading]="prioritaria() ? 'eager' : 'lazy'" />
+        </button>
       }
     </div>
   }

@@ -13,7 +13,9 @@
         @if (capa(); as c) {
           <div class="detail-hero" [style.background]="c.url ? 'var(--surface-2)' : c.fundo">
             @if (c.url) {
-              <img class="detail-hero-foto" [src]="c.url" [alt]="a.titulo" />
+              <button type="button" class="detail-hero-ampliar" [attr.aria-label]="rotuloDaFoto(a)" (click)="verFotos(a)">
+                <img class="detail-hero-foto" [src]="c.url" [alt]="a.titulo" />
+              </button>
             } @else {
               <span class="detail-hero-label">{{ c.texto }}</span>
             }

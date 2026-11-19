@@ -14,6 +14,11 @@ import { Icone } from '../../shared/icone';
 import { dataCompleta, tempoRelativo } from '../../shared/tempo-relativo';
 import { ToastService } from '../../shared/toast.service';
 import {
+  VisualizadorService,
+  descreverFoto,
+  rotuloParaAmpliar,
+} from '../../shared/visualizador/visualizador.service';
+import {
   AnuncioDetalhe,
   AnuncioService,
   Avaliacao,
@@ -31,6 +36,8 @@ import { gradienteDaCapa, notaPorExtenso, precoPorExtenso, textoDaCapa } from '.
  * linha de detalhes mostra o tipo, a categoria e a data. O "Conversar com" abre a conversa com quem anunciou,
  * com um texto sobre o anúncio já no campo (não é enviado sozinho). Para quem anunciou, o card de compra vira o
  * de gerenciar: editar, pausar e excluir.
+ *
+ * As miniaturas trocam a foto grande, e clicar na foto grande abre todas em tela cheia, a partir dela.
  */
 @Component({
   selector: 'app-anuncio-pagina',
@@ -45,6 +52,7 @@ export class AnuncioPagina {
   private readonly location = inject(Location);
   private readonly toast = inject(ToastService);
   private readonly trilhas = inject(TrilhaService);
+  private readonly visualizador = inject(VisualizadorService);
 
   protected readonly anuncio = signal<AnuncioDetalhe | null>(null);
   protected readonly naoEncontrado = signal(false);
@@ -141,6 +149,19 @@ export class AnuncioPagina {
           this.mostrar(resposta.anuncio, resposta.avaliacoes);
         }
       });
+  }
+
+  protected rotuloDaFoto(anuncio: AnuncioDetalhe): string {
+    return rotuloParaAmpliar(this.fotoAtual(), anuncio.imagens.length, `do anúncio ${anuncio.titulo}`);
+  }
+
+  /** Todas as fotos do anúncio em tela cheia, a partir da que está na tela. */
+  protected verFotos(anuncio: AnuncioDetalhe): void {
+    const total = anuncio.imagens.length;
+    this.visualizador.abrir(
+      anuncio.imagens.map((url, i) => ({ url, descricao: descreverFoto(i, total, `do anúncio ${anuncio.titulo}`) })),
+      this.fotoAtual(),
+    );
   }
 
   protected voltar(): void {

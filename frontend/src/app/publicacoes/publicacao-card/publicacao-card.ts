@@ -17,6 +17,11 @@ import { Icone } from '../../shared/icone';
 import { dataCompleta, tempoRelativo } from '../../shared/tempo-relativo';
 import { ToastService } from '../../shared/toast.service';
 import {
+  VisualizadorService,
+  descreverFoto,
+  rotuloParaAmpliar,
+} from '../../shared/visualizador/visualizador.service';
+import {
   PessoaPublica,
   Publicacao,
   PublicacaoService,
@@ -29,7 +34,7 @@ import { TextoPublicacao } from '../texto-publicacao';
  * O `Post` do MVP com dados reais. Além do que o MVP tinha (cabeçalho, texto, imagem, curtir, comentar,
  * republicar, compartilhar e salvar), mostra até 4 imagens, vídeo, o cartão do link e o menu ⋯ com editar e
  * excluir, que no MVP não fazia nada. Editar e confirmar a exclusão acontecem no próprio card: o MVP não tem
- * modal.
+ * modal. Clicar numa imagem abre as imagens do post em tela cheia, no visualizador.
  *
  * As ações mudam o card na hora e desfazem se a API recusar. Cada mudança sai em `mudou`, para a lista que
  * contém o card ficar em dia.
@@ -51,11 +56,12 @@ export class PublicacaoCard {
   private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
   private readonly elemento = inject(ElementRef<HTMLElement>);
+  private readonly visualizador = inject(VisualizadorService);
 
   readonly publicacao = input.required<Publicacao>();
   /** Quem republicou, no feed de um perfil. */
   readonly republicadaPor = input<PessoaPublica | null>(null);
-  /** No feed, clicar no texto, na mídia ou nos comentários abre a publicação. Na página dela, não. */
+  /** No feed, clicar no texto ou nos comentários abre a publicação. Na página dela, não. */
   readonly navegavel = input(true);
   /** O primeiro card da tela: as imagens dele carregam já, sem esperar a rolagem (`loading="eager"`). */
   readonly prioritaria = input(false);
@@ -89,6 +95,23 @@ export class PublicacaoCard {
 
   protected readonly tamanhoTexto = TAMANHO_TEXTO;
   protected readonly dominio = dominio;
+
+  protected rotuloDaImagem(indice: number): string {
+    return rotuloParaAmpliar(indice, this.imagens().length, this.deQuem());
+  }
+
+  /** As imagens do post em tela cheia, a partir da que foi clicada. */
+  protected verImagem(indice: number): void {
+    const total = this.imagens().length;
+    this.visualizador.abrir(
+      this.imagens().map((imagem, i) => ({ url: imagem.url, descricao: descreverFoto(i, total, this.deQuem()) })),
+      indice,
+    );
+  }
+
+  private deQuem(): string {
+    return `da publicação de ${this.estado().autor.nomeCompleto}`;
+  }
 
   protected abrir(): void {
     if (this.navegavel()) {

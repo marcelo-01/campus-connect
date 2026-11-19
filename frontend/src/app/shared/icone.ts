@@ -14,6 +14,7 @@ export type NomeIcone =
   | 'imagem'
   | 'link'
   | 'voltar'
+  | 'avancar'
   | 'sair'
   | 'globo'
   | 'local'
@@ -38,7 +39,7 @@ export type NomeIcone =
 
 /**
  * Ícones do `components.jsx` do MVP (objeto `Icon`), com os mesmos traços. `voltar` vem do `BackBar` do
- * MVP; `globo` é o `Icon.Globe` do chip "Toda a rede"; `coracao`, `coracao-cheio`, `comentario`,
+ * MVP, e `avancar` é o mesmo traço virado, para o visualizador de fotos; `globo` é o `Icon.Globe` do chip "Toda a rede"; `coracao`, `coracao-cheio`, `comentario`,
  * `republicar`, `compartilhar` e `opcoes` são os do card do post (`Heart`, `HeartFill`, `Comment`, `Repost`,
  * `Share`, `More`); `estrela` é o `Icon.Star` da nota no marketplace; `enviar` é o `Icon.Send` do campo de
  * mensagem. `bloquear` (um círculo cortado) não existia lá e segue o mesmo estilo. `sair`, `local`, `lixeira`, `check`, `conexoes` (o `Icon.User` do MVP com uma segunda
@@ -97,6 +98,9 @@ export type NomeIcone =
       }
       @case ('voltar') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      }
+      @case ('avancar') {
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
       }
       @case ('sair') {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>

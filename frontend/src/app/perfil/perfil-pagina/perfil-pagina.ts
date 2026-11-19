@@ -17,6 +17,7 @@ import { Avatar } from '../../shared/avatar';
 import { BolhaMarca } from '../../shared/bolha-marca';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
+import { VisualizadorService } from '../../shared/visualizador/visualizador.service';
 import { Perfil, PerfilService, linkSemEsquema, mesEAno } from '../perfil.service';
 
 type Aba = 'posts' | 'market' | 'saved' | 'about';
@@ -27,6 +28,8 @@ type Aba = 'posts' | 'market' | 'saved' | 'about';
  * número de conexões abre a lista. A aba Posts mostra os posts da pessoa e os que ela republicou; a de
  * Salvos, só no próprio perfil, os posts salvos. A aba Marketplace mostra os anúncios da pessoa; no próprio
  * perfil, também os pausados.
+ *
+ * A foto e a capa enviadas abrem em tela cheia no clique. As iniciais e o gradiente, de quem não enviou, não.
  *
  * Sem `:username` na rota, mostra o perfil de quem está logado.
  */
@@ -43,6 +46,7 @@ export class PerfilPagina {
   private readonly bolhasService = inject(BolhaService);
   private readonly conexoes = inject(ConexaoService);
   private readonly toast = inject(ToastService);
+  private readonly visualizador = inject(VisualizadorService);
 
   protected readonly perfil = signal<Perfil | null>(null);
   protected readonly bolhas = signal<BolhaResumo[]>([]);
@@ -114,6 +118,20 @@ export class PerfilPagina {
   }
 
   /** Depois de conectar ou desfazer, o número do perfil muda. Se a tela já mostra outro perfil, nada muda. */
+  protected verFoto(perfil: Perfil): void {
+    if (perfil.fotoUrl) {
+      this.visualizador.abrir([{ url: perfil.fotoUrl, descricao: `Foto de perfil de ${perfil.nomeCompleto}` }], 0, {
+        redonda: true,
+      });
+    }
+  }
+
+  protected verCapa(perfil: Perfil): void {
+    if (perfil.capaUrl) {
+      this.visualizador.abrir([{ url: perfil.capaUrl, descricao: `Capa do perfil de ${perfil.nomeCompleto}` }]);
+    }
+  }
+
   protected recarregarTotal(perfil: Perfil): void {
     this.conexoes.total(perfil.id).subscribe({
       next: (total) => {
