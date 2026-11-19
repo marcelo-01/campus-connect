@@ -1,4 +1,4 @@
-<div class="content content-narrow">
+<div class="content">
   @if (minhas(); as lista) {
     @if (lista.length) {
       <app-composer [bolhaPreferida]="filtro()?.id ?? null" (publicada)="aoPublicar($event)" />

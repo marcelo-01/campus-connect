@@ -12,7 +12,7 @@ import { EscopoFeed } from '../publicacao.service';
   imports: [Feed],
   styles: ':host { display: contents; }',
   template: `
-    <div class="content content-narrow">
+    <div class="content">
       <div>
         <h1 class="section-title">Salvos</h1>
         <div class="section-sub">Só você vê o que salvou.</div>

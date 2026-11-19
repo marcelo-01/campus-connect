@@ -1613,6 +1613,8 @@ a.bubble-tag:hover { background: oklch(from var(--accent) l c h / 0.16); }
 .post-galeria[data-quantidade="3"] { aspect-ratio: 16/9; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 .post-galeria[data-quantidade="3"] img:first-child { grid-row: span 2; }
 .post-galeria[data-quantidade="4"] { aspect-ratio: 4/3; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+/* Com o post na largura toda, o mosaico pela proporção passaria de 600 px de altura. */
+.post-galeria:not([data-quantidade="1"]) { max-height: 560px; }
 
 .post-video video { width: 100%; max-height: 560px; display: block; background: #000; }
 
@@ -1800,8 +1802,9 @@ select.chip {
 }
 /* No clique no aviso, o feed rola até os chips, que param logo abaixo da barra do topo. */
 .feed-comeco { scroll-margin-top: calc(var(--altura-topbar, 65px) + 15px); }
-/* A aba Posts da bolha e do perfil, na largura de leitura do feed. */
-.feed-coluna { max-width: 680px; width: 100%; display: flex; flex-direction: column; gap: 18px; }
+/* A aba Posts da bolha e do perfil. Os posts ocupam a largura toda, inclusive o espaço do painel da
+   direita do MVP (assuntos em alta), que fica de fora enquanto a rede é pequena. */
+.feed-coluna { width: 100%; display: flex; flex-direction: column; gap: 18px; }
 
 /* Comentários: respostas recuadas, comentário removido, convite para entrar na bolha. */
 .comment-avatar { display: grid; border-radius: 999px; flex-shrink: 0; }
