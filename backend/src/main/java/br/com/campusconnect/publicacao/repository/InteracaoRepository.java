@@ -14,7 +14,8 @@ import org.springframework.stereotype.Repository;
 
 /**
  * Curtidas, publicações salvas e republicações, e as contagens que o feed mostra. Ligar e desligar são
- * idempotentes: dois cliques seguidos não dão erro nem contam duas vezes.
+ * idempotentes: dois cliques seguidos não dão erro nem contam duas vezes. Curtidas e republicações devolvem se
+ * mudou algo, para o aviso a quem escreveu sair uma vez só.
  *
  * <p>As contagens e os estados de quem vê são lidos em lote, para a página inteira do feed de uma vez.
  */
@@ -26,27 +27,27 @@ public class InteracaoRepository {
 
     // ------------------------------------------------------------ curtidas
 
-    public void curtirPublicacao(UUID usuarioId, UUID publicacaoId) {
-        jdbc.update("""
+    public boolean curtirPublicacao(UUID usuarioId, UUID publicacaoId) {
+        return mudou("""
                 insert into reacao (usuario_id, publicacao_id, tipo) values (:usuario, :alvo, 'CURTIDA')
                 on conflict do nothing
                 """, parametros(usuarioId, publicacaoId));
     }
 
-    public void descurtirPublicacao(UUID usuarioId, UUID publicacaoId) {
-        jdbc.update("delete from reacao where usuario_id = :usuario and publicacao_id = :alvo",
+    public boolean descurtirPublicacao(UUID usuarioId, UUID publicacaoId) {
+        return mudou("delete from reacao where usuario_id = :usuario and publicacao_id = :alvo",
                 parametros(usuarioId, publicacaoId));
     }
 
-    public void curtirComentario(UUID usuarioId, UUID comentarioId) {
-        jdbc.update("""
+    public boolean curtirComentario(UUID usuarioId, UUID comentarioId) {
+        return mudou("""
                 insert into reacao (usuario_id, comentario_id, tipo) values (:usuario, :alvo, 'CURTIDA')
                 on conflict do nothing
                 """, parametros(usuarioId, comentarioId));
     }
 
-    public void descurtirComentario(UUID usuarioId, UUID comentarioId) {
-        jdbc.update("delete from reacao where usuario_id = :usuario and comentario_id = :alvo",
+    public boolean descurtirComentario(UUID usuarioId, UUID comentarioId) {
+        return mudou("delete from reacao where usuario_id = :usuario and comentario_id = :alvo",
                 parametros(usuarioId, comentarioId));
     }
 
@@ -64,15 +65,15 @@ public class InteracaoRepository {
                 parametros(usuarioId, publicacaoId));
     }
 
-    public void republicar(UUID usuarioId, UUID publicacaoId) {
-        jdbc.update("""
+    public boolean republicar(UUID usuarioId, UUID publicacaoId) {
+        return mudou("""
                 insert into republicacao (usuario_id, publicacao_id) values (:usuario, :alvo)
                 on conflict do nothing
                 """, parametros(usuarioId, publicacaoId));
     }
 
-    public void desfazerRepublicacao(UUID usuarioId, UUID publicacaoId) {
-        jdbc.update("delete from republicacao where usuario_id = :usuario and publicacao_id = :alvo",
+    public boolean desfazerRepublicacao(UUID usuarioId, UUID publicacaoId) {
+        return mudou("delete from republicacao where usuario_id = :usuario and publicacao_id = :alvo",
                 parametros(usuarioId, publicacaoId));
     }
 
@@ -127,6 +128,12 @@ public class InteracaoRepository {
 
     // ------------------------------------------------------------ exclusão de uma bolha
 
+    /** Todas as publicações da bolha, até as excluídas. */
+    public List<UUID> publicacoesDaBolha(UUID bolhaId) {
+        return jdbc.queryForList("select id from publicacao where bolha_id = :bolha",
+                new MapSqlParameterSource("bolha", bolhaId), UUID.class);
+    }
+
     /** Os arquivos (imagens, vídeos e imagens de prévia) de todas as publicações da bolha, até das excluídas. */
     public List<String> arquivosDasPublicacoesDaBolha(UUID bolhaId) {
         return jdbc.queryForList("""
@@ -155,6 +162,10 @@ public class InteracaoRepository {
     }
 
     // ------------------------------------------------------------ apoio
+
+    private boolean mudou(String sql, MapSqlParameterSource parametros) {
+        return jdbc.update(sql, parametros) > 0;
+    }
 
     private static MapSqlParameterSource parametros(UUID usuarioId, UUID alvoId) {
         return new MapSqlParameterSource("usuario", usuarioId).addValue("alvo", alvoId);

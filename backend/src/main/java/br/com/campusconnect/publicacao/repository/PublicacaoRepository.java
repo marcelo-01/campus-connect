@@ -14,6 +14,8 @@ public interface PublicacaoRepository extends JpaRepository<Publicacao, UUID> {
 
     Optional<Publicacao> findByIdAndStatus(UUID id, StatusPublicacao status);
 
+    List<Publicacao> findByIdInAndStatus(Collection<UUID> ids, StatusPublicacao status);
+
     /** As publicações de uma página do feed, já com as mídias, numa consulta só. */
     @Query("select distinct p from Publicacao p left join fetch p.midias where p.id in :ids")
     List<Publicacao> carregarComMidias(@Param("ids") Collection<UUID> ids);

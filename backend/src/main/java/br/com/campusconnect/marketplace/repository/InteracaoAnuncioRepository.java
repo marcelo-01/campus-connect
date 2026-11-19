@@ -57,14 +57,18 @@ public class InteracaoAnuncioRepository {
     /**
      * Grava a avaliação da pessoa, ou troca a nota e o comentário se ela já tinha avaliado. Num comando só,
      * para dois cliques seguidos não baterem na restrição de uma avaliação por pessoa.
+     *
+     * @return se a avaliação é nova. No PostgreSQL, a linha recém-inserida é a que tem {@code xmax} zero.
      */
-    public void avaliar(UUID autorId, UUID anuncioId, short nota, @Nullable String comentario) {
-        jdbc.update("""
+    public boolean avaliar(UUID autorId, UUID anuncioId, short nota, @Nullable String comentario) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("""
                 insert into avaliacao_anuncio (anuncio_id, autor_id, nota, comentario)
                 values (:anuncio, :usuario, :nota, :comentario)
                 on conflict (anuncio_id, autor_id)
                 do update set nota = excluded.nota, comentario = excluded.comentario
-                """, parametros(autorId, anuncioId).addValue("nota", nota).addValue("comentario", comentario));
+                returning xmax = 0
+                """, parametros(autorId, anuncioId).addValue("nota", nota).addValue("comentario", comentario),
+                Boolean.class));
     }
 
     /** A média e o total de avaliações de cada anúncio. Os que não têm avaliação não aparecem no mapa. */

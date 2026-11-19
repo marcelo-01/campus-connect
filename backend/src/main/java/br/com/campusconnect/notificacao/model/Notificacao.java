@@ -36,12 +36,20 @@ public class Notificacao extends EntidadeBase {
     @Column(name = "tipo", nullable = false, length = 30)
     private TipoNotificacao tipo;
 
-    /** Aponta para entidades diferentes conforme o {@link #tipo}, por isso não tem FK. */
+    /**
+     * A página para onde a notificação leva: a publicação ou o anúncio. Aponta para entidades diferentes conforme o
+     * {@link #tipo}, por isso não tem FK.
+     */
     @Column(name = "referencia_id")
     private UUID referenciaId;
 
-    @Column(name = "mensagem", length = 255)
-    private String mensagem;
+    /** O que foi curtido ou escrito dentro da referência: o comentário ou a avaliação. Também não tem FK. */
+    @Column(name = "detalhe_id")
+    private UUID detalheId;
+
+    /** O começo do comentário, copiado quando a notificação nasce: comentários não mudam depois de escritos. */
+    @Column(name = "trecho", length = 255)
+    private String trecho;
 
     @Column(name = "lida_em")
     private Instant lidaEm;

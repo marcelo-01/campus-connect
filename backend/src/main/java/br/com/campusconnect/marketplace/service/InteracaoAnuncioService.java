@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,6 +22,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Qualquer pessoa logada, menos quem anunciou, deixa uma avaliação por anúncio, que pode trocar ou
  * apagar depois. O pagamento acontece fora da plataforma, então o sistema não sabe quem de fato contratou
  * ou comprou.
+ *
+ * <p>A primeira avaliação de cada pessoa e a exclusão dela saem como {@link EventosMarketplace}, para o módulo de
+ * notificações avisar quem anunciou.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,6 +35,7 @@ public class InteracaoAnuncioService {
     private final InteracaoAnuncioRepository interacoes;
     private final MontadorAnuncios montador;
     private final UsuarioService usuarios;
+    private final ApplicationEventPublisher eventos;
 
     @Transactional
     public void favoritar(UUID quem, UUID anuncioId) {
@@ -55,9 +60,14 @@ public class InteracaoAnuncioService {
         if (anuncio.getAnuncianteId().equals(quem)) {
             throw new AcessoNegadoException(RegrasAnuncio.NAO_AVALIA_O_PROPRIO);
         }
-        interacoes.avaliar(quem, anuncioId, RegrasAnuncio.nota(nota), RegrasAnuncio.comentario(comentario));
+        boolean primeira =
+                interacoes.avaliar(quem, anuncioId, RegrasAnuncio.nota(nota), RegrasAnuncio.comentario(comentario));
         AvaliacaoAnuncio gravada = avaliacoes.findByAnuncio_IdAndAutorId(anuncioId, quem)
                 .orElseThrow(() -> new AnuncioNaoEncontradoException(anuncioId));
+        if (primeira) {
+            eventos.publishEvent(new EventosMarketplace.AnuncioAvaliado(gravada.getId(), anuncioId,
+                    anuncio.getAnuncianteId(), quem));
+        }
         return montador.avaliacoes(List.of(gravada), quem).stream().findFirst()
                 .orElseThrow(() -> new AnuncioNaoEncontradoException(anuncioId));
     }
@@ -71,6 +81,7 @@ public class InteracaoAnuncioService {
             throw new AcessoNegadoException(RegrasAnuncio.SO_QUEM_AVALIOU_APAGA);
         }
         avaliacoes.delete(avaliacao);
+        eventos.publishEvent(new EventosMarketplace.AvaliacaoApagada(avaliacaoId));
     }
 
     /**

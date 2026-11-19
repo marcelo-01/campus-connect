@@ -18,7 +18,7 @@ class CampusConnectApplicationTests {
     /** Subir o contexto já roda o Flyway e o {@code ddl-auto=validate} sobre todas as entidades. */
     @Test
     void aplicaAsMigrationsEValidaAsEntidades() {
-        assertThat(contar("select count(*) from flyway_schema_history where success")).isEqualTo(20);
+        assertThat(contar("select count(*) from flyway_schema_history where success")).isEqualTo(21);
         assertThat(contar("""
                 select count(*) from information_schema.tables
                 where table_schema = 'public' and table_type = 'BASE TABLE'

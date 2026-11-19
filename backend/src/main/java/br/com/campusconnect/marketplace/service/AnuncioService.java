@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -59,6 +60,7 @@ public class AnuncioService {
     private final ImagemService imagens;
     private final ArquivoService arquivos;
     private final TransactionTemplate transacao;
+    private final ApplicationEventPublisher eventos;
 
     // ------------------------------------------------------------ escrita
 
@@ -163,9 +165,24 @@ public class AnuncioService {
         }
         anuncio.setStatus(StatusAnuncio.REMOVIDO);
         arquivos.descartarAoFim(MontadorAnuncios.urls(anuncio), List.of());
+        eventos.publishEvent(new EventosMarketplace.AnuncioExcluido(id));
     }
 
     // ------------------------------------------------------------ leitura
+
+    /**
+     * O título de cada anúncio que ainda existe, publicado ou pausado, para quem mostra um anúncio de passagem, como
+     * as notificações de quem anunciou. Os excluídos ficam de fora.
+     */
+    @Transactional(readOnly = true)
+    public List<ResumoAnuncio> resumos(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return anuncios.findByIdInAndStatusIn(ids, List.of(StatusAnuncio.PUBLICADO, StatusAnuncio.PAUSADO)).stream()
+                .map(anuncio -> new ResumoAnuncio(anuncio.getId(), anuncio.getTitulo()))
+                .toList();
+    }
 
     /**
      * Um anúncio publicado, para qualquer pessoa logada. O pausado só aparece para quem anunciou.

@@ -24,6 +24,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,9 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>Comentar e curtir comentário exigem ser membro da bolha do post. Excluir pode quem escreveu ou um
  * administrador. O comentário excluído some; se tiver respostas, fica no lugar dele um "Comentário
  * removido", sem autor e sem texto, para as respostas não perderem o contexto.
+ *
+ * <p>Comentar, curtir e excluir saem como {@link EventosPublicacao}, para o módulo de notificações avisar quem
+ * escreveu.
  */
 @Service
 @RequiredArgsConstructor
@@ -49,6 +53,7 @@ public class ComentarioService {
     private final InteracaoRepository interacoes;
     private final BolhaService bolhas;
     private final UsuarioService usuarios;
+    private final ApplicationEventPublisher eventos;
 
     /** @param ordem {@code relevantes} (mais curtidos primeiro) ou {@code recentes} (mais novos primeiro) */
     @Transactional(readOnly = true)
@@ -110,16 +115,20 @@ public class ComentarioService {
         String texto = RegrasPublicacao.comentario(conteudo);
 
         Comentario pai = null;
+        UUID autorRespondido = null;
         if (respondendoA != null) {
             Comentario alvo = carregarAtivo(respondendoA);
             if (!alvo.getPublicacao().getId().equals(publicacaoId)) {
                 throw new CampoInvalidoException("respondendoA", "Esse comentário é de outra publicação.");
             }
             pai = alvo.getComentarioPai() != null ? alvo.getComentarioPai() : alvo;
+            autorRespondido = alvo.getAutorId();
         }
         Comentario comentario = new Comentario(publicacao, quem, texto);
         comentario.setComentarioPai(pai);
         comentarios.saveAndFlush(comentario);
+        eventos.publishEvent(new EventosPublicacao.ComentarioFeito(comentario.getId(), publicacaoId, quem, texto,
+                publicacao.getAutorId(), autorRespondido));
 
         UsuarioPublico autor = usuarios.buscarPublicos(List.of(quem)).stream().findFirst()
                 .orElseThrow(() -> new AcessoNegadoException("Sua conta não pode comentar."));
@@ -133,19 +142,25 @@ public class ComentarioService {
             throw new AcessoNegadoException(SO_QUEM_ESCREVEU);
         }
         comentario.setRemovidoEm(Instant.now());
+        eventos.publishEvent(new EventosPublicacao.ComentarioExcluido(comentarioId));
     }
 
     @Transactional
     public void curtir(UUID quem, UUID comentarioId) {
         Comentario comentario = carregarAtivo(comentarioId);
         RegrasPublicacao.garantirMembro(bolhas.ehMembro(quem, comentario.getPublicacao().getBolhaId()));
-        interacoes.curtirComentario(quem, comentarioId);
+        if (interacoes.curtirComentario(quem, comentarioId)) {
+            eventos.publishEvent(new EventosPublicacao.ComentarioCurtido(quem, comentarioId,
+                    comentario.getPublicacao().getId(), comentario.getAutorId(), comentario.getConteudo()));
+        }
     }
 
     @Transactional
     public void descurtir(UUID quem, UUID comentarioId) {
         carregarAtivo(comentarioId);
-        interacoes.descurtirComentario(quem, comentarioId);
+        if (interacoes.descurtirComentario(quem, comentarioId)) {
+            eventos.publishEvent(new EventosPublicacao.CurtidaDeComentarioRetirada(quem, comentarioId));
+        }
     }
 
     // ------------------------------------------------------------ apoio

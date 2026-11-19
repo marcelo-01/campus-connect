@@ -33,6 +33,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -65,6 +66,7 @@ public class PublicacaoService {
     private final ArquivoService arquivos;
     private final PreviaLinkService previas;
     private final TransactionTemplate transacao;
+    private final ApplicationEventPublisher eventos;
 
     // ------------------------------------------------------------ escrita
 
@@ -162,9 +164,25 @@ public class PublicacaoService {
         publicacao.setStatus(StatusPublicacao.REMOVIDA);
         publicacao.setRemovidoEm(Instant.now());
         arquivos.descartarAoFim(arquivosDe(publicacao), List.of());
+        eventos.publishEvent(new EventosPublicacao.PublicacoesExcluidas(List.of(id)));
     }
 
     // ------------------------------------------------------------ leitura
+
+    /**
+     * O começo do texto de cada publicação que ainda está no ar, para quem mostra uma publicação de passagem, como
+     * as notificações. As que saíram do ar ficam de fora.
+     */
+    @Transactional(readOnly = true)
+    public List<ResumoPublicacao> resumos(Collection<UUID> ids) {
+        if (ids.isEmpty()) {
+            return List.of();
+        }
+        return publicacoes.findByIdInAndStatus(ids, StatusPublicacao.PUBLICADA).stream()
+                .map(publicacao -> new ResumoPublicacao(publicacao.getId(),
+                        ResumoPublicacao.trecho(publicacao.getConteudo())))
+                .toList();
+    }
 
     @Transactional(readOnly = true)
     public PublicacaoVista buscar(UUID quemVe, UUID id) {

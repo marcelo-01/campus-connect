@@ -17,6 +17,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,6 +34,8 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>O bloqueio é de cada lado: quem bloqueou vê {@link SituacaoConexao#BLOQUEADA}; quem foi bloqueado não é avisado.
  * Bloquear desfaz o que houver entre as duas pessoas, e enquanto o bloqueio durar nenhum pedido aparece para quem
  * bloqueou.
+ *
+ * <p>Quando algo muda de fato, sai um dos {@link EventosConexao}, que o módulo de notificações ouve.
  */
 @Service
 @RequiredArgsConstructor
@@ -44,6 +47,7 @@ public class ConexaoService {
     private final ConexaoRepository conexoes;
     private final BloqueioRepository bloqueios;
     private final UsuarioService usuarios;
+    private final ApplicationEventPublisher eventos;
 
     // ------------------------------------------------------------ ações
 
@@ -67,8 +71,10 @@ public class ConexaoService {
         }
         if (bloqueios.bloqueou(outro, quem)) {
             conexoes.pedirJaRecusado(par.menor(), par.maior(), quem);
-        } else if (conexoes.pedir(par.menor(), par.maior(), quem) == 0) {
-            conexoes.aceitarPedidoDe(par.menor(), par.maior(), outro);
+        } else if (conexoes.pedir(par.menor(), par.maior(), quem) == 1) {
+            eventos.publishEvent(new EventosConexao.PedidoFeito(quem, outro));
+        } else if (conexoes.aceitarPedidoDe(par.menor(), par.maior(), outro) == 1) {
+            eventos.publishEvent(new EventosConexao.PedidoAceito(outro, quem));
         }
         return situacao(quem, outro, par);
     }
@@ -93,7 +99,9 @@ public class ConexaoService {
     @Transactional
     public SituacaoConexao cancelarPedido(UUID quem, UUID outro) {
         Par par = Par.de(quem, outro);
-        conexoes.cancelarPedidoDe(par.menor(), par.maior(), quem);
+        if (conexoes.cancelarPedidoDe(par.menor(), par.maior(), quem) == 1) {
+            eventos.publishEvent(new EventosConexao.PedidoRetirado(quem, outro));
+        }
         return situacao(quem, outro, par);
     }
 
@@ -123,6 +131,7 @@ public class ConexaoService {
         conexoes.travarPar(par.chave());
         bloqueios.bloquear(quem, outro);
         conexoes.apagarPar(par.menor(), par.maior());
+        eventos.publishEvent(new EventosConexao.PessoaBloqueada(quem, outro));
         return SituacaoConexao.BLOQUEADA;
     }
 
