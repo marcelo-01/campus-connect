@@ -1,6 +1,7 @@
 package br.com.campusconnect.usuario.api;
 
 import br.com.campusconnect.arquivo.service.ImagemService;
+import br.com.campusconnect.usuario.service.PaginaPessoas;
 import br.com.campusconnect.usuario.service.Perfil;
 import br.com.campusconnect.usuario.service.PerfilService;
 import br.com.campusconnect.usuario.service.UsuarioResumo;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -35,6 +37,16 @@ class UsuarioController {
     @GetMapping("/me")
     ResponseEntity<UsuarioResumo> eu(@AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.of(usuarios.buscarResumo(idDe(jwt)));
+    }
+
+    /**
+     * A busca de pessoas pelo nome e pelo username. {@code limite} vai de 1 a 20; as sugestões do campo de busca
+     * pedem menos que a página.
+     */
+    @GetMapping("/busca")
+    PaginaPessoas busca(@RequestParam(required = false) String q, @RequestParam(required = false) String cursor,
+            @RequestParam(required = false) Integer limite) {
+        return usuarios.buscarPessoas(q, cursor, limite);
     }
 
     @GetMapping("/{username}/perfil")

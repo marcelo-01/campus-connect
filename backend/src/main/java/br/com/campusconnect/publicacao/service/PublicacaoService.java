@@ -224,6 +224,22 @@ public class PublicacaoService {
         return paginaPorData(feeds.doUsuario(usuarioId, inicio.em(), inicio.id(), TAMANHO_PAGINA + 1), quemVe, null);
     }
 
+    /**
+     * A aba Posts da busca: os posts de toda a rede com as palavras buscadas, do mais novo para o mais antigo. Qualquer
+     * pessoa logada lê qualquer post, então a busca não se limita às bolhas de quem busca.
+     *
+     * @param termo as palavras, como numa busca da web (ver {@link FeedRepository#comTexto}); vazio não acha nada
+     */
+    @Transactional(readOnly = true)
+    public PaginaFeed feedBusca(UUID quemVe, @Nullable String termo, @Nullable String cursor) {
+        String busca = RegrasPublicacao.busca(termo);
+        Cursor inicio = Cursor.ler(cursor);
+        if (busca.isEmpty()) {
+            return new PaginaFeed(List.of(), null, null);
+        }
+        return paginaPorData(feeds.comTexto(busca, inicio.em(), inicio.id(), TAMANHO_PAGINA + 1), quemVe, null);
+    }
+
     /** Os posts que a pessoa salvou. Só ela vê. */
     @Transactional(readOnly = true)
     public PaginaFeed salvas(UUID quem, @Nullable String cursor) {

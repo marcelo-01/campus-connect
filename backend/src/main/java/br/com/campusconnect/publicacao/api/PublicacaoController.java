@@ -91,6 +91,13 @@ class PublicacaoController {
         return publicacoes.feedUsuario(idDe(jwt), usuarioId, cursor);
     }
 
+    /** Os posts de toda a rede com as palavras de {@code q}, do mais novo para o mais antigo. */
+    @GetMapping("/busca")
+    PaginaFeed busca(@RequestParam(required = false) String q, @RequestParam(required = false) String cursor,
+            @AuthenticationPrincipal Jwt jwt) {
+        return publicacoes.feedBusca(idDe(jwt), q, cursor);
+    }
+
     @GetMapping("/salvas")
     PaginaFeed salvas(@RequestParam(required = false) String cursor, @AuthenticationPrincipal Jwt jwt) {
         return publicacoes.salvas(idDe(jwt), cursor);

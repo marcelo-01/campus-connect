@@ -158,6 +158,26 @@ public class FeedRepository {
         return jdbc.query(sql.toString(), parametros, FeedRepository::item);
     }
 
+    /**
+     * Posts de toda a rede cujo texto tem as palavras buscadas, do mais novo para o mais antigo. O texto é lido como
+     * numa busca da web: aspas pedem a frase exata, {@code -palavra} tira os posts com ela e {@code or} aceita uma ou
+     * outra. A comparação é pelo radical e sem acento (ver a configuração {@code busca_pt} na migration V24).
+     *
+     * <p>Uma busca só com palavras que não contam, como "de" ou "para", não acha nada.
+     */
+    public List<Item> comTexto(String termo, @Nullable Instant antesDe, @Nullable UUID antesDoId, int limite) {
+        StringBuilder sql = new StringBuilder("""
+                select p.id, null::uuid as republicada_por, p.criado_em as em
+                from publicacao p
+                where p.status = 'PUBLICADA' and p.busca @@ websearch_to_tsquery('busca_pt', :termo)
+                """);
+        MapSqlParameterSource parametros = new MapSqlParameterSource("termo", termo);
+        depoisDe(sql, parametros, "(p.criado_em, p.id)", antesDe, antesDoId);
+        sql.append(" order by p.criado_em desc, p.id desc limit :limite");
+        parametros.addValue("limite", limite);
+        return jdbc.query(sql.toString(), parametros, FeedRepository::item);
+    }
+
     /** Posts que a pessoa salvou, do salvo por último para o primeiro. */
     public List<Item> salvasPor(UUID usuarioId, @Nullable Instant antesDe, @Nullable UUID antesDoId, int limite) {
         StringBuilder sql = new StringBuilder("""

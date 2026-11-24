@@ -20,6 +20,7 @@ final class RegrasPublicacao {
     static final int TAMANHO_COMENTARIO = 1000;
     static final int TAMANHO_LINK = 2000;
     static final int MAXIMO_IMAGENS = 4;
+    static final int TAMANHO_BUSCA = 100;
 
     static final String ENTRE_NA_BOLHA = "Entre na bolha para interagir com as publicações dela.";
     static final String SO_NAS_SUAS_BOLHAS = "Você só pode publicar nas bolhas de que participa.";
@@ -97,6 +98,15 @@ final class RegrasPublicacao {
             throw new CampoInvalidoException("link", "Informe um endereço web, como exemplo.com/pagina.");
         }
         return valor;
+    }
+
+    /** As palavras da busca de posts, sem espaços nas pontas; nulo vira vazio. */
+    static String busca(@Nullable String termo) {
+        String texto = termo == null ? "" : termo.strip();
+        if (texto.length() > TAMANHO_BUSCA) {
+            throw new CampoInvalidoException("q", "A busca pode ter até " + TAMANHO_BUSCA + " caracteres.");
+        }
+        return texto;
     }
 
     static String comentario(@Nullable String conteudo) {
