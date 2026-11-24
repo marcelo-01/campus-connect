@@ -1,0 +1,110 @@
+<div class="content">
+  <div class="input-prefix busca-pagina-campo">
+    <app-icone nome="busca" />
+    <input
+      #campo
+      type="search"
+      enterkeyhint="search"
+      placeholder="Buscar pessoas, bolhas, posts…"
+      aria-label="Buscar pessoas, bolhas e posts"
+      autocomplete="off"
+      [attr.maxlength]="tamanhoBusca"
+      [value]="digitado()"
+      (input)="digitar($event)"
+      (keydown.enter)="buscarAgora(campo)"
+    />
+  </div>
+
+  @if (!termo()) {
+    <div class="card empty-state">
+      <div class="empty-bubble" style="background: var(--accent)"><app-icone nome="busca" /></div>
+      <h3>O que você procura?</h3>
+      <p>
+        Digite no campo de busca para encontrar pessoas pelo nome ou pelo &#64;username, bolhas pelo nome ou pela sigla
+        e posts pelas palavras do texto.
+      </p>
+    </div>
+  } @else {
+    <div>
+      <h1 class="section-title">Busca</h1>
+      <div class="section-sub busca-termo">Resultados para “{{ termo() }}”</div>
+    </div>
+
+    <div class="tabs">
+      @for (opcao of abas; track opcao.valor) {
+        <button
+          type="button"
+          [class.active]="aba() === opcao.valor"
+          [attr.aria-pressed]="aba() === opcao.valor"
+          (click)="escolherAba(opcao.valor)"
+        >
+          {{ opcao.rotulo }}
+        </button>
+      }
+    </div>
+
+    @switch (aba()) {
+      @case ('posts') {
+        <app-feed [escopo]="escopoDosPosts()" [comChips]="false" estiloVazio="cartao" [vazioTexto]="semPosts()" />
+      }
+      @case ('pessoas') {
+        @if (falhouPessoas()) {
+          <div class="feed-aviso">
+            Não foi possível buscar as pessoas.
+            <button type="button" class="btn btn-ghost btn-sm" (click)="tentarDeNovo()">Tentar de novo</button>
+          </div>
+        } @else if (pessoas(); as lista) {
+          @if (lista.length) {
+            <div class="card" style="padding-block: 4px">
+              <div class="person-list">
+                @for (pessoa of lista; track pessoa.id) {
+                  <app-pessoa-linha [pessoa]="pessoa" tamanhoAvatar="md" />
+                }
+              </div>
+            </div>
+            @if (proximaDePessoas()) {
+              <div class="feed-mais">
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  [disabled]="carregandoMaisPessoas()"
+                  (click)="carregarMaisPessoas()"
+                >
+                  {{ carregandoMaisPessoas() ? 'Carregando…' : 'Ver mais' }}
+                </button>
+              </div>
+            }
+          } @else {
+            <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+              Ninguém com “{{ termo() }}” no nome ou no username.
+            </div>
+          }
+        } @else {
+          <div class="feed-aviso">Buscando pessoas…</div>
+        }
+      }
+      @case ('bolhas') {
+        @if (falhouBolhas()) {
+          <div class="feed-aviso">
+            Não foi possível carregar as bolhas.
+            <button type="button" class="btn btn-ghost btn-sm" (click)="carregarBolhas()">Tentar de novo</button>
+          </div>
+        } @else if (bolhas(); as lista) {
+          @if (lista.length) {
+            <div class="explore-grid">
+              @for (bolha of lista; track bolha.id) {
+                <app-bolha-cartao [bolha]="bolha" [acima]="nomeAcima(bolha)" />
+              }
+            </div>
+          } @else {
+            <div class="card" style="text-align: center; padding: 40px; color: var(--text-muted)">
+              Nenhuma bolha com “{{ termo() }}”. <a class="link-acao" routerLink="/bolhas">Explorar todas as bolhas</a>
+            </div>
+          }
+        } @else {
+          <div class="feed-aviso">Buscando bolhas…</div>
+        }
+      }
+    }
+  }
+</div>

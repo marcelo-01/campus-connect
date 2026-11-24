@@ -30,6 +30,12 @@ describe('funções das publicações', () => {
     expect(perfil.url).toBe('/api/publicacoes/usuario/u1');
     expect(perfil.parametros.has('ordem')).toBe(false);
     expect(enderecoDoFeed({ tipo: 'salvas' }, 'recentes', null).url).toBe('/api/publicacoes/salvas');
+
+    const busca = enderecoDoFeed({ tipo: 'busca', termo: '  bolsa de estágio ' }, 'recentes', 'c2');
+    expect(busca.url).toBe('/api/publicacoes/busca');
+    expect(busca.parametros.get('q')).toBe('bolsa de estágio');
+    expect(busca.parametros.get('cursor')).toBe('c2');
+    expect(busca.parametros.has('ordem')).toBe(false);
   });
 
   it('pergunta pelos posts novos ao lado do feed, com o mesmo filtro e o mesmo chip', () => {

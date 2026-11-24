@@ -2355,6 +2355,35 @@ select.chip {
 .link-acao:disabled { opacity: 0.6; cursor: progress; text-decoration: none; }
 
 /* ========================================================================
+   Busca — adicionado no projeto Angular
+   No MVP o campo da barra do topo era só enfeite. Agora ele sugere pessoas
+   enquanto a pessoa digita, numa lista presa embaixo dele, e o Enter abre
+   a página de busca, com as abas Posts, Pessoas e Bolhas.
+   ======================================================================== */
+.search { position: relative; }
+.search:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
+
+/* A lista tem a largura do campo e fica logo abaixo dele. */
+.menu-flutuante.busca-sugestoes { left: 0; right: 0; top: calc(100% + 6px); min-width: 0; padding: 6px; gap: 2px; }
+.busca-sugestoes > a.busca-opcao { gap: 10px; padding: 7px 10px; min-width: 0; }
+.busca-sugestoes > a.busca-opcao.ativa { background: var(--surface-hover); }
+.busca-opcao-icone {
+  width: 36px; height: 36px; flex-shrink: 0;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+}
+.busca-opcao-texto { display: flex; flex-direction: column; min-width: 0; line-height: 1.3; }
+.busca-opcao-nome,
+.busca-opcao-detalhe { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.busca-opcao-nome { font-weight: 600; }
+.busca-opcao-detalhe { font-size: 12.5px; font-weight: 400; color: var(--text-muted); }
+
+/* Um termo longo quebra em vez de passar da tela. */
+.busca-termo { overflow-wrap: anywhere; }
+
+/* ========================================================================
    Telas estreitas (RNF01) — adicionado no projeto Angular
    O MVP era só para desktop: a moldura tinha largura mínima de 1100px, e no
    celular a página inteira encolhia ou rolava para o lado. Abaixo de 1024px
@@ -2405,7 +2434,9 @@ select.chip {
 .menu-fechar,
 .menu-fundo,
 .barra-inferior,
-.thread-voltar { display: none; }
+.thread-voltar,
+.busca-botao,
+.busca-pagina-campo { display: none; }
 
 /* Altura da barra de baixo, descontada do conteúdo. Fora das telas estreitas ela não existe. */
 :root { --altura-barra-inferior: 0px; }
@@ -2468,8 +2499,10 @@ select.chip {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
-  /* A busca ainda não funciona; no celular, ela só tomaria o lugar do título. */
+  /* O campo de busca tomaria o lugar do título: ele dá lugar a uma lupa, e a página de busca tem o seu. */
   .search { display: none; }
+  .busca-botao { display: grid; }
+  .busca-pagina-campo { display: flex; }
   /* O painel de aparência se prende à barra (sticky), não ao botão: preso ao botão, ele passaria da borda
      esquerda da tela. */
   .topbar .menu-ancora { position: static; }

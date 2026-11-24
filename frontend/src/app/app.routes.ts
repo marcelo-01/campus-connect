@@ -12,6 +12,7 @@ import { VerificarEmail } from './auth/verificar-email/verificar-email';
 import { BolhaForm } from './bolhas/bolha-form/bolha-form';
 import { BolhaPagina } from './bolhas/bolha-pagina/bolha-pagina';
 import { Explorar } from './bolhas/explorar/explorar';
+import { BuscaPagina } from './busca/busca-pagina/busca-pagina';
 import { ConexoesPagina } from './conexoes/conexoes-pagina/conexoes-pagina';
 import { Inicio } from './inicio/inicio';
 import { Shell } from './layout/shell/shell';
@@ -74,6 +75,13 @@ export const routes: Routes = [
         data: { trilha: ['Publicação'] },
       },
       { path: 'salvos', component: SalvosPagina, title: 'Salvos · CampusConnect', data: { trilha: ['Salvos'] } },
+      {
+        // O Enter no campo de busca da barra do topo leva para cá, com o termo em `q` e a aba em `aba`.
+        path: 'busca',
+        component: BuscaPagina,
+        title: 'Busca · CampusConnect',
+        data: { trilha: ['Busca'] },
+      },
       {
         // O sino da barra do topo e o item "Notificações" do menu levam para cá.
         path: 'notificacoes',

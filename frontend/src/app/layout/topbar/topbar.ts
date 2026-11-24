@@ -12,10 +12,10 @@ import {
 } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
+import { BuscaTopo } from '../../busca/busca-topo';
 import { NotificacaoService } from '../../notificacoes/notificacao.service';
 import { Avatar } from '../../shared/avatar';
 import { Icone } from '../../shared/icone';
-import { ToastService } from '../../shared/toast.service';
 import { MenuAparencia } from '../aparencia/menu-aparencia';
 
 /**
@@ -26,13 +26,15 @@ import { MenuAparencia } from '../aparencia/menu-aparencia';
  * A trilha pode quebrar em mais linhas e deixar a barra mais alta. Como o aviso de posts novos do feed
  * fica preso logo abaixo dela, a altura da barra vai para o CSS em `--altura-topbar`.
  *
+ * O campo de busca sugere pessoas enquanto a pessoa digita e abre a página de busca no Enter (ver {@link BuscaTopo}).
+ *
  * Nas telas estreitas aparece à esquerda o botão que abre a gaveta do menu, a trilha fica só com o último nome
- * e a busca some (ela ainda não funciona).
+ * e o campo de busca dá lugar a uma lupa, que leva à página de busca.
  */
 @Component({
   selector: 'app-topbar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, Avatar, Icone, MenuAparencia],
+  imports: [RouterLink, Avatar, BuscaTopo, Icone, MenuAparencia],
   styles: ':host { display: contents; }',
   template: `
     <div class="topbar" #barra>
@@ -56,11 +58,10 @@ import { MenuAparencia } from '../aparencia/menu-aparencia';
           }
         }
       </div>
-      <div class="search">
+      <app-busca-topo />
+      <a class="icon-btn busca-botao" routerLink="/busca" title="Buscar" aria-label="Buscar">
         <app-icone nome="busca" />
-        <input placeholder="Buscar pessoas, bolhas, posts…" (keydown.enter)="emBreve('Busca')" />
-        <span class="search-atalho">⌘K</span>
-      </div>
+      </a>
       <app-menu-aparencia />
       <a class="icon-btn" routerLink="/notificacoes" title="Notificações" [attr.aria-label]="rotuloDoSino()">
         <app-icone nome="notificacoes" />
@@ -77,7 +78,6 @@ import { MenuAparencia } from '../aparencia/menu-aparencia';
 export class Topbar {
   protected readonly auth = inject(AuthService);
   protected readonly notificacoes = inject(NotificacaoService);
-  private readonly toast = inject(ToastService);
 
   readonly trilha = input<string[]>(['Início']);
   /** Se a gaveta do menu está aberta, para o `aria-expanded` do botão de menu. */
@@ -113,9 +113,5 @@ export class Topbar {
   /** Devolve o foco ao botão de menu quando a gaveta fecha com o foco dentro dela. */
   focarBotaoMenu(): void {
     this.botaoMenu().nativeElement.focus();
-  }
-
-  protected emBreve(recurso: string): void {
-    this.toast.mostrar(`${recurso} — em breve`);
   }
 }

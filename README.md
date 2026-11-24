@@ -22,6 +22,7 @@ bolhas, as pessoas publicam, conversam, se conectam e anunciam serviços e produ
 | RF08 · Direcionar posts | Quem publica marca as bolhas em que o post vai aparecer, e ele aparece só nelas. No Início dá para filtrar por bolha |
 | RF09 a RF12 · Marketplace | Anúncios de serviço ou produto em 1 a 5 bolhas, até 6 fotos, categorias, favoritos, avaliações e pausa |
 | Notificações | Pedido de conexão e aceite, comentário, resposta, curtida, republicação e avaliação de anúncio, em tempo real. Curtidas e republicações do mesmo alvo vêm juntas ("Ana e mais 3 pessoas curtiram") |
+| Busca | Campo no topo que sugere pessoas enquanto se digita (Ctrl+K) e página com abas de posts, pessoas e bolhas. Os posts de toda a rede são buscados por palavras, em português, sem diferenciar acento e com plurais ("estagios" acha "estágio") |
 
 
 ## Tecnologias

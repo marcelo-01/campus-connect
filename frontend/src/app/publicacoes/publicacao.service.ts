@@ -105,7 +105,9 @@ export type EscopoFeed =
   | { tipo: 'bolha'; bolhaId: string }
   /** Os posts de uma pessoa e os que ela republicou. */
   | { tipo: 'usuario'; usuarioId: string }
-  | { tipo: 'salvas' };
+  | { tipo: 'salvas' }
+  /** Os posts de toda a rede com as palavras buscadas. */
+  | { tipo: 'busca'; termo: string };
 
 export interface NovaPublicacao {
   /** As bolhas marcadas no composer: o post aparece só nelas. */
@@ -198,7 +200,7 @@ export function enderecoDoFeed(
   if (cursor) {
     parametros = parametros.set('cursor', cursor);
   }
-  // O perfil e as salvas não têm chips: a ordem é sempre a da data.
+  // O perfil, as salvas e a busca não têm chips: a ordem é sempre a da data.
   const comOrdem = (url: string) => ({
     url,
     parametros: ordem === 'recentes' ? parametros : parametros.set('ordem', ordem),
@@ -215,6 +217,8 @@ export function enderecoDoFeed(
       return { url: `/api/publicacoes/usuario/${escopo.usuarioId}`, parametros };
     case 'salvas':
       return { url: '/api/publicacoes/salvas', parametros };
+    case 'busca':
+      return { url: '/api/publicacoes/busca', parametros: parametros.set('q', escopo.termo.trim()) };
   }
 }
 

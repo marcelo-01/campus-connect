@@ -4,6 +4,7 @@ import { Router, provideRouter } from '@angular/router';
 import { AuthService } from '../../auth/auth.service';
 import { UsuarioResumo } from '../../auth/sessao';
 import { BolhaService } from '../../bolhas/bolha.service';
+import { BuscaService } from '../../busca/busca.service';
 import { ConexaoService } from '../../conexoes/conexao.service';
 import { MensagemService } from '../../mensagens/mensagem.service';
 import { NotificacaoService } from '../../notificacoes/notificacao.service';
@@ -28,6 +29,7 @@ describe('Shell', () => {
         { provide: AuthService, useValue: { usuario: signal<UsuarioResumo | null>(null), sair: vi.fn() } },
         { provide: AoVivoService, useValue: { conectarComo: vi.fn() } },
         { provide: BolhaService, useValue: { minhas: signal(null), recarregarMinhas: vi.fn() } },
+        { provide: BuscaService, useValue: { pessoas: vi.fn() } },
         { provide: ConexaoService, useValue: { totalRecebidos: signal(2), recarregarMinhas: vi.fn() } },
         { provide: MensagemService, useValue: { naoLidas: signal(0), recarregarNaoLidas: vi.fn() } },
         { provide: NotificacaoService, useValue: { naoLidas: signal(3), recarregarNaoLidas: vi.fn() } },
