@@ -2,8 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ToastService } from '../../shared/toast.service';
-import { IconeGoogle, IconeOlho } from '../../shared/icones';
+import { IconeOlho } from '../../shared/icones';
 import { aplicarErroDaApi, emailValido, mensagemDeErro } from '../../shared/formulario';
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService } from '../auth.service';
@@ -20,14 +19,13 @@ const MENSAGENS: Record<string, Record<string, string>> = {
 @Component({
   selector: 'app-entrar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AuthLayout, ReactiveFormsModule, RouterLink, IconeOlho, IconeGoogle],
+  imports: [AuthLayout, ReactiveFormsModule, RouterLink, IconeOlho],
   styles: ':host { display: contents; }',
   templateUrl: './entrar.html',
 })
 export class Entrar {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
   private readonly verificacao = inject(VerificacaoPendente);
   private readonly redefinicao = inject(RedefinicaoPendente);
 
@@ -87,10 +85,5 @@ export class Entrar {
     void this.router.navigate(['/redefinir-senha'], {
       state: { email: this.form.controls.email.value.trim() },
     });
-  }
-
-  protected emBreve(evento: Event, recurso: string): void {
-    evento.preventDefault();
-    this.toast.mostrar(`${recurso} — em breve`);
   }
 }
