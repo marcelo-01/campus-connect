@@ -61,7 +61,7 @@
       @case ('posts') {
         <div class="feed-coluna">
           @if (b.membro) {
-            <app-composer [bolhaFixa]="b" (publicada)="aoPublicar($event)" />
+            <app-composer [bolhaPreferida]="b.id" (publicada)="aoPublicar($event)" />
           }
           @if (escopoPosts(); as escopo) {
             <app-feed

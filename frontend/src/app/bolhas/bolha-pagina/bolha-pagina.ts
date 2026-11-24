@@ -41,8 +41,8 @@ type Aba = 'posts' | 'subbolhas' | 'membros' | 'sobre';
  * para as sub-bolhas e a linha de pessoa das conexões para os membros, com o botão de conexão. A barra do
  * topo mostra a hierarquia ("IFBA › Campus › Curso"), como o `Topbar` do MVP.
  *
- * A aba Posts mostra os posts da bolha e os das bolhas acima dela: o que é publicado numa bolha desce
- * para as de dentro, mas não sobe. Quem é membro publica ali mesmo, pelo composer com o destino fixo.
+ * A aba Posts mostra os posts publicados na bolha. Quem é membro publica ali mesmo, pelo composer, que
+ * já vem com esta bolha marcada e deixa marcar outras.
  */
 @Component({
   selector: 'app-bolha-pagina',
@@ -137,8 +137,12 @@ export class BolhaPagina {
     this.agir(this.bolhas.sair(bolha.id), recado);
   }
 
+  /** O post novo aparece na hora, se a bolha desta página continuou marcada. */
   protected aoPublicar(publicacao: Publicacao): void {
-    this.feed()?.adicionar(publicacao);
+    const pagina = this.bolha();
+    if (pagina && publicacao.bolhas.some((bolha) => bolha.id === pagina.id)) {
+      this.feed()?.adicionar(publicacao);
+    }
   }
 
   private agir(acao: ReturnType<BolhaService['entrar']>, recado: string): void {

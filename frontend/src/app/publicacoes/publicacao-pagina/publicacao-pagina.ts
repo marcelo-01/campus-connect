@@ -24,7 +24,9 @@ import {
   Publicacao,
   PublicacaoService,
   TAMANHO_COMENTARIO,
+  bolhasDoConvite,
   comentariosPorExtenso,
+  separadorComOu,
 } from '../publicacao.service';
 import { ComentarioItem } from './comentario-item';
 
@@ -63,6 +65,8 @@ export class PublicacaoPagina {
 
   protected readonly tamanhoComentario = TAMANHO_COMENTARIO;
   protected readonly comentariosPorExtenso = comentariosPorExtenso;
+  protected readonly bolhasDoConvite = bolhasDoConvite;
+  protected readonly separadorComOu = separadorComOu;
 
   private readonly campo = viewChild<ElementRef<HTMLTextAreaElement>>('campoComentario');
   private readonly destroyRef = inject(DestroyRef);

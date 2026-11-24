@@ -11,8 +11,8 @@ import { EscopoFeed, Publicacao } from '../publicacoes/publicacao.service';
  * O `FeedScreen` do MVP: o composer, os chips e os posts das bolhas da pessoa. Como entrar numa bolha
  * também entra nas de cima, o que é publicado na bolha geral chega aqui.
  *
- * Antes dos chips fica o filtro por bolha: escolhida uma, o feed mostra só os posts feitos nela, sem os
- * que descem das bolhas de cima. A escolha fica na URL (`/?bolha=<slug>`) e vira o destino do composer.
+ * Antes dos chips fica o filtro por bolha: escolhida uma, o feed mostra só os posts publicados nela. A
+ * escolha fica na URL (`/?bolha=<slug>`) e vem marcada no composer.
  */
 @Component({
   selector: 'app-inicio',
@@ -65,10 +65,10 @@ export class Inicio {
     void this.router.navigate([], { queryParams: { bolha: slug || null } });
   }
 
-  /** O post novo aparece na hora, se for da bolha do filtro (ou se não houver filtro). */
+  /** O post novo aparece na hora, se estiver na bolha do filtro (ou se não houver filtro). */
   protected aoPublicar(publicacao: Publicacao): void {
     const filtro = this.filtro();
-    if (!filtro || filtro.id === publicacao.bolha.id) {
+    if (!filtro || publicacao.bolhas.some((bolha) => bolha.id === filtro.id)) {
       this.feed()?.adicionar(publicacao);
     }
   }

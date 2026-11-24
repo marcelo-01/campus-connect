@@ -26,6 +26,7 @@ import {
   Publicacao,
   PublicacaoService,
   TAMANHO_TEXTO,
+  bolhasDoConvite,
   dominio,
 } from '../publicacao.service';
 import { TextoPublicacao } from '../texto-publicacao';
@@ -35,6 +36,9 @@ import { TextoPublicacao } from '../texto-publicacao';
  * republicar, compartilhar e salvar), mostra até 4 imagens, vídeo, o cartão do link e o menu ⋯ com editar e
  * excluir, que no MVP não fazia nada. Editar e confirmar a exclusão acontecem no próprio card: o MVP não tem
  * modal. Clicar numa imagem abre as imagens do post em tela cheia, no visualizador.
+ *
+ * O cabeçalho mostra a primeira bolha do post, a mais ampla. Se ele estiver em outras, o "+N" ao lado
+ * mostra as demais.
  *
  * As ações mudam o card na hora e desfazem se a API recusar. Cada mudança sai em `mudou`, para a lista que
  * contém o card ficar em dia.
@@ -82,7 +86,13 @@ export class PublicacaoCard {
   protected readonly proprio = computed(() => this.estado().autor.id === this.auth.usuario()?.id);
   protected readonly imagens = computed(() => this.estado().midias.filter((m) => m.tipo === 'IMAGEM'));
   protected readonly video = computed(() => this.estado().midias.find((m) => m.tipo === 'VIDEO') ?? null);
-  protected readonly cor = computed(() => corDaBolha(this.estado().bolha.tipo));
+  protected readonly todasAsBolhas = signal(false);
+  protected readonly bolhasVisiveis = computed(() => {
+    const bolhas = this.estado().bolhas;
+    return this.todasAsBolhas() ? bolhas : bolhas.slice(0, 1);
+  });
+  protected readonly bolhasEscondidas = computed(() => this.estado().bolhas.slice(this.bolhasVisiveis().length));
+  protected readonly nomesEscondidos = computed(() => this.bolhasEscondidas().map((b) => b.nome).join(', '));
   protected readonly tempo = computed(() => tempoRelativo(this.estado().criadoEm));
   protected readonly quando = computed(() => dataCompleta(this.estado().criadoEm));
   protected readonly tituloRepublicar = computed(() => {
@@ -95,6 +105,7 @@ export class PublicacaoCard {
 
   protected readonly tamanhoTexto = TAMANHO_TEXTO;
   protected readonly dominio = dominio;
+  protected readonly corDaBolha = corDaBolha;
 
   protected rotuloDaImagem(indice: number): string {
     return rotuloParaAmpliar(indice, this.imagens().length, this.deQuem());
@@ -132,7 +143,7 @@ export class PublicacaoCard {
   protected curtir(): void {
     const antes = this.estado();
     if (!antes.podeInteragir) {
-      this.toast.mostrar(`Entre em ${antes.bolha.nome} para curtir`);
+      this.toast.mostrar(`Entre em ${bolhasDoConvite(antes.bolhas)} para curtir`);
       return;
     }
     const ligar = !antes.curtida;
@@ -149,7 +160,7 @@ export class PublicacaoCard {
       return;
     }
     if (!antes.podeInteragir) {
-      this.toast.mostrar(`Entre em ${antes.bolha.nome} para republicar`);
+      this.toast.mostrar(`Entre em ${bolhasDoConvite(antes.bolhas)} para republicar`);
       return;
     }
     const ligar = !antes.republicada;

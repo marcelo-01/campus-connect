@@ -1,4 +1,4 @@
-@if (destino(); as d) {
+@if (minhas().length) {
   <div class="composer" [class.enviando]="enviando()">
     <app-avatar [nome]="usuario()?.nomeCompleto" [fotoUrl]="usuario()?.fotoUrl" tamanho="md" />
     <div class="composer-main">
@@ -6,7 +6,7 @@
         #campoTexto
         rows="2"
         aria-label="Texto da publicação"
-        [placeholder]="'Compartilhe algo com ' + d.nome + '…'"
+        [placeholder]="destino().length ? 'Compartilhe algo com ' + resumo() + '…' : 'Compartilhe algo…'"
         [attr.maxlength]="tamanhoTexto"
         [value]="texto()"
         (input)="texto.set($any($event.target).value)"
@@ -52,19 +52,39 @@
       }
 
       <div class="composer-tools">
-        <div class="target">
-          <span class="bubble-dot" [style.width.px]="10" [style.height.px]="10" [style.background]="cor()"></span>
-          @if (bolhaFixa()) {
-            Postar em {{ d.nome }}
-          } @else {
-            <label class="target-escolha">
-              Postar em
-              <select aria-label="Bolha da publicação" [value]="escolhida()" (change)="escolhida.set($any($event.target).value)">
+        <div class="menu-ancora target-ancora">
+          <button
+            type="button"
+            class="target target-botao"
+            aria-haspopup="true"
+            [attr.aria-expanded]="escolhendo()"
+            (click)="alternarEscolha($event)"
+          >
+            <span class="bubble-dot" [style.width.px]="10" [style.height.px]="10" [style.background]="cor()"></span>
+            @if (destino()[0]; as primeira) {
+              Postar em <b>{{ primeira.nome }}</b>
+              @if (destino().length > 1) {
+                <span>e mais {{ destino().length - 1 }}</span>
+              }
+            } @else {
+              <b>Escolha onde postar</b>
+            }
+            <span class="target-seta" aria-hidden="true"></span>
+          </button>
+          @if (escolhendo()) {
+            <div class="menu-flutuante destino-menu" role="group" aria-label="Bolhas da publicação">
+              <p class="destino-menu-texto destino-menu-titulo">Onde o post vai aparecer</p>
+              <div class="destino-menu-lista">
                 @for (bolha of minhas(); track bolha.id) {
-                  <option [value]="bolha.id" [selected]="bolha.id === escolhida()">{{ recuo(bolha.nivel) }}{{ bolha.nome }}</option>
+                  <label class="destino-item" [style.padding-left.px]="10 + bolha.nivel * 16">
+                    <input type="checkbox" [checked]="marcadas().has(bolha.id)" (change)="alternarBolha(bolha.id)" />
+                    <span class="bubble-dot" [style.background]="corDaBolha(bolha.tipo)"></span>
+                    <span class="destino-nome">{{ bolha.nome }}</span>
+                  </label>
                 }
-              </select>
-            </label>
+              </div>
+              <p class="destino-menu-texto">O post aparece só nas bolhas marcadas.</p>
+            </div>
           }
         </div>
         <label class="tool-btn" title="Imagem" [class.desabilitado]="!!video()">

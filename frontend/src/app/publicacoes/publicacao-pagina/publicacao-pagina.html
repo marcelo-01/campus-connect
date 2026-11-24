@@ -64,7 +64,11 @@
       </div>
     } @else {
       <div class="card comment-convite">
-        Entre em <a [routerLink]="['/bolhas', p.bolha.slug]">{{ p.bolha.nome }}</a> para comentar e curtir.
+        Entre em
+        @for (b of p.bolhas; track b.id) {
+          <a [routerLink]="['/bolhas', b.slug]">{{ b.nome }}</a>{{ separadorComOu($index, $count) }}
+        }
+        para comentar e curtir.
       </div>
     }
 
@@ -74,7 +78,7 @@
           <app-comentario-item
             [comentario]="c"
             [podeInteragir]="p.podeInteragir"
-            [nomeDaBolha]="p.bolha.nome"
+            [nomeDaBolha]="bolhasDoConvite(p.bolhas)"
             (responder)="responder($event, c.id)"
             (mudou)="aoMudar($event)"
             (excluido)="aoExcluir($event)"
@@ -85,7 +89,7 @@
                   <app-comentario-item
                     [comentario]="r"
                     [podeInteragir]="p.podeInteragir"
-                    [nomeDaBolha]="p.bolha.nome"
+                    [nomeDaBolha]="bolhasDoConvite(p.bolhas)"
                     (responder)="responder($event, c.id)"
                     (mudou)="aoMudar($event)"
                     (excluido)="aoExcluir($event)"

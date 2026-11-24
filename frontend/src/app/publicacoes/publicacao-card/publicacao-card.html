@@ -14,9 +14,24 @@
     <div class="post-author">
       <div class="name">
         <a [routerLink]="['/perfil', p.autor.username]">{{ p.autor.nomeCompleto }}</a>
-        <a class="bubble-tag" [routerLink]="['/bolhas', p.bolha.slug]" [title]="'Publicado em ' + p.bolha.nome">
-          <span class="bubble-dot" [style.background]="cor()"></span>{{ p.bolha.nome }}
-        </a>
+        <span class="post-bolhas" [class.abertas]="todasAsBolhas()">
+          @for (b of bolhasVisiveis(); track b.id) {
+            <a class="bubble-tag" [routerLink]="['/bolhas', b.slug]" [title]="'Publicado em ' + b.nome">
+              <span class="bubble-dot" [style.background]="corDaBolha(b.tipo)"></span>{{ b.nome }}
+            </a>
+          }
+          @if (bolhasEscondidas().length) {
+            <button
+              type="button"
+              class="bubble-tag bubble-tag-mais"
+              [title]="'Publicado também em ' + nomesEscondidos()"
+              [attr.aria-label]="'Ver as outras bolhas: ' + nomesEscondidos()"
+              (click)="todasAsBolhas.set(true)"
+            >
+              +{{ bolhasEscondidas().length }}
+            </button>
+          }
+        </span>
       </div>
       <div class="meta">
         <span>&#64;{{ p.autor.username }}</span>

@@ -79,9 +79,9 @@ export class ComentarioItem {
   private readonly toast = inject(ToastService);
 
   readonly comentario = input.required<Comentario>();
-  /** Membro da bolha do post: pode curtir e responder. */
+  /** Membro de uma das bolhas do post: pode curtir e responder. */
   readonly podeInteragir = input(false);
-  /** O nome da bolha, para o aviso de quem tenta curtir sem ser membro. */
+  /** As bolhas do post ("IFBA ou ADS"), para o aviso de quem tenta curtir sem ser membro. */
   readonly nomeDaBolha = input('');
 
   readonly responder = output<Comentario>();

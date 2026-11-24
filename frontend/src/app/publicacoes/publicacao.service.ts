@@ -31,8 +31,8 @@ export interface LinkAnexado {
 export interface Publicacao {
   id: string;
   autor: PessoaPublica;
-  /** A bolha em que o post foi feito; pode ser uma acima da que a pessoa está vendo. */
-  bolha: BolhaResumo;
+  /** As bolhas em que o post aparece, das mais amplas para as mais específicas. Sempre há pelo menos uma. */
+  bolhas: BolhaResumo[];
   conteudo: string;
   /** Até 4 imagens ou 1 vídeo. */
   midias: Midia[];
@@ -45,7 +45,7 @@ export interface Publicacao {
   curtida: boolean;
   salva: boolean;
   republicada: boolean;
-  /** Se quem vê é membro da bolha do post e pode curtir, comentar e republicar. */
+  /** Se quem vê é membro de uma das bolhas do post e pode curtir, comentar e republicar. */
   podeInteragir: boolean;
   podeEditar: boolean;
   podeExcluir: boolean;
@@ -99,16 +99,17 @@ export type OrdemComentarios = 'relevantes' | 'recentes';
 
 /** De onde vêm os posts de um feed. */
 export type EscopoFeed =
-  /** As bolhas de quem está logado; com `bolhaId`, só os posts feitos nela. */
+  /** As bolhas de quem está logado; com `bolhaId`, só os posts publicados nela. */
   | { tipo: 'inicio'; bolhaId: string | null }
-  /** A bolha e as de cima: o que é publicado numa bolha desce para as de dentro. */
+  /** Os posts publicados na bolha. */
   | { tipo: 'bolha'; bolhaId: string }
   /** Os posts de uma pessoa e os que ela republicou. */
   | { tipo: 'usuario'; usuarioId: string }
   | { tipo: 'salvas' };
 
 export interface NovaPublicacao {
-  bolhaId: string;
+  /** As bolhas marcadas no composer: o post aparece só nelas. */
+  bolhaIds: string[];
   conteudo: string;
   link: string | null;
   imagens: File[];
@@ -244,7 +245,7 @@ export function rotuloDasNovas(novas: NovasPublicacoes): string {
  */
 export function formularioDaPublicacao(nova: NovaPublicacao): FormData {
   const formulario = new FormData();
-  const dados = { bolhaId: nova.bolhaId, conteudo: nova.conteudo, link: nova.link || null };
+  const dados = { bolhaIds: nova.bolhaIds, conteudo: nova.conteudo, link: nova.link || null };
   formulario.append('dados', new Blob([JSON.stringify(dados)], { type: 'application/json' }));
   for (const imagem of nova.imagens) {
     formulario.append('imagens', imagem);
@@ -284,6 +285,25 @@ export function dominio(url: string): string {
   } catch {
     return url;
   }
+}
+
+/**
+ * As bolhas do post no convite para entrar: "ADS", "IFBA ou ADS", "IFBA, Campus ou ADS". Quem entra em
+ * qualquer uma delas pode interagir.
+ */
+export function bolhasDoConvite(bolhas: Pick<BolhaResumo, 'nome'>[]): string {
+  const nomes = bolhas.map((bolha) => bolha.nome);
+  return nomes.length < 2 ? (nomes[0] ?? '') : `${nomes.slice(0, -1).join(', ')} ou ${nomes.at(-1)}`;
+}
+
+/** O que vem depois de cada item de uma lista escrita: ", " entre eles, " ou " antes do último. */
+export function separadorComOu(indice: number, total: number): string {
+  return indice >= total - 1 ? '' : indice === total - 2 ? ' ou ' : ', ';
+}
+
+/** As bolhas marcadas no composer, em poucas palavras: "ADS", "IFBA e ADS", "IFBA e mais 2". */
+export function resumoDoDestino(nomes: string[]): string {
+  return nomes.length <= 2 ? nomes.join(' e ') : `${nomes[0]} e mais ${nomes.length - 1}`;
 }
 
 /** "1 comentário", "3 comentários". */

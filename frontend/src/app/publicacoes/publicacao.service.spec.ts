@@ -1,4 +1,5 @@
 import {
+  bolhasDoConvite,
   comentariosPorExtenso,
   dominio,
   enderecoDasNovas,
@@ -6,7 +7,9 @@ import {
   formularioDaPublicacao,
   problemaNaImagemDoPost,
   problemaNoVideo,
+  resumoDoDestino,
   rotuloDasNovas,
+  separadorComOu,
 } from './publicacao.service';
 
 describe('funções das publicações', () => {
@@ -51,7 +54,7 @@ describe('funções das publicações', () => {
   it('manda os dados como JSON e cada arquivo na sua parte', async () => {
     const foto = new File(['x'], 'foto.png', { type: 'image/png' });
     const formulario = formularioDaPublicacao({
-      bolhaId: 'b1',
+      bolhaIds: ['b1', 'b2'],
       conteudo: 'Oi',
       link: '',
       imagens: [foto, foto],
@@ -60,7 +63,7 @@ describe('funções das publicações', () => {
 
     const dados = formulario.get('dados') as Blob;
     expect(dados.type).toBe('application/json');
-    expect(JSON.parse(await dados.text())).toEqual({ bolhaId: 'b1', conteudo: 'Oi', link: null });
+    expect(JSON.parse(await dados.text())).toEqual({ bolhaIds: ['b1', 'b2'], conteudo: 'Oi', link: null });
     expect(formulario.getAll('imagens')).toHaveLength(2);
     expect(formulario.has('video')).toBe(false);
   });
@@ -80,6 +83,21 @@ describe('funções das publicações', () => {
   it('mostra só o domínio de um link', () => {
     expect(dominio('https://www.ifba.edu.br/eventos?x=1')).toBe('ifba.edu.br');
     expect(dominio('github.com/ana')).toBe('github.com');
+  });
+
+  it('escreve as bolhas do post no convite para entrar', () => {
+    expect(bolhasDoConvite([{ nome: 'ADS' }])).toBe('ADS');
+    expect(bolhasDoConvite([{ nome: 'IFBA' }, { nome: 'ADS' }])).toBe('IFBA ou ADS');
+    expect(bolhasDoConvite([{ nome: 'IFBA' }, { nome: 'Campus' }, { nome: 'ADS' }])).toBe('IFBA, Campus ou ADS');
+    expect(['IFBA', 'Campus', 'ADS'].map((_, i) => separadorComOu(i, 3))).toEqual([', ', ' ou ', '']);
+    expect(separadorComOu(0, 1)).toBe('');
+  });
+
+  it('resume as bolhas marcadas no composer', () => {
+    expect(resumoDoDestino([])).toBe('');
+    expect(resumoDoDestino(['ADS'])).toBe('ADS');
+    expect(resumoDoDestino(['IFBA', 'ADS'])).toBe('IFBA e ADS');
+    expect(resumoDoDestino(['IFBA', 'Campus', 'ADS'])).toBe('IFBA e mais 2');
   });
 
   it('escreve a contagem de comentários por extenso', () => {

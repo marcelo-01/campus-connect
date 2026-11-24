@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { AuthService } from '../../auth/auth.service';
 import { ProblemaApi } from '../../auth/sessao';
-import { BolhaService, MarcaDaBolha, corDaBolha, recuoNoSelect } from '../../bolhas/bolha.service';
+import { BolhaResumo, BolhaService, corDaBolha } from '../../bolhas/bolha.service';
 import { Avatar } from '../../shared/avatar';
 import { Icone } from '../../shared/icone';
 import { ToastService } from '../../shared/toast.service';
@@ -26,10 +26,8 @@ import {
   dominio,
   problemaNaImagemDoPost,
   problemaNoVideo,
+  resumoDoDestino,
 } from '../publicacao.service';
-
-/** A bolha de destino, como o composer precisa dela. */
-export type DestinoDoPost = MarcaDaBolha & { id: string };
 
 interface Anexo {
   arquivo: File;
@@ -37,8 +35,9 @@ interface Anexo {
 }
 
 /**
- * O `Composer` do MVP, agora publicando de verdade. A pílula "Postar em" mostra a bolha de destino: na
- * página de uma bolha ela é fixa; no Início vira um seletor com as bolhas da pessoa.
+ * O `Composer` do MVP, agora publicando de verdade. A pílula "Postar em" abre a lista das bolhas da pessoa,
+ * cada uma com uma caixinha, e o post aparece só nas bolhas marcadas: não desce para as de dentro. Vem
+ * marcada a bolha da página, ou a do filtro no Início; sem nenhuma das duas, a primeira da lista.
  *
  * Os botões Enquete, Evento e Emoji do MVP saíram (enquete não é requisito, e o teclado já tem emoji). No
  * lugar entraram Vídeo e Link. Um post leva até 4 imagens ou 1 vídeo, e um link. O cartão do link aqui é
@@ -50,16 +49,19 @@ interface Anexo {
   imports: [Avatar, Icone],
   styles: ':host { display: contents; }',
   templateUrl: './composer.html',
+  host: {
+    '(document:click)': 'fecharEscolhaSeForFora($event)',
+    '(document:keydown.escape)': 'escolhendo.set(false)',
+  },
 })
 export class Composer {
   private readonly auth = inject(AuthService);
   private readonly bolhas = inject(BolhaService);
   private readonly servico = inject(PublicacaoService);
   private readonly toast = inject(ToastService);
+  private readonly elemento = inject(ElementRef<HTMLElement>);
 
-  /** Na página de uma bolha, o destino não muda. */
-  readonly bolhaFixa = input<DestinoDoPost | null>(null);
-  /** No Início, a bolha do filtro vira o destino escolhido. */
+  /** A bolha que já vem marcada: a da página da bolha, ou a do filtro no Início. */
   readonly bolhaPreferida = input<string | null>(null);
 
   readonly publicada = output<Publicacao>();
@@ -68,14 +70,38 @@ export class Composer {
 
   protected readonly usuario = this.auth.usuario;
   protected readonly minhas = computed(() => this.bolhas.minhas() ?? []);
-  protected readonly escolhida = linkedSignal(() => this.bolhaPreferida() ?? this.minhas()[0]?.id ?? null);
-  protected readonly destino = computed<DestinoDoPost | null>(
-    () => this.bolhaFixa() ?? this.minhas().find((b) => b.id === this.escolhida()) ?? null,
-  );
-  protected readonly cor = computed(() => {
-    const destino = this.destino();
-    return destino ? corDaBolha(destino.tipo) : 'var(--accent)';
+  /**
+   * Os ids das bolhas marcadas. Trocar a bolha preferida (o filtro do Início, por exemplo) recomeça a
+   * escolha. Recarregar a lista, como ao entrar numa bolha, só desmarca as que saíram dela.
+   */
+  protected readonly marcadas = linkedSignal<
+    { preferida: string | null; minhas: BolhaResumo[] },
+    ReadonlySet<string>
+  >({
+    source: () => ({ preferida: this.bolhaPreferida(), minhas: this.minhas() }),
+    computation: ({ preferida, minhas }, anterior) => {
+      const existentes = new Set(minhas.map((bolha) => bolha.id));
+      if (anterior?.source.preferida === preferida) {
+        const mantidas = [...anterior.value].filter((id) => existentes.has(id));
+        if (mantidas.length) {
+          return new Set(mantidas);
+        }
+      }
+      const inicial = preferida && existentes.has(preferida) ? preferida : minhas[0]?.id;
+      return new Set(inicial ? [inicial] : []);
+    },
   });
+  /**
+   * As bolhas marcadas, na ordem da lista: das mais amplas para as de dentro. A pílula mostra o nome da
+   * primeira, que encolhe com reticências, e o "e mais N" fora dele, para as outras nunca sumirem.
+   */
+  protected readonly destino = computed(() => this.minhas().filter((bolha) => this.marcadas().has(bolha.id)));
+  protected readonly resumo = computed(() => resumoDoDestino(this.destino().map((bolha) => bolha.nome)));
+  protected readonly cor = computed(() => {
+    const primeira = this.destino()[0];
+    return primeira ? corDaBolha(primeira.tipo) : 'var(--accent)';
+  });
+  protected readonly escolhendo = signal(false);
 
   protected readonly texto = signal('');
   protected readonly imagens = signal<Anexo[]>([]);
@@ -86,14 +112,14 @@ export class Composer {
 
   protected readonly podePublicar = computed(
     () =>
-      !!this.destino() &&
+      this.destino().length > 0 &&
       !this.enviando() &&
       (!!this.texto().trim() || this.imagens().length > 0 || !!this.video() || !!this.link().trim()),
   );
 
   protected readonly tamanhoTexto = TAMANHO_TEXTO;
   protected readonly dominio = dominio;
-  protected readonly recuo = recuoNoSelect;
+  protected readonly corDaBolha = corDaBolha;
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.liberarPrevias());
@@ -103,6 +129,31 @@ export class Composer {
   focar(): void {
     this.campoTexto()?.nativeElement.focus();
   }
+
+  // ---------------------------------------------------------------- bolhas de destino
+
+  protected alternarEscolha(evento: Event): void {
+    evento.stopPropagation();
+    this.escolhendo.update((aberta) => !aberta);
+  }
+
+  protected fecharEscolhaSeForFora(evento: Event): void {
+    if (this.escolhendo() && !this.elemento.nativeElement.contains(evento.target as Node)) {
+      this.escolhendo.set(false);
+    }
+  }
+
+  protected alternarBolha(id: string): void {
+    this.marcadas.update((atuais) => {
+      const novas = new Set(atuais);
+      if (!novas.delete(id)) {
+        novas.add(id);
+      }
+      return novas;
+    });
+  }
+
+  // ---------------------------------------------------------------- anexos
 
   protected escolherImagens(evento: Event): void {
     const campo = evento.target as HTMLInputElement;
@@ -170,15 +221,18 @@ export class Composer {
     }
   }
 
+  // ---------------------------------------------------------------- publicar
+
   protected publicar(): void {
-    const destino = this.destino();
-    if (!destino || !this.podePublicar()) {
+    if (!this.podePublicar()) {
       return;
     }
+    const resumo = this.resumo();
+    this.escolhendo.set(false);
     this.enviando.set(true);
     this.servico
       .publicar({
-        bolhaId: destino.id,
+        bolhaIds: this.destino().map((bolha) => bolha.id),
         conteudo: this.texto().trim(),
         link: this.link().trim() || null,
         imagens: this.imagens().map((a) => a.arquivo),
@@ -188,7 +242,7 @@ export class Composer {
         next: (publicacao) => {
           this.enviando.set(false);
           this.limpar();
-          this.toast.mostrar(`Publicado em ${destino.nome}`);
+          this.toast.mostrar(`Publicado em ${resumo}`);
           this.publicada.emit(publicacao);
         },
         error: (erro: unknown) => {
@@ -198,6 +252,7 @@ export class Composer {
       });
   }
 
+  /** O texto e os anexos saem; as bolhas marcadas ficam para o próximo post. */
   private limpar(): void {
     this.liberarPrevias();
     this.texto.set('');
