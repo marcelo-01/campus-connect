@@ -55,14 +55,14 @@ class PublicacaoController {
 
     // ------------------------------------------------------------ feeds
 
-    /** Sem {@code bolhaId}: os posts das bolhas da pessoa. Com: só os feitos nessa bolha. */
+    /** Sem {@code bolhaId}: os posts das bolhas da pessoa. Com: só os publicados nessa bolha. */
     @GetMapping("/feed")
     PaginaFeed feed(@RequestParam(required = false) UUID bolhaId, @RequestParam(required = false) String ordem,
             @RequestParam(required = false) String cursor, @AuthenticationPrincipal Jwt jwt) {
         return publicacoes.feedInicio(idDe(jwt), bolhaId, ordem, cursor);
     }
 
-    /** Os posts da bolha e os das bolhas acima dela. */
+    /** Os posts publicados na bolha. */
     @GetMapping("/bolha/{bolhaId}")
     PaginaFeed daBolha(@PathVariable UUID bolhaId, @RequestParam(required = false) String ordem,
             @RequestParam(required = false) String cursor, @AuthenticationPrincipal Jwt jwt) {
@@ -77,7 +77,7 @@ class PublicacaoController {
         return publicacoes.novasNoInicio(idDe(jwt), bolhaId, ordem, desde);
     }
 
-    /** Quantos posts chegaram à bolha, ou às bolhas acima dela, depois de {@code desde}. */
+    /** Quantos posts chegaram à bolha depois de {@code desde}. */
     @GetMapping("/bolha/{bolhaId}/novas")
     NovasPublicacoes novasNaBolha(@PathVariable UUID bolhaId, @RequestParam(required = false) String ordem,
             @RequestParam(required = false) String desde, @AuthenticationPrincipal Jwt jwt) {
@@ -104,8 +104,8 @@ class PublicacaoController {
     }
 
     /**
-     * Multipart: {@code dados} é o JSON com a bolha, o texto e o link; {@code imagens} (até 4) ou
-     * {@code video} (1) são os arquivos.
+     * Multipart: {@code dados} é o JSON com as bolhas ({@code bolhaIds}), o texto e o link; {@code imagens}
+     * (até 4) ou {@code video} (1) são os arquivos.
      */
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     ResponseEntity<PublicacaoVista> publicar(@Valid @RequestPart("dados") NovaPublicacaoRequest dados,

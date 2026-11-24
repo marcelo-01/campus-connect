@@ -352,7 +352,7 @@ class NotificacoesApiTest extends ApiMarketplaceTeste {
     }
 
     private String publicar(Conta conta, UUID bolha, String texto) throws Exception {
-        String json = "{\"bolhaId\": \"%s\", \"conteudo\": \"%s\"}".formatted(bolha, texto);
+        String json = "{\"bolhaIds\": [\"%s\"], \"conteudo\": \"%s\"}".formatted(bolha, texto);
         return JsonPath.read(corpo(comToken(multipart("/api/publicacoes").file(new MockMultipartFile("dados", "",
                 MediaType.APPLICATION_JSON_VALUE, json.getBytes(StandardCharsets.UTF_8))), conta)
                 .andExpect(status().isCreated())), "$.id");

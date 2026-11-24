@@ -16,7 +16,21 @@ public interface PublicacaoRepository extends JpaRepository<Publicacao, UUID> {
 
     List<Publicacao> findByIdInAndStatus(Collection<UUID> ids, StatusPublicacao status);
 
-    /** As publicações de uma página do feed, já com as mídias, numa consulta só. */
+    /**
+     * As publicações de uma página do feed, já com as mídias, numa consulta só. As bolhas vêm à parte, em
+     * {@link #bolhasDe}: buscá-las aqui junto repetiria cada mídia uma vez por bolha.
+     */
     @Query("select distinct p from Publicacao p left join fetch p.midias where p.id in :ids")
     List<Publicacao> carregarComMidias(@Param("ids") Collection<UUID> ids);
+
+    /** As bolhas de cada publicação, em lote: uma linha por publicação e bolha. */
+    @Query("select p.id as publicacaoId, b as bolhaId from Publicacao p join p.bolhaIds b where p.id in :ids")
+    List<BolhaDaPublicacao> bolhasDe(@Param("ids") Collection<UUID> ids);
+
+    interface BolhaDaPublicacao {
+
+        UUID getPublicacaoId();
+
+        UUID getBolhaId();
+    }
 }

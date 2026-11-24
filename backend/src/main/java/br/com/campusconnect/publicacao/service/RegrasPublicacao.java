@@ -4,7 +4,12 @@ import br.com.campusconnect.comum.AcessoNegadoException;
 import br.com.campusconnect.comum.CampoInvalidoException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.regex.Pattern;
 import org.jspecify.annotations.Nullable;
 
@@ -17,6 +22,7 @@ final class RegrasPublicacao {
     static final int MAXIMO_IMAGENS = 4;
 
     static final String ENTRE_NA_BOLHA = "Entre na bolha para interagir com as publicações dela.";
+    static final String SO_NAS_SUAS_BOLHAS = "Você só pode publicar nas bolhas de que participa.";
     static final String SO_QUEM_ESCREVEU_EDITA = "Só quem escreveu pode editar a publicação.";
     static final String SO_QUEM_ESCREVEU_EXCLUI = "Só quem escreveu ou um administrador pode excluir.";
     static final String NAO_REPUBLICA_O_PROPRIO = "Você não pode republicar a própria publicação.";
@@ -34,6 +40,18 @@ final class RegrasPublicacao {
                     "A publicação pode ter até " + TAMANHO_TEXTO + " caracteres.");
         }
         return texto;
+    }
+
+    /** As bolhas sem repetição, na ordem em que vieram. */
+    static Set<UUID> bolhas(@Nullable List<UUID> bolhaIds) {
+        Set<UUID> bolhas = new LinkedHashSet<>();
+        if (bolhaIds != null) {
+            bolhaIds.stream().filter(Objects::nonNull).forEach(bolhas::add);
+        }
+        if (bolhas.isEmpty()) {
+            throw new CampoInvalidoException("bolhaIds", "Escolha pelo menos uma bolha.");
+        }
+        return bolhas;
     }
 
     /** Um post precisa de alguma coisa: texto, imagem, vídeo ou link. */

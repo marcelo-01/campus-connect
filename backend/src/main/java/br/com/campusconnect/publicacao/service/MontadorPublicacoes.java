@@ -13,6 +13,7 @@ import br.com.campusconnect.publicacao.service.PublicacaoVista.MidiaVista;
 import br.com.campusconnect.usuario.service.UsuarioPublico;
 import br.com.campusconnect.usuario.service.UsuarioService;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,10 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 class MontadorPublicacoes {
 
+    /** As bolhas de um post vêm das mais amplas para as mais específicas. */
+    private static final Comparator<BolhaResumo> ORDEM_DAS_BOLHAS = Comparator.comparingInt(BolhaResumo::nivel)
+            .thenComparing(BolhaResumo::nome, String.CASE_INSENSITIVE_ORDER);
+
     private final PublicacaoRepository publicacoes;
     private final InteracaoRepository interacoes;
     private final UsuarioService usuarios;
@@ -55,8 +60,11 @@ class MontadorPublicacoes {
                 .forEach(pessoas::add);
         Map<UUID, UsuarioPublico> publicos = usuarios.buscarPublicos(List.copyOf(pessoas)).stream()
                 .collect(Collectors.toMap(UsuarioPublico::id, Function.identity()));
-        Map<UUID, BolhaResumo> bolhasPorId = bolhas.resumos(
-                porId.values().stream().map(Publicacao::getBolhaId).collect(Collectors.toSet()), quemVe);
+        Map<UUID, List<UUID>> bolhasPorPublicacao = publicacoes.bolhasDe(ids).stream()
+                .collect(Collectors.groupingBy(PublicacaoRepository.BolhaDaPublicacao::getPublicacaoId,
+                        Collectors.mapping(PublicacaoRepository.BolhaDaPublicacao::getBolhaId, Collectors.toList())));
+        Map<UUID, BolhaResumo> bolhasPorId = bolhas.resumos(bolhasPorPublicacao.values().stream()
+                .flatMap(List::stream).collect(Collectors.toSet()), quemVe);
 
         Contexto contexto = new Contexto(quemVe, usuarios.ehAdministrador(quemVe),
                 interacoes.curtidasPorPublicacao(ids), interacoes.comentariosPorPublicacao(ids),
@@ -70,12 +78,13 @@ class MontadorPublicacoes {
                 continue;
             }
             UsuarioPublico autor = publicos.get(publicacao.getAutorId());
-            BolhaResumo bolha = bolhasPorId.get(publicacao.getBolhaId());
+            List<BolhaResumo> bolhasDoPost = bolhasPorPublicacao.getOrDefault(publicacao.getId(), List.of()).stream()
+                    .map(bolhasPorId::get).filter(Objects::nonNull).sorted(ORDEM_DAS_BOLHAS).toList();
             UsuarioPublico republicadaPor = item.republicadaPor() == null ? null : publicos.get(item.republicadaPor());
-            if (autor == null || bolha == null || (item.republicadaPor() != null && republicadaPor == null)) {
+            if (autor == null || bolhasDoPost.isEmpty() || (item.republicadaPor() != null && republicadaPor == null)) {
                 continue;
             }
-            montados.add(new ItemFeed(vista(publicacao, autor, bolha, contexto), republicadaPor, item.em()));
+            montados.add(new ItemFeed(vista(publicacao, autor, bolhasDoPost, contexto), republicadaPor, item.em()));
         }
         return montados;
     }
@@ -86,7 +95,7 @@ class MontadorPublicacoes {
                 .stream().findFirst().map(ItemFeed::publicacao);
     }
 
-    private static PublicacaoVista vista(Publicacao publicacao, UsuarioPublico autor, BolhaResumo bolha,
+    private static PublicacaoVista vista(Publicacao publicacao, UsuarioPublico autor, List<BolhaResumo> bolhas,
             Contexto contexto) {
         UUID id = publicacao.getId();
         List<MidiaVista> midias = new ArrayList<>();
@@ -100,11 +109,12 @@ class MontadorPublicacoes {
             }
         }
         boolean proprio = publicacao.getAutorId().equals(contexto.quemVe());
-        return new PublicacaoVista(id, autor, bolha, publicacao.getConteudo(), List.copyOf(midias), link,
+        return new PublicacaoVista(id, autor, bolhas, publicacao.getConteudo(), List.copyOf(midias), link,
                 publicacao.getCriadoEm(), publicacao.getAtualizadoEm(),
                 contexto.curtidas().getOrDefault(id, 0L), contexto.comentarios().getOrDefault(id, 0L),
                 contexto.republicacoes().getOrDefault(id, 0L), contexto.curtiu(id), contexto.salvou(id),
-                contexto.republicou(id), bolha.membro(), proprio, proprio || contexto.administrador());
+                contexto.republicou(id), bolhas.stream().anyMatch(BolhaResumo::membro), proprio,
+                proprio || contexto.administrador());
     }
 
     private record Contexto(UUID quemVe, boolean administrador, Map<UUID, Long> curtidas,

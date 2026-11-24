@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -41,9 +42,8 @@ import org.springframework.transaction.support.TransactionTemplate;
 /**
  * Publicar, editar, excluir e ler publicações, os feeds e o aviso de posts novos.
  *
- * <p>Quem vê um post é qualquer pessoa logada. Quem publica precisa ser membro da bolha. O que é
- * publicado numa bolha desce para as bolhas de dentro dela, mas não sobe: o feed de uma bolha mostra os
- * posts dela e os das bolhas acima.
+ * <p>Quem vê um post é qualquer pessoa logada. Quem publica marca as bolhas em que o post aparece, todas de
+ * que é membro. O post fica só nelas: não desce para as bolhas de dentro nem sobe para as de cima.
  */
 @Service
 @RequiredArgsConstructor
@@ -75,18 +75,21 @@ public class PublicacaoService {
      * durante o upload e a leitura da página. Se algo der errado depois, os arquivos novos são apagados.
      *
      * @param imagens até 4 imagens, já conferidas em até 5 MB cada
-     * @throws AcessoNegadoException se a pessoa não for membro da bolha
+     * @throws AcessoNegadoException se a pessoa não for membro de alguma das bolhas
      */
     public PublicacaoVista publicar(UUID autor, NovaPublicacao nova, List<byte[]> imagens,
             @Nullable VideoEnviado video) {
         String texto = RegrasPublicacao.texto(nova.conteudo());
         String link = RegrasPublicacao.link(nova.link());
         RegrasPublicacao.garantirConteudo(texto, imagens.size(), video != null, link != null);
-        BolhaResumo bolha = bolhas.resumos(List.of(nova.bolhaId()), autor).get(nova.bolhaId());
-        if (bolha == null) {
-            throw new CampoInvalidoException("bolhaId", "Escolha uma bolha que exista.");
+        Set<UUID> destino = RegrasPublicacao.bolhas(nova.bolhaIds());
+        Map<UUID, BolhaResumo> resumos = bolhas.resumos(destino, autor);
+        if (resumos.size() != destino.size()) {
+            throw new CampoInvalidoException("bolhaIds", "Escolha bolhas que existam.");
         }
-        RegrasPublicacao.garantirMembro(bolha.membro());
+        if (!resumos.values().stream().allMatch(BolhaResumo::membro)) {
+            throw new AcessoNegadoException(RegrasPublicacao.SO_NAS_SUAS_BOLHAS);
+        }
 
         List<String> gravados = new ArrayList<>();
         UUID id;
@@ -107,7 +110,8 @@ public class PublicacaoService {
             }
 
             id = transacao.execute(status -> {
-                Publicacao publicacao = new Publicacao(autor, bolha.id(), texto, StatusPublicacao.PUBLICADA);
+                Publicacao publicacao = new Publicacao(autor, texto, StatusPublicacao.PUBLICADA);
+                publicacao.getBolhaIds().addAll(destino);
                 imagensGravadas.forEach(url -> publicacao.adicionarMidia(TipoMidia.IMAGEM, url).setMimeType("image/jpeg"));
                 if (videoGravado != null) {
                     publicacao.adicionarMidia(TipoMidia.VIDEO, videoGravado)
@@ -193,7 +197,7 @@ public class PublicacaoService {
      * O feed do Início: os posts das bolhas em que a pessoa está. Como entrar numa bolha também entra nas
      * de cima, os posts da bolha geral chegam por aqui.
      *
-     * @param bolhaId quando vem, só os posts feitos nessa bolha, sem os que descem das de cima
+     * @param bolhaId quando vem, só os posts publicados nessa bolha
      * @param ordem {@code recentes}, {@code alta} ou {@code midia}
      */
     @Transactional(readOnly = true)
@@ -203,13 +207,14 @@ public class PublicacaoService {
     }
 
     /**
-     * O feed de uma bolha: os posts dela e os das bolhas acima, nunca os das de dentro.
+     * O feed de uma bolha: os posts publicados nela, sem os das bolhas de cima nem os das de dentro.
      *
      * @throws br.com.campusconnect.bolha.service.BolhaNaoEncontradaException se a bolha não existir
      */
     @Transactional(readOnly = true)
     public PaginaFeed feedBolha(UUID quemVe, UUID bolhaId, @Nullable String ordem, @Nullable String cursor) {
-        return paginaDasBolhas(bolhas.idsDoCaminho(bolhaId), OrdemFeed.de(ordem), Cursor.ler(cursor), quemVe);
+        bolhas.garantirQueExiste(bolhaId);
+        return paginaDasBolhas(List.of(bolhaId), OrdemFeed.de(ordem), Cursor.ler(cursor), quemVe);
     }
 
     /** O feed de um perfil: os posts da pessoa e os que ela republicou. */
@@ -242,13 +247,14 @@ public class PublicacaoService {
     }
 
     /**
-     * O aviso no topo do feed de uma bolha, que conta também os posts das bolhas acima.
+     * O aviso no topo do feed de uma bolha.
      *
      * @throws br.com.campusconnect.bolha.service.BolhaNaoEncontradaException se a bolha não existir
      */
     @Transactional(readOnly = true)
     public NovasPublicacoes novasNaBolha(UUID quemVe, UUID bolhaId, @Nullable String ordem, @Nullable String desde) {
-        return novasDasBolhas(bolhas.idsDoCaminho(bolhaId), ordem, desde, quemVe);
+        bolhas.garantirQueExiste(bolhaId);
+        return novasDasBolhas(List.of(bolhaId), ordem, desde, quemVe);
     }
 
     // ------------------------------------------------------------ apoio

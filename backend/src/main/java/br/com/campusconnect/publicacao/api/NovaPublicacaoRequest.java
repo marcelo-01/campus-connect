@@ -1,14 +1,13 @@
 package br.com.campusconnect.publicacao.api;
 
 import br.com.campusconnect.publicacao.service.NovaPublicacao;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import java.util.List;
 import java.util.UUID;
 
 /** A parte {@code dados} do multipart de uma publicação nova. As imagens e o vídeo vêm em partes próprias. */
 record NovaPublicacaoRequest(
-        @NotNull(message = "Escolha a bolha da publicação.")
-        UUID bolhaId,
+        List<UUID> bolhaIds,
 
         @Size(max = 3000, message = "A publicação pode ter até 3000 caracteres.")
         String conteudo,
@@ -22,6 +21,6 @@ record NovaPublicacaoRequest(
     }
 
     NovaPublicacao paraNovaPublicacao() {
-        return new NovaPublicacao(bolhaId, conteudo, link);
+        return new NovaPublicacao(bolhaIds, conteudo, link);
     }
 }

@@ -128,37 +128,48 @@ public class InteracaoRepository {
 
     // ------------------------------------------------------------ exclusão de uma bolha
 
-    /** Todas as publicações da bolha, até as excluídas. */
-    public List<UUID> publicacoesDaBolha(UUID bolhaId) {
-        return jdbc.queryForList("select id from publicacao where bolha_id = :bolha",
-                new MapSqlParameterSource("bolha", bolhaId), UUID.class);
+    /**
+     * As publicações que estão só nesta bolha, até as excluídas. Sem ela, ficariam sem bolha nenhuma. As
+     * que estão também em outras bolhas continuam nelas.
+     */
+    private static final String SO_DA_BOLHA = """
+            select pb.publicacao_id from publicacao_bolha pb
+            where pb.bolha_id = :bolha
+              and not exists (select 1 from publicacao_bolha outra
+                              where outra.publicacao_id = pb.publicacao_id and outra.bolha_id <> :bolha)
+            """;
+
+    /** As publicações que a exclusão da bolha apaga: as que só estão nela, até as excluídas. */
+    public List<UUID> publicacoesSoDaBolha(UUID bolhaId) {
+        return jdbc.queryForList(SO_DA_BOLHA, new MapSqlParameterSource("bolha", bolhaId), UUID.class);
     }
 
-    /** Os arquivos (imagens, vídeos e imagens de prévia) de todas as publicações da bolha, até das excluídas. */
-    public List<String> arquivosDasPublicacoesDaBolha(UUID bolhaId) {
+    /** Os arquivos (imagens, vídeos e imagens de prévia) das publicações que só estão na bolha. */
+    public List<String> arquivosDasPublicacoesSoDaBolha(UUID bolhaId) {
         return jdbc.queryForList("""
-                select m.url from midia_publicacao m join publicacao p on p.id = m.publicacao_id
-                where p.bolha_id = :bolha and m.tipo in ('IMAGEM', 'VIDEO')
+                select m.url from midia_publicacao m
+                where m.publicacao_id in (%1$s) and m.tipo in ('IMAGEM', 'VIDEO')
                 union all
-                select m.imagem_url from midia_publicacao m join publicacao p on p.id = m.publicacao_id
-                where p.bolha_id = :bolha and m.imagem_url is not null
-                """, new MapSqlParameterSource("bolha", bolhaId), String.class);
+                select m.imagem_url from midia_publicacao m
+                where m.publicacao_id in (%1$s) and m.imagem_url is not null
+                """.formatted(SO_DA_BOLHA), new MapSqlParameterSource("bolha", bolhaId), String.class);
     }
 
     /**
-     * Apaga de vez as publicações da bolha, com tudo o que depende delas. As mídias saem junto pelo
-     * {@code ON DELETE CASCADE}; o resto vai antes, na ordem das chaves estrangeiras.
+     * Tira as publicações da bolha. As que só estavam nela são apagadas de vez, com tudo o que depende
+     * delas: as mídias e o vínculo com a bolha saem junto pelo {@code ON DELETE CASCADE}, e o resto vai
+     * antes, na ordem das chaves estrangeiras. As que estão também em outras bolhas só perdem esta.
      */
-    public void apagarPublicacoesDaBolha(UUID bolhaId) {
+    public void tirarPublicacoesDaBolha(UUID bolhaId) {
         MapSqlParameterSource bolha = new MapSqlParameterSource("bolha", bolhaId);
-        String daBolha = "select id from publicacao where bolha_id = :bolha";
         jdbc.update("delete from reacao where comentario_id in (select id from comentario where publicacao_id in ("
-                + daBolha + "))", bolha);
-        jdbc.update("delete from reacao where publicacao_id in (" + daBolha + ")", bolha);
-        jdbc.update("delete from comentario where publicacao_id in (" + daBolha + ")", bolha);
-        jdbc.update("delete from publicacao_salva where publicacao_id in (" + daBolha + ")", bolha);
-        jdbc.update("delete from republicacao where publicacao_id in (" + daBolha + ")", bolha);
-        jdbc.update("delete from publicacao where bolha_id = :bolha", bolha);
+                + SO_DA_BOLHA + "))", bolha);
+        jdbc.update("delete from reacao where publicacao_id in (" + SO_DA_BOLHA + ")", bolha);
+        jdbc.update("delete from comentario where publicacao_id in (" + SO_DA_BOLHA + ")", bolha);
+        jdbc.update("delete from publicacao_salva where publicacao_id in (" + SO_DA_BOLHA + ")", bolha);
+        jdbc.update("delete from republicacao where publicacao_id in (" + SO_DA_BOLHA + ")", bolha);
+        jdbc.update("delete from publicacao where id in (" + SO_DA_BOLHA + ")", bolha);
+        jdbc.update("delete from publicacao_bolha where bolha_id = :bolha", bolha);
     }
 
     // ------------------------------------------------------------ apoio

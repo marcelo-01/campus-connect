@@ -5,7 +5,6 @@ import br.com.campusconnect.arquivo.service.ImagemInvalidaException;
 import br.com.campusconnect.arquivo.service.ImagemService;
 import br.com.campusconnect.bolha.model.Bolha;
 import br.com.campusconnect.bolha.model.MembroBolha;
-import br.com.campusconnect.bolha.model.MembroBolhaId;
 import br.com.campusconnect.bolha.model.PapelMembro;
 import br.com.campusconnect.bolha.model.TipoBolha;
 import br.com.campusconnect.bolha.repository.BolhaRepository;
@@ -14,7 +13,6 @@ import br.com.campusconnect.bolha.repository.MembroBolhaRepository.TotalPorBolha
 import br.com.campusconnect.comum.AcessoNegadoException;
 import br.com.campusconnect.comum.CampoInvalidoException;
 import br.com.campusconnect.usuario.service.UsuarioService;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -94,24 +92,18 @@ public class BolhaService {
         return membros.idsDasBolhasDo(usuarioId);
     }
 
+    /** Se a pessoa participa de pelo menos uma das bolhas. */
     @Transactional(readOnly = true)
-    public boolean ehMembro(UUID usuarioId, UUID bolhaId) {
-        return membros.existsById(new MembroBolhaId(bolhaId, usuarioId));
+    public boolean ehMembroDeAlguma(UUID usuarioId, Collection<UUID> bolhaIds) {
+        return !bolhaIds.isEmpty() && membros.participaDeAlguma(usuarioId, bolhaIds);
     }
 
-    /**
-     * A bolha e as que ficam acima dela, de baixo para cima. É o que o feed de uma bolha mostra: o que foi
-     * publicado numa bolha desce para as de dentro dela, mas não sobe.
-     *
-     * @throws BolhaNaoEncontradaException se a bolha não existir
-     */
+    /** @throws BolhaNaoEncontradaException se a bolha não existir */
     @Transactional(readOnly = true)
-    public List<UUID> idsDoCaminho(UUID bolhaId) {
-        List<UUID> ids = new ArrayList<>();
-        for (Bolha atual = carregar(bolhaId); atual != null; atual = atual.getBolhaPai()) {
-            ids.add(atual.getId());
+    public void garantirQueExiste(UUID bolhaId) {
+        if (!bolhas.existsById(bolhaId)) {
+            throw new BolhaNaoEncontradaException(bolhaId);
         }
-        return ids;
     }
 
     /** Resumo de cada bolha pedida, com {@code membro} do ponto de vista de quem vê. Ids que não existem ficam de fora. */

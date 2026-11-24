@@ -19,7 +19,7 @@ bolhas, as pessoas publicam, conversam, se conectam e anunciam serviços e produ
 | RF05 · Mensagens | Conversa direta em tempo real (SSE), bloqueio e limite contra spam |
 | RF06 · Bolhas | Busca por nome ou sigla, entrar e sair. Entrar numa bolha inclui as de cima; sair inclui as de baixo |
 | RF07 · Hierarquia | Tipos Geral, Campus, Curso e Comunidade. Só administradores criam, editam e excluem bolhas |
-| RF08 · Direcionar posts | O post desce pela hierarquia e nunca sobe: um post na Geral aparece em todas as sub-bolhas. No Início dá para filtrar por bolha |
+| RF08 · Direcionar posts | Quem publica marca as bolhas em que o post vai aparecer, e ele aparece só nelas. No Início dá para filtrar por bolha |
 | RF09 a RF12 · Marketplace | Anúncios de serviço ou produto em 1 a 5 bolhas, até 6 fotos, categorias, favoritos, avaliações e pausa |
 | Notificações | Pedido de conexão e aceite, comentário, resposta, curtida, republicação e avaliação de anúncio, em tempo real. Curtidas e republicações do mesmo alvo vêm juntas ("Ana e mais 3 pessoas curtiram") |
 

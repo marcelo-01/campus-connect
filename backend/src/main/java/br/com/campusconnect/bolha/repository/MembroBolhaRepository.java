@@ -19,6 +19,9 @@ public interface MembroBolhaRepository extends JpaRepository<MembroBolha, Membro
     @Query("select m.id.bolhaId from MembroBolha m where m.id.usuarioId = :usuarioId")
     Set<UUID> idsDasBolhasDo(@Param("usuarioId") UUID usuarioId);
 
+    @Query("select count(m) > 0 from MembroBolha m where m.id.usuarioId = :usuarioId and m.id.bolhaId in :bolhas")
+    boolean participaDeAlguma(@Param("usuarioId") UUID usuarioId, @Param("bolhas") Collection<UUID> bolhas);
+
     /** Não faz nada se a pessoa já participa: dois cliques seguidos em "Entrar" não dão erro. */
     @Modifying
     @Query(value = """

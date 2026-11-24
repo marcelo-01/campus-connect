@@ -28,6 +28,12 @@ import org.springframework.stereotype.Repository;
 @RequiredArgsConstructor
 public class FeedRepository {
 
+    /** Os posts publicados em alguma das bolhas pedidas. Um post em várias delas aparece uma vez só. */
+    private static final String NAS_BOLHAS = """
+            exists (select 1 from publicacao_bolha pb
+                    where pb.publicacao_id = p.id and pb.bolha_id in (:bolhas))
+            """;
+
     /** O chip "Com mídia": só os posts com imagem ou vídeo. */
     private static final String COM_MIDIA = """
             and exists (select 1 from midia_publicacao m
@@ -58,8 +64,8 @@ public class FeedRepository {
         StringBuilder sql = new StringBuilder("""
                 select p.id, null::uuid as republicada_por, p.criado_em as em
                 from publicacao p
-                where p.status = 'PUBLICADA' and p.bolha_id in (:bolhas)
-                """);
+                where p.status = 'PUBLICADA' and
+                """).append(NAS_BOLHAS);
         if (soComMidia) {
             sql.append(COM_MIDIA);
         }
@@ -81,13 +87,13 @@ public class FeedRepository {
             return List.of();
         }
         // Cada feed aberto repete esta consulta de tempos em tempos. A comparação só pela data já está
-        // implícita na de data e id, mas é ela que deixa o índice (bolha_id, criado_em) delimitar a busca.
+        // implícita na de data e id, mas é ela que deixa o índice dos publicados delimitar a busca.
         StringBuilder sql = new StringBuilder("""
                 select p.id, p.autor_id
                 from publicacao p
-                where p.status = 'PUBLICADA' and p.bolha_id in (:bolhas) and p.autor_id <> :excetoAutor
-                  and p.criado_em >= :desde and (p.criado_em, p.id) > (:desde, :desdeId)
-                """);
+                where p.status = 'PUBLICADA' and p.autor_id <> :excetoAutor
+                  and p.criado_em >= :desde and (p.criado_em, p.id) > (:desde, :desdeId) and
+                """).append(NAS_BOLHAS);
         if (soComMidia) {
             sql.append(COM_MIDIA);
         }
@@ -116,7 +122,8 @@ public class FeedRepository {
                 left join (select publicacao_id, count(*) as total from reacao
                            where publicacao_id is not null group by publicacao_id) r
                        on r.publicacao_id = p.id
-                where p.status = 'PUBLICADA' and p.bolha_id in (:bolhas) and p.criado_em >= :desde
+                where p.status = 'PUBLICADA' and p.criado_em >= :desde and
+                """ + NAS_BOLHAS + """
                 order by coalesce(r.total, 0) desc, p.criado_em desc, p.id desc
                 offset :deslocamento limit :limite
                 """,

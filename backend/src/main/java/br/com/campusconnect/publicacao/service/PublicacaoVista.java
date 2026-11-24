@@ -10,17 +10,16 @@ import org.jspecify.annotations.Nullable;
 /**
  * Uma publicação como aparece no feed, já do ponto de vista de quem está vendo.
  *
- * @param bolha a bolha em que o post foi feito, que pode ser uma acima da que a pessoa está vendo: o que
- *     é publicado numa bolha desce para as de dentro dela
+ * @param bolhas as bolhas em que o post aparece, das mais amplas para as mais específicas
  * @param midias imagens (até 4) ou um vídeo, na ordem em que foram anexados
  * @param link o link anexado, com a prévia quando o servidor conseguiu ler a página
  * @param editadoEm quando o texto foi editado pela última vez, ou {@code null} se nunca foi
  * @param curtida se quem vê curtiu
  * @param salva se quem vê salvou
  * @param republicada se quem vê republicou
- * @param podeInteragir se quem vê é membro da bolha do post e pode curtir, comentar e republicar
+ * @param podeInteragir se quem vê é membro de uma das bolhas do post e pode curtir, comentar e republicar
  */
-public record PublicacaoVista(UUID id, UsuarioPublico autor, BolhaResumo bolha, String conteudo,
+public record PublicacaoVista(UUID id, UsuarioPublico autor, List<BolhaResumo> bolhas, String conteudo,
         List<MidiaVista> midias, @Nullable LinkVista link, Instant criadoEm, @Nullable Instant editadoEm,
         long curtidas, long comentarios, long republicacoes, boolean curtida, boolean salva,
         boolean republicada, boolean podeInteragir, boolean podeEditar, boolean podeExcluir) {

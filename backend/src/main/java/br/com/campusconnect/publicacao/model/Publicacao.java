@@ -2,16 +2,21 @@ package br.com.campusconnect.publicacao.model;
 
 import br.com.campusconnect.comum.EntidadeAuditada;
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -33,10 +38,6 @@ public class Publicacao extends EntidadeAuditada {
     private UUID autorId;
 
     @NonNull
-    @Column(name = "bolha_id", nullable = false)
-    private UUID bolhaId;
-
-    @NonNull
     @Column(name = "conteudo", nullable = false, columnDefinition = "text")
     private String conteudo;
 
@@ -50,6 +51,13 @@ public class Publicacao extends EntidadeAuditada {
 
     @Column(name = "removido_em")
     private Instant removidoEm;
+
+    /** As bolhas em que o post aparece, marcadas por quem publicou. Não mudam depois. */
+    @Setter(AccessLevel.NONE)
+    @ElementCollection
+    @CollectionTable(name = "publicacao_bolha", joinColumns = @JoinColumn(name = "publicacao_id"))
+    @Column(name = "bolha_id", nullable = false)
+    private Set<UUID> bolhaIds = new HashSet<>();
 
     @Setter(AccessLevel.NONE)
     @OneToMany(mappedBy = "publicacao", cascade = CascadeType.ALL, orphanRemoval = true)

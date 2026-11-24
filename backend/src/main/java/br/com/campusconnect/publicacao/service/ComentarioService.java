@@ -32,8 +32,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Comentários de uma publicação, com um nível de respostas. Responder a uma resposta pendura a nova no
  * mesmo comentário de cima, como nas redes sociais mais comuns.
  *
- * <p>Comentar e curtir comentário exigem ser membro da bolha do post. Excluir pode quem escreveu ou um
- * administrador. O comentário excluído some; se tiver respostas, fica no lugar dele um "Comentário
+ * <p>Comentar e curtir comentário exigem ser membro de uma das bolhas do post. Excluir pode quem escreveu
+ * ou um administrador. O comentário excluído some; se tiver respostas, fica no lugar dele um "Comentário
  * removido", sem autor e sem texto, para as respostas não perderem o contexto.
  *
  * <p>Comentar, curtir e excluir saem como {@link EventosPublicacao}, para o módulo de notificações avisar quem
@@ -111,7 +111,7 @@ public class ComentarioService {
     public ComentarioVista comentar(UUID quem, UUID publicacaoId, @Nullable String conteudo,
             @Nullable UUID respondendoA) {
         Publicacao publicacao = carregarPublicada(publicacaoId);
-        RegrasPublicacao.garantirMembro(bolhas.ehMembro(quem, publicacao.getBolhaId()));
+        RegrasPublicacao.garantirMembro(bolhas.ehMembroDeAlguma(quem, publicacao.getBolhaIds()));
         String texto = RegrasPublicacao.comentario(conteudo);
 
         Comentario pai = null;
@@ -148,7 +148,7 @@ public class ComentarioService {
     @Transactional
     public void curtir(UUID quem, UUID comentarioId) {
         Comentario comentario = carregarAtivo(comentarioId);
-        RegrasPublicacao.garantirMembro(bolhas.ehMembro(quem, comentario.getPublicacao().getBolhaId()));
+        RegrasPublicacao.garantirMembro(bolhas.ehMembroDeAlguma(quem, comentario.getPublicacao().getBolhaIds()));
         if (interacoes.curtirComentario(quem, comentarioId)) {
             eventos.publishEvent(new EventosPublicacao.ComentarioCurtido(quem, comentarioId,
                     comentario.getPublicacao().getId(), comentario.getAutorId(), comentario.getConteudo()));

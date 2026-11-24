@@ -11,9 +11,9 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Quando uma bolha é excluída, apaga de vez as publicações dela, com comentários, curtidas, salvas e
- * republicações. Roda na mesma transação da exclusão: se ela falhar, nada é apagado. Os arquivos saem
- * do disco só depois do commit.
+ * Quando uma bolha é excluída, apaga de vez as publicações que só estavam nela, com comentários, curtidas,
+ * salvas e republicações. As que estão também em outras bolhas continuam nelas. Roda na mesma transação da
+ * exclusão: se ela falhar, nada é apagado. Os arquivos saem do disco só depois do commit.
  *
  * <p>Avisa os outros módulos com {@link EventosPublicacao.PublicacoesExcluidas}, como na exclusão de um post.
  */
@@ -27,9 +27,9 @@ class ApagaPublicacoesDaBolha {
 
     @EventListener
     void aoExcluir(BolhaExcluida evento) {
-        List<UUID> publicacoes = interacoes.publicacoesDaBolha(evento.bolhaId());
-        List<String> arquivosDaBolha = interacoes.arquivosDasPublicacoesDaBolha(evento.bolhaId());
-        interacoes.apagarPublicacoesDaBolha(evento.bolhaId());
+        List<UUID> publicacoes = interacoes.publicacoesSoDaBolha(evento.bolhaId());
+        List<String> arquivosDaBolha = interacoes.arquivosDasPublicacoesSoDaBolha(evento.bolhaId());
+        interacoes.tirarPublicacoesDaBolha(evento.bolhaId());
         arquivos.descartarAoFim(arquivosDaBolha, List.of());
         if (!publicacoes.isEmpty()) {
             eventos.publishEvent(new EventosPublicacao.PublicacoesExcluidas(publicacoes));

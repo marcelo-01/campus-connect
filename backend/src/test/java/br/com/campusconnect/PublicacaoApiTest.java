@@ -1,6 +1,7 @@
 package br.com.campusconnect;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.notNullValue;
@@ -19,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -90,7 +92,7 @@ class PublicacaoApiTest {
                 .andExpect(header().string(HttpHeaders.LOCATION, matchesPattern("/api/publicacoes/[0-9a-f-]{36}")))
                 .andExpect(jsonPath("$.conteudo").value("Alguém para estudar Java hoje?"))
                 .andExpect(jsonPath("$.autor.username").value("ana.bc"))
-                .andExpect(jsonPath("$.bolha.id").value(curso.toString()))
+                .andExpect(jsonPath("$.bolhas[*].id").value(contains(curso.toString())))
                 .andExpect(jsonPath("$.midias", hasSize(0)))
                 .andExpect(jsonPath("$.link").value(nullValue()))
                 .andExpect(jsonPath("$.editadoEm").value(nullValue()))
@@ -114,7 +116,7 @@ class PublicacaoApiTest {
         entrar(ana, curso);
         publicar(bia, curso, "Oi!", null)
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.detail").value("Entre na bolha para interagir com as publicações dela."));
+                .andExpect(jsonPath("$.detail").value("Você só pode publicar nas bolhas de que participa."));
 
         String id = idDe(publicar(ana, curso, "Aberto para quem passar", null));
 
@@ -133,7 +135,10 @@ class PublicacaoApiTest {
     void bolhaQueNaoExisteDaErro() throws Exception {
         publicar(ana, UUID.randomUUID(), "Para onde?", null)
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.erros.bolhaId").exists());
+                .andExpect(jsonPath("$.erros.bolhaIds").value("Escolha bolhas que existam."));
+        publicar(ana, List.of(), "Para lugar nenhum")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.erros.bolhaIds").value("Escolha pelo menos uma bolha."));
         comToken(get("/api/publicacoes/bolha/" + UUID.randomUUID()), ana).andExpect(status().isNotFound());
         comToken(get("/api/publicacoes/" + UUID.randomUUID()), ana).andExpect(status().isNotFound());
     }
@@ -225,43 +230,89 @@ class PublicacaoApiTest {
         assertThat(jdbc.queryForObject("select count(*) from publicacao", Long.class)).isZero();
     }
 
-    // ------------------------------------------------------------------ hierarquia (RF08)
+    // ------------------------------------------------------------------ bolhas do post (RF08)
 
     @Test
-    void oPostDesceParaAsBolhasDeDentroMasNaoSobe() throws Exception {
+    void oPostApareceSoNasBolhasMarcadas() throws Exception {
         entrar(ana, comunidade); // entra também no curso, no campus e na geral
-        String doGeral = idDe(publicar(ana, geral, "Comunicado para todos", null));
-        String doCampus = idDe(publicar(ana, campus, "Aviso do campus", null));
-        String doCurso = idDe(publicar(ana, curso, "Prova de ADS na sexta", null));
-        String daComunidade = idDe(publicar(ana, comunidade, "Torneio de xadrez", null));
+        String doGeral = idDe(publicar(ana, List.of(geral), "Comunicado para todos"));
+        String doCampusEDoCurso = idDe(publicar(ana, List.of(curso, campus), "Aviso do campus e de ADS"));
+        String daComunidade = idDe(publicar(ana, List.of(comunidade), "Torneio de xadrez"));
 
+        // Não desce para as bolhas de dentro nem sobe para as de cima.
         assertThat(ids(comToken(get("/api/publicacoes/bolha/" + geral), bia))).containsExactly(doGeral);
-        assertThat(ids(comToken(get("/api/publicacoes/bolha/" + campus), bia))).containsExactly(doCampus, doGeral);
-        assertThat(ids(comToken(get("/api/publicacoes/bolha/" + curso), bia)))
-                .containsExactly(doCurso, doCampus, doGeral);
-        assertThat(ids(comToken(get("/api/publicacoes/bolha/" + comunidade), bia)))
-                .containsExactly(daComunidade, doCurso, doCampus, doGeral);
+        assertThat(ids(comToken(get("/api/publicacoes/bolha/" + campus), bia))).containsExactly(doCampusEDoCurso);
+        assertThat(ids(comToken(get("/api/publicacoes/bolha/" + curso), bia))).containsExactly(doCampusEDoCurso);
+        assertThat(ids(comToken(get("/api/publicacoes/bolha/" + comunidade), bia))).containsExactly(daComunidade);
 
-        // A etiqueta mostra a bolha de origem, mesmo vista de dentro do curso.
-        comToken(get("/api/publicacoes/bolha/" + curso), bia)
-                .andExpect(jsonPath("$.itens[2].publicacao.bolha.id").value(geral.toString()));
+        // As bolhas do post vêm das mais amplas para as mais específicas.
+        comToken(get("/api/publicacoes/" + doCampusEDoCurso), bia)
+                .andExpect(jsonPath("$.bolhas[*].id").value(contains(campus.toString(), curso.toString())));
     }
 
     @Test
-    void oInicioMostraAsMinhasBolhasEOFiltroSoAsDaBolhaEscolhida() throws Exception {
+    void oInicioMostraUmaVezSoOPostQueEstaEmVariasBolhas() throws Exception {
         entrar(ana, comunidade);
         entrar(bia, curso); // está no curso, no campus e na geral, mas não na comunidade
-        String doGeral = idDe(publicar(ana, geral, "Comunicado", null));
-        String doCurso = idDe(publicar(ana, curso, "Prova", null));
-        String daComunidade = idDe(publicar(ana, comunidade, "Torneio", null));
+        String doGeral = idDe(publicar(ana, List.of(geral), "Comunicado"));
+        String doGeralEDoCurso = idDe(publicar(ana, List.of(geral, curso), "Prova"));
+        String daComunidade = idDe(publicar(ana, List.of(comunidade), "Torneio"));
 
-        assertThat(ids(comToken(get("/api/publicacoes/feed"), bia))).containsExactly(doCurso, doGeral);
-        assertThat(ids(comToken(get("/api/publicacoes/feed"), ana))).containsExactly(daComunidade, doCurso, doGeral);
+        assertThat(ids(comToken(get("/api/publicacoes/feed"), bia))).containsExactly(doGeralEDoCurso, doGeral);
+        assertThat(ids(comToken(get("/api/publicacoes/feed"), ana)))
+                .containsExactly(daComunidade, doGeralEDoCurso, doGeral);
 
         assertThat(ids(comToken(get("/api/publicacoes/feed").param("bolhaId", curso.toString()), bia)))
-                .containsExactly(doCurso);
+                .containsExactly(doGeralEDoCurso);
         assertThat(ids(comToken(get("/api/publicacoes/feed").param("bolhaId", geral.toString()), bia)))
-                .containsExactly(doGeral);
+                .containsExactly(doGeralEDoCurso, doGeral);
+    }
+
+    @Test
+    void oPostEmVariasBolhasNaoRepeteAsFotos() throws Exception {
+        entrar(ana, curso);
+        String id = idDe(comToken(publicacao(List.of(geral, campus, curso), "Fotos da Semana Acadêmica", null)
+                .file(imagem("a.png")).file(imagem("b.png")), ana));
+
+        comToken(get("/api/publicacoes/" + id), ana)
+                .andExpect(jsonPath("$.bolhas", hasSize(3)))
+                .andExpect(jsonPath("$.midias", hasSize(2)));
+        comToken(get("/api/publicacoes/feed"), ana)
+                .andExpect(jsonPath("$.itens", hasSize(1)))
+                .andExpect(jsonPath("$.itens[0].publicacao.bolhas", hasSize(3)))
+                .andExpect(jsonPath("$.itens[0].publicacao.midias", hasSize(2)));
+    }
+
+    @Test
+    void publicaSoNasBolhasDeQueParticipa() throws Exception {
+        entrar(ana, curso); // não está na comunidade
+        publicar(ana, List.of(curso, comunidade), "Para o curso e o xadrez")
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail").value("Você só pode publicar nas bolhas de que participa."));
+        assertThat(jdbc.queryForObject("select count(*) from publicacao", Long.class)).isZero();
+
+        // A mesma bolha duas vezes conta uma só.
+        publicar(ana, List.of(curso, curso), "Duas vezes no curso")
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.bolhas", hasSize(1)));
+    }
+
+    @Test
+    void interageQuemEstaEmUmaDasBolhasDoPost() throws Exception {
+        entrar(ana, comunidade);
+        entrar(bia, curso); // está no curso, mas não na comunidade
+        String soDaComunidade = idDe(publicar(ana, List.of(comunidade), "Só para o clube"));
+        String doCursoEDaComunidade = idDe(publicar(ana, List.of(curso, comunidade), "Xadrez depois da aula?"));
+
+        comToken(get("/api/publicacoes/" + soDaComunidade), bia).andExpect(jsonPath("$.podeInteragir").value(false));
+        comToken(post("/api/publicacoes/" + soDaComunidade + "/curtida"), bia).andExpect(status().isForbidden());
+
+        comToken(get("/api/publicacoes/" + doCursoEDaComunidade), bia)
+                .andExpect(jsonPath("$.podeInteragir").value(true));
+        curtir(bia, doCursoEDaComunidade);
+        comToken(post("/api/publicacoes/" + doCursoEDaComunidade + "/comentarios")
+                .contentType(MediaType.APPLICATION_JSON).content("{\"conteudo\": \"Bora!\"}"), bia)
+                .andExpect(status().isCreated());
     }
 
     // ------------------------------------------------------------------ paginação e chips
@@ -348,7 +399,7 @@ class PublicacaoApiTest {
     }
 
     @Test
-    void oAvisoSegueAHierarquiaOFiltroEOChipDoFeed() throws Exception {
+    void oAvisoSegueAsBolhasDoPostOFiltroEOChipDoFeed() throws Exception {
         entrar(ana, comunidade); // entra também no curso, no campus e na geral
         entrar(bia, curso); // está no curso, no campus e na geral, mas não na comunidade
         // Os feeds da Bia abrem vazios: tudo o que chegar depois é novo.
@@ -357,15 +408,17 @@ class PublicacaoApiTest {
         String daBolha = topo(comToken(get("/api/publicacoes/bolha/" + curso), bia));
         String comMidia = topo(comToken(get("/api/publicacoes/bolha/" + curso).param("ordem", "midia"), bia));
 
-        idDe(publicar(ana, geral, "Desce para o curso", null));
-        idDe(publicar(ana, comunidade, "Não sobe para o curso", null));
+        idDe(publicar(ana, List.of(geral), "Não desce para o curso"));
+        idDe(publicar(ana, List.of(comunidade), "Não sobe para o curso"));
+        idDe(publicar(ana, List.of(geral, curso), "Na geral e no curso"));
         idDe(comToken(publicacao(curso, "Com foto", null).file(imagem("f.png")), ana));
 
-        novas(get("/api/publicacoes/feed/novas"), inicio, bia).andExpect(jsonPath("$.total").value(2));
-        // Filtrado pelo curso, o Início só conta o que foi feito no curso.
+        // O post da geral e do curso conta uma vez só; o da comunidade fica de fora, porque a Bia não está nela.
+        novas(get("/api/publicacoes/feed/novas"), inicio, bia).andExpect(jsonPath("$.total").value(3));
+        // Filtrado pelo curso, o Início só conta o que foi publicado no curso.
         novas(get("/api/publicacoes/feed/novas").param("bolhaId", curso.toString()), filtrado, bia)
-                .andExpect(jsonPath("$.total").value(1));
-        // A bolha conta o que desce da geral, mas não o que foi feito na comunidade, que fica dentro dela.
+                .andExpect(jsonPath("$.total").value(2));
+        // A bolha conta só o que foi publicado nela: nem o da geral, nem o da comunidade.
         novas(get("/api/publicacoes/bolha/" + curso + "/novas"), daBolha, bia).andExpect(jsonPath("$.total").value(2));
         novas(get("/api/publicacoes/bolha/" + curso + "/novas").param("ordem", "midia"), comMidia, bia)
                 .andExpect(jsonPath("$.total").value(1));
@@ -454,7 +507,7 @@ class PublicacaoApiTest {
     }
 
     @Test
-    void excluirABolhaApagaAsPublicacoesDela() throws Exception {
+    void excluirABolhaApagaAsPublicacoesQueSoEstavamNela() throws Exception {
         entrar(ana, comunidade);
         entrar(bia, comunidade);
         String corpo = comToken(publicacao(comunidade, "Vai sumir", null).file(imagem("f.png")), ana)
@@ -467,10 +520,14 @@ class PublicacaoApiTest {
         comToken(post("/api/publicacoes/" + id + "/salva"), bia).andExpect(status().isNoContent());
         comToken(post("/api/publicacoes/" + id + "/republicacao"), bia).andExpect(status().isNoContent());
         String doCurso = idDe(publicar(ana, curso, "Fica", null));
+        String tambemNoCurso = idDe(publicar(ana, List.of(curso, comunidade), "Fica só no curso"));
 
         comToken(delete("/api/bolhas/" + comunidade), equipe).andExpect(status().isNoContent());
 
-        assertThat(jdbc.queryForList("select id::text from publicacao", String.class)).containsExactly(doCurso);
+        assertThat(jdbc.queryForList("select id::text from publicacao", String.class))
+                .containsExactlyInAnyOrder(doCurso, tambemNoCurso);
+        comToken(get("/api/publicacoes/" + tambemNoCurso), ana)
+                .andExpect(jsonPath("$.bolhas[*].id").value(contains(curso.toString())));
         assertThat(jdbc.queryForObject("select count(*) from comentario", Long.class)).isZero();
         assertThat(jdbc.queryForObject("select count(*) from reacao", Long.class)).isZero();
         mvc.perform(get(foto)).andExpect(status().isNotFound());
@@ -512,16 +569,25 @@ class PublicacaoApiTest {
         return comToken(publicacao(bolha, texto, link), conta);
     }
 
+    private ResultActions publicar(Conta conta, List<UUID> bolhas, String texto) throws Exception {
+        return comToken(publicacao(bolhas, texto, null), conta);
+    }
+
     private ResultActions editar(Conta conta, String id, String texto) throws Exception {
         return comToken(put("/api/publicacoes/" + id).contentType(MediaType.APPLICATION_JSON)
                 .content("{\"conteudo\": \"%s\"}".formatted(texto)), conta);
     }
 
-    /** O multipart de uma publicação nova, só com a parte {@code dados}; os arquivos o teste acrescenta. */
     private static MockMultipartHttpServletRequestBuilder publicacao(UUID bolha, String texto, String link) {
+        return publicacao(List.of(bolha), texto, link);
+    }
+
+    /** O multipart de uma publicação nova, só com a parte {@code dados}; os arquivos o teste acrescenta. */
+    private static MockMultipartHttpServletRequestBuilder publicacao(List<UUID> bolhas, String texto, String link) {
+        String destino = bolhas.stream().map(bolha -> "\"" + bolha + "\"").collect(Collectors.joining(", ", "[", "]"));
         String json = link == null
-                ? "{\"bolhaId\": \"%s\", \"conteudo\": \"%s\"}".formatted(bolha, texto)
-                : "{\"bolhaId\": \"%s\", \"conteudo\": \"%s\", \"link\": \"%s\"}".formatted(bolha, texto, link);
+                ? "{\"bolhaIds\": %s, \"conteudo\": \"%s\"}".formatted(destino, texto)
+                : "{\"bolhaIds\": %s, \"conteudo\": \"%s\", \"link\": \"%s\"}".formatted(destino, texto, link);
         return multipart("/api/publicacoes").file(new MockMultipartFile("dados", "", MediaType.APPLICATION_JSON_VALUE,
                 json.getBytes(StandardCharsets.UTF_8)));
     }

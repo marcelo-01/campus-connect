@@ -247,7 +247,7 @@ class InteracoesApiTest {
     }
 
     private String publicar(Conta conta, UUID bolha, String texto) throws Exception {
-        String json = "{\"bolhaId\": \"%s\", \"conteudo\": \"%s\"}".formatted(bolha, texto);
+        String json = "{\"bolhaIds\": [\"%s\"], \"conteudo\": \"%s\"}".formatted(bolha, texto);
         return JsonPath.read(acao(multipart("/api/publicacoes").file(new MockMultipartFile("dados", "",
                         MediaType.APPLICATION_JSON_VALUE, json.getBytes(StandardCharsets.UTF_8))), conta)
                 .andExpect(status().isCreated())

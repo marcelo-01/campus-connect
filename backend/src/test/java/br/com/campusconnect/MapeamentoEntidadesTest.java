@@ -141,8 +141,8 @@ class MapeamentoEntidadesTest {
         Impulsionamento impulsionamento = em.persist(new Impulsionamento(anuncio, bolhaCurso.getId(), inicio,
                 fim, new BigDecimal("19.90"), StatusImpulsionamento.ATIVO));
 
-        Publicacao publicacao = new Publicacao(ana.getId(), bolhaCurso.getId(), "Bem-vindos!",
-                StatusPublicacao.PUBLICADA);
+        Publicacao publicacao = new Publicacao(ana.getId(), "Bem-vindos!", StatusPublicacao.PUBLICADA);
+        publicacao.getBolhaIds().add(bolhaCurso.getId());
         publicacao.adicionarMidia(TipoMidia.IMAGEM, "https://exemplo.com/foto.png").setTamanhoBytes(5_000_000_000L);
         MidiaPublicacao link = publicacao.adicionarMidia(TipoMidia.LINK, "https://exemplo.com");
         link.setTitulo("Exemplo");
@@ -191,7 +191,7 @@ class MapeamentoEntidadesTest {
                 where table_schema = 'public' and table_type = 'BASE TABLE'
                   and table_name <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(tabelas).hasSize(26).allSatisfy(tabela -> assertThat(
+        assertThat(tabelas).hasSize(27).allSatisfy(tabela -> assertThat(
                 jdbc.queryForObject("select count(*) from " + tabela, Long.class)).as(tabela).isPositive());
 
         Usuario anaLida = em.find(Usuario.class, ana.getId());
@@ -247,6 +247,7 @@ class MapeamentoEntidadesTest {
 
         Publicacao publicacaoLida = em.find(Publicacao.class, publicacao.getId());
         assertThat(publicacaoLida.isFixada()).isFalse();
+        assertThat(publicacaoLida.getBolhaIds()).containsExactly(bolhaCurso.getId());
         assertThat(publicacaoLida.getMidias()).extracting(MidiaPublicacao::getTipo)
                 .containsExactly(TipoMidia.IMAGEM, TipoMidia.LINK);
         assertThat(publicacaoLida.getMidias().getFirst().getTamanhoBytes()).isEqualTo(5_000_000_000L);

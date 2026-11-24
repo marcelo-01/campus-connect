@@ -15,9 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Curtir, salvar e republicar uma publicação. Ligar e desligar são idempotentes.
  *
- * <p>Curtir e republicar aparecem para os outros, então exigem ser membro da bolha do post. Salvar é
- * privado e vale para qualquer pessoa logada. Desligar nunca exige nada: quem saiu da bolha ainda pode
- * tirar a própria curtida.
+ * <p>Curtir e republicar aparecem para os outros, então exigem ser membro de uma das bolhas do post.
+ * Salvar é privado e vale para qualquer pessoa logada. Desligar nunca exige nada: quem saiu da bolha ainda
+ * pode tirar a própria curtida.
  *
  * <p>Curtir e republicar avisam quem escreveu pelos {@link EventosPublicacao}, só quando a ação muda algo.
  */
@@ -33,7 +33,7 @@ public class InteracaoService {
     @Transactional
     public void curtir(UUID quem, UUID publicacaoId) {
         Publicacao publicacao = carregarPublicada(publicacaoId);
-        RegrasPublicacao.garantirMembro(bolhas.ehMembro(quem, publicacao.getBolhaId()));
+        RegrasPublicacao.garantirMembro(bolhas.ehMembroDeAlguma(quem, publicacao.getBolhaIds()));
         if (interacoes.curtirPublicacao(quem, publicacaoId)) {
             eventos.publishEvent(new EventosPublicacao.PublicacaoCurtida(quem, publicacaoId, publicacao.getAutorId()));
         }
@@ -66,7 +66,7 @@ public class InteracaoService {
         if (publicacao.getAutorId().equals(quem)) {
             throw new CampoInvalidoException("publicacao", RegrasPublicacao.NAO_REPUBLICA_O_PROPRIO);
         }
-        RegrasPublicacao.garantirMembro(bolhas.ehMembro(quem, publicacao.getBolhaId()));
+        RegrasPublicacao.garantirMembro(bolhas.ehMembroDeAlguma(quem, publicacao.getBolhaIds()));
         if (interacoes.republicar(quem, publicacaoId)) {
             eventos.publishEvent(
                     new EventosPublicacao.PublicacaoRepublicada(quem, publicacaoId, publicacao.getAutorId()));
