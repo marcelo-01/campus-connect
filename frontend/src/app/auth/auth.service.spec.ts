@@ -64,6 +64,66 @@ describe('AuthService', () => {
     reenvio.flush(null, { status: 202, statusText: 'Accepted' });
   });
 
+  it('redefine a senha pelo código: confere antes, sem abrir a sessão, e entra no fim', () => {
+    auth.esqueciSenha('ana@exemplo.com').subscribe();
+    const pedido = http.expectOne('/api/auth/esqueci-senha');
+    expect(pedido.request.body).toEqual({ email: 'ana@exemplo.com' });
+    pedido.flush(null, { status: 202, statusText: 'Accepted' });
+
+    auth.conferirCodigoRedefinicao('ana@exemplo.com', '123456').subscribe();
+    const conferencia = http.expectOne('/api/auth/redefinir-senha/conferir');
+    expect(conferencia.request.body).toEqual({ email: 'ana@exemplo.com', codigo: '123456' });
+    conferencia.flush(null, { status: 204, statusText: 'No Content' });
+    expect(auth.autenticado()).toBe(false);
+
+    auth.redefinirSenha('ana@exemplo.com', '123456', 'outra-senha-forte').subscribe();
+    const redefinicao = http.expectOne('/api/auth/redefinir-senha');
+    expect(redefinicao.request.body).toEqual({
+      email: 'ana@exemplo.com',
+      codigo: '123456',
+      novaSenha: 'outra-senha-forte',
+    });
+    redefinicao.flush(SESSAO);
+
+    expect(auth.accessToken).toBe('jwt-1');
+    expect(auth.usuario()?.username).toBe('ana');
+  });
+
+  it('alterar a senha troca a sessão pela nova que o servidor devolve', () => {
+    auth.entrar('ana@exemplo.com', 'senha-forte-123', true).subscribe();
+    http.expectOne('/api/auth/login').flush(SESSAO);
+
+    auth.alterarSenha('senha-forte-123', 'outra-senha-forte').subscribe();
+    const alteracao = http.expectOne('/api/auth/alterar-senha');
+    expect(alteracao.request.body).toEqual({ senhaAtual: 'senha-forte-123', novaSenha: 'outra-senha-forte' });
+    alteracao.flush({ ...SESSAO, accessToken: 'jwt-2' });
+
+    expect(auth.accessToken).toBe('jwt-2');
+  });
+
+  it('alterar a senha com a sessão já vencida (401) esquece a sessão local', () => {
+    auth.entrar('ana@exemplo.com', 'senha-forte-123', true).subscribe();
+    http.expectOne('/api/auth/login').flush(SESSAO);
+
+    auth.alterarSenha('senha-forte-123', 'outra-senha-forte').subscribe({ error: () => undefined });
+    http.expectOne('/api/auth/alterar-senha').flush(null, { status: 401, statusText: 'Unauthorized' });
+
+    expect(auth.autenticado()).toBe(false);
+    expect(auth.accessToken).toBeNull();
+  });
+
+  it('alterar a senha com a senha atual errada (400) não mexe na sessão', () => {
+    auth.entrar('ana@exemplo.com', 'senha-forte-123', true).subscribe();
+    http.expectOne('/api/auth/login').flush(SESSAO);
+
+    auth.alterarSenha('errada', 'outra-senha-forte').subscribe({ error: () => undefined });
+    http
+      .expectOne('/api/auth/alterar-senha')
+      .flush({ erros: { senhaAtual: 'A senha atual está incorreta.' } }, { status: 400, statusText: 'Bad Request' });
+
+    expect(auth.accessToken).toBe('jwt-1');
+  });
+
   it('renovações simultâneas usam uma única requisição, porque o refresh token só vale uma vez', async () => {
     const primeira = auth.renovar();
     const segunda = auth.renovar();

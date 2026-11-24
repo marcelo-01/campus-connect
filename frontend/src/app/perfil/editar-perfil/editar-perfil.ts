@@ -1,7 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, WritableSignal, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { AuthService } from '../../auth/auth.service';
 import { ProblemaApi } from '../../auth/sessao';
@@ -36,7 +36,7 @@ const MENSAGENS: Record<Campo, Record<string, string>> = {
 @Component({
   selector: 'app-editar-perfil',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Avatar, Icone],
+  imports: [ReactiveFormsModule, RouterLink, Avatar, Icone],
   styles: ':host { display: contents; }',
   templateUrl: './editar-perfil.html',
 })

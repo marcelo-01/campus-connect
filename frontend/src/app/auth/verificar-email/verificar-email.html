@@ -35,8 +35,8 @@
 
   <p class="verificacao-reenvio">
     Não chegou? Confira a caixa de spam ou
-    @if (espera() > 0) {
-      peça outro código em {{ tempoDeEspera() }}.
+    @if (reenvio.segundos() > 0) {
+      peça outro código em {{ reenvio.texto() }}.
     } @else {
       <button type="button" class="link-acao" [disabled]="reenviando()" (click)="reenviar()">
         peça outro código</button

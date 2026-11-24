@@ -1,0 +1,102 @@
+<div class="content content-narrow">
+  <div class="backbar">
+    <button type="button" class="back-btn" title="Voltar" (click)="voltar()">
+      <app-icone nome="voltar" />
+    </button>
+    <div class="backbar-title">
+      <h1>Alterar senha</h1>
+    </div>
+  </div>
+
+  <form class="senha-form" [formGroup]="form" (ngSubmit)="salvar()">
+    @if (erroGeral(); as erro) {
+      <div class="auth-alert" role="alert">{{ erro }}</div>
+    }
+
+    <!-- Para o gerenciador de senhas saber de que conta é a senha nova. -->
+    <input type="email" autocomplete="username" [value]="email" hidden readonly />
+
+    <div class="field-group">
+      <label for="senha-atual">Senha atual</label>
+      <div class="input-affix" [class.invalid]="mostrarErro('senhaAtual')">
+        <input
+          #campo
+          id="senha-atual"
+          [type]="mostrar().senhaAtual ? 'text' : 'password'"
+          autocomplete="current-password"
+          formControlName="senhaAtual"
+        />
+        <button
+          type="button"
+          class="affix-btn"
+          (click)="alternar('senhaAtual')"
+          [title]="mostrar().senhaAtual ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <app-icone-olho [riscado]="mostrar().senhaAtual" />
+        </button>
+      </div>
+      @if (mostrarErro('senhaAtual')) {
+        <p class="field-error">{{ mensagem('senhaAtual') }}</p>
+      }
+    </div>
+
+    <div class="field-group">
+      <label for="senha-nova">Senha nova</label>
+      <div class="input-affix" [class.invalid]="mostrarErro('novaSenha')">
+        <input
+          id="senha-nova"
+          [type]="mostrar().novaSenha ? 'text' : 'password'"
+          placeholder="Mínimo de 8 caracteres"
+          autocomplete="new-password"
+          formControlName="novaSenha"
+        />
+        <button
+          type="button"
+          class="affix-btn"
+          (click)="alternar('novaSenha')"
+          [title]="mostrar().novaSenha ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <app-icone-olho [riscado]="mostrar().novaSenha" />
+        </button>
+      </div>
+      @if (mostrarErro('novaSenha')) {
+        <p class="field-error">{{ mensagem('novaSenha') }}</p>
+      }
+    </div>
+
+    <div class="field-group">
+      <label for="senha-confirmar">Confirmar senha nova</label>
+      <div class="input-affix" [class.invalid]="mostrarErro('confirmarSenha')">
+        <input
+          id="senha-confirmar"
+          [type]="mostrar().confirmarSenha ? 'text' : 'password'"
+          placeholder="••••••••"
+          autocomplete="new-password"
+          formControlName="confirmarSenha"
+        />
+        <button
+          type="button"
+          class="affix-btn"
+          (click)="alternar('confirmarSenha')"
+          [title]="mostrar().confirmarSenha ? 'Ocultar senha' : 'Mostrar senha'"
+        >
+          <app-icone-olho [riscado]="mostrar().confirmarSenha" />
+        </button>
+      </div>
+      @if (mostrarErro('confirmarSenha')) {
+        <p class="field-error">{{ mensagem('confirmarSenha') }}</p>
+      }
+    </div>
+
+    <p class="senha-dica">
+      Ao salvar, a conta sai dos outros aparelhos em que estiver aberta. Este continua conectado.
+    </p>
+
+    <div class="form-foot">
+      <button type="button" class="btn btn-ghost" (click)="voltar()">Cancelar</button>
+      <button type="submit" class="btn btn-primary" [disabled]="salvando()">
+        {{ salvando() ? 'Salvando…' : 'Salvar senha' }}
+      </button>
+    </div>
+  </form>
+</div>

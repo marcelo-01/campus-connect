@@ -26,7 +26,7 @@
     <div class="field-group full">
       <label for="login-senha">
         Senha
-        <a href="#" (click)="emBreve($event, 'Recuperação de senha')">Esqueceu a senha?</a>
+        <a href="/redefinir-senha" (click)="esqueceuSenha($event)">Esqueceu a senha?</a>
       </label>
       <div class="input-affix" [class.invalid]="mostrarErro('senha')">
         <input

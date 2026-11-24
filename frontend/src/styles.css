@@ -2355,6 +2355,27 @@ select.chip {
 .link-acao:disabled { opacity: 0.6; cursor: progress; text-decoration: none; }
 
 /* ========================================================================
+   Senha — adicionado no projeto Angular
+   O MVP não tinha como trocar a senha. O "Esqueceu a senha?" do login usa a
+   moldura e o campo do código da verificação de e-mail. Quem está logado
+   troca a senha numa tela própria, aberta pelo fim de "Editar perfil".
+   ======================================================================== */
+.perfil-senha {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-top: 8px;
+}
+.perfil-senha h2 { font-size: 15px; font-weight: 600; margin: 0; }
+.perfil-senha p { font-size: 13.5px; color: var(--text-muted); margin: 4px 0 0; }
+
+.senha-form { display: flex; flex-direction: column; gap: 16px; max-width: 480px; }
+.senha-dica { font-size: 13.5px; line-height: 1.5; color: var(--text-muted); margin: 0; }
+
+/* ========================================================================
    Busca — adicionado no projeto Angular
    No MVP o campo da barra do topo era só enfeite. Agora ele sugere pessoas
    enquanto a pessoa digita, numa lista presa embaixo dele, e o Enter abre

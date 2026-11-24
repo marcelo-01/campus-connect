@@ -1,0 +1,171 @@
+<app-auth-layout>
+  @switch (etapa()) {
+    @case ('email') {
+      <h1 class="auth-title">Esqueceu a senha?</h1>
+      <p class="auth-sub">
+        Digite o e-mail da sua conta. Vamos mandar um código para você criar uma senha nova.
+      </p>
+
+      <form class="auth-form" [formGroup]="formEmail" (ngSubmit)="pedirCodigo()">
+        @if (erroGeral(); as erro) {
+          <div class="auth-alert" role="alert">{{ erro }}</div>
+        }
+
+        <div class="field-group full">
+          <label for="redefinicao-email">E-mail</label>
+          <input
+            #campo
+            id="redefinicao-email"
+            class="form-input"
+            [class.invalid]="mostrarErro(formEmail.controls.email)"
+            type="email"
+            placeholder="seu.email@exemplo.com"
+            autocomplete="username"
+            formControlName="email"
+          />
+          @if (mostrarErro(formEmail.controls.email)) {
+            <p class="field-error">{{ mensagem('email') }}</p>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block auth-submit" [disabled]="enviando()">
+          {{ enviando() ? 'Mandando…' : 'Mandar código' }}
+        </button>
+      </form>
+
+      <p class="auth-foot">
+        Lembrou a senha?
+        <a routerLink="/entrar">Entrar</a>
+      </p>
+    }
+
+    @case ('codigo') {
+      <h1 class="auth-title">Digite o código</h1>
+      <p class="auth-sub">
+        Se houver uma conta com <span class="verificacao-email">{{ email() }}</span
+        >, mandamos para ela um código de 6 números.
+      </p>
+
+      <form class="auth-form" [formGroup]="formCodigo" (ngSubmit)="conferirCodigo()">
+        @if (erroGeral(); as erro) {
+          <div class="auth-alert" role="alert">{{ erro }}</div>
+        }
+
+        <div class="field-group full">
+          <label for="redefinicao-codigo">Código</label>
+          <input
+            #campo
+            id="redefinicao-codigo"
+            class="form-input codigo-verificacao"
+            [class.invalid]="mostrarErro(formCodigo.controls.codigo)"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            placeholder="000000"
+            formControlName="codigo"
+          />
+          @if (mostrarErro(formCodigo.controls.codigo)) {
+            <p class="field-error">{{ mensagem('codigo') }}</p>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block auth-submit" [disabled]="enviando()">
+          {{ enviando() ? 'Conferindo…' : 'Continuar' }}
+        </button>
+      </form>
+
+      <p class="verificacao-reenvio">
+        Não chegou? Confira a caixa de spam ou
+        @if (reenvio.segundos() > 0) {
+          peça outro código em {{ reenvio.texto() }}.
+        } @else {
+          <button type="button" class="link-acao" [disabled]="reenviando()" (click)="reenviar()">
+            peça outro código</button
+          >.
+        }
+      </p>
+
+      <p class="auth-foot">
+        <button type="button" class="link-acao" (click)="usarOutroEmail()">
+          Usar outro e-mail
+        </button>
+        <span aria-hidden="true"> · </span>
+        <a routerLink="/entrar">Voltar para o login</a>
+      </p>
+    }
+
+    @case ('senha') {
+      <h1 class="auth-title">Crie uma senha nova</h1>
+      <p class="auth-sub">
+        Depois de salvar, você já entra na conta, e ela sai dos outros aparelhos em que estiver
+        aberta.
+      </p>
+
+      <form class="auth-form" [formGroup]="formSenha" (ngSubmit)="salvarSenha()">
+        @if (erroGeral(); as erro) {
+          <div class="auth-alert" role="alert">{{ erro }}</div>
+        }
+
+        <!-- Para o gerenciador de senhas saber de que conta é a senha nova. -->
+        <input type="email" autocomplete="username" [value]="email()" hidden readonly />
+
+        <div class="field-group full">
+          <label for="redefinicao-senha">Senha nova</label>
+          <div class="input-affix" [class.invalid]="mostrarErro(formSenha.controls.novaSenha)">
+            <input
+              #campo
+              id="redefinicao-senha"
+              [type]="mostrarSenha() ? 'text' : 'password'"
+              placeholder="Mínimo de 8 caracteres"
+              autocomplete="new-password"
+              formControlName="novaSenha"
+            />
+            <button
+              type="button"
+              class="affix-btn"
+              (click)="mostrarSenha.set(!mostrarSenha())"
+              [title]="mostrarSenha() ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <app-icone-olho [riscado]="mostrarSenha()" />
+            </button>
+          </div>
+          @if (mostrarErro(formSenha.controls.novaSenha)) {
+            <p class="field-error">{{ mensagem('novaSenha') }}</p>
+          }
+        </div>
+
+        <div class="field-group full">
+          <label for="redefinicao-confirmar">Confirmar senha nova</label>
+          <div class="input-affix" [class.invalid]="mostrarErro(formSenha.controls.confirmarSenha)">
+            <input
+              id="redefinicao-confirmar"
+              [type]="mostrarConfirmacao() ? 'text' : 'password'"
+              placeholder="••••••••"
+              autocomplete="new-password"
+              formControlName="confirmarSenha"
+            />
+            <button
+              type="button"
+              class="affix-btn"
+              (click)="mostrarConfirmacao.set(!mostrarConfirmacao())"
+              [title]="mostrarConfirmacao() ? 'Ocultar senha' : 'Mostrar senha'"
+            >
+              <app-icone-olho [riscado]="mostrarConfirmacao()" />
+            </button>
+          </div>
+          @if (mostrarErro(formSenha.controls.confirmarSenha)) {
+            <p class="field-error">{{ mensagem('confirmarSenha') }}</p>
+          }
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-block auth-submit" [disabled]="enviando()">
+          {{ enviando() ? 'Salvando…' : 'Salvar e entrar' }}
+        </button>
+      </form>
+
+      <p class="auth-foot">
+        <a routerLink="/entrar">Voltar para o login</a>
+      </p>
+    }
+  }
+</app-auth-layout>

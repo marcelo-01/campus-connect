@@ -8,6 +8,7 @@ import {
 } from './auth/auth.guards';
 import { Cadastro } from './auth/cadastro/cadastro';
 import { Entrar } from './auth/entrar/entrar';
+import { RedefinirSenha } from './auth/redefinir-senha/redefinir-senha';
 import { VerificarEmail } from './auth/verificar-email/verificar-email';
 import { BolhaForm } from './bolhas/bolha-form/bolha-form';
 import { BolhaPagina } from './bolhas/bolha-pagina/bolha-pagina';
@@ -22,6 +23,7 @@ import { MarketplacePagina } from './marketplace/marketplace-pagina/marketplace-
 import { ConversaAberta } from './mensagens/conversa-aberta/conversa-aberta';
 import { MensagensPagina, SemConversa } from './mensagens/mensagens-pagina/mensagens-pagina';
 import { NotificacoesPagina } from './notificacoes/notificacoes-pagina/notificacoes-pagina';
+import { AlterarSenha } from './perfil/alterar-senha/alterar-senha';
 import { EditarPerfil } from './perfil/editar-perfil/editar-perfil';
 import { PerfilPagina } from './perfil/perfil-pagina/perfil-pagina';
 import { PublicacaoPagina } from './publicacoes/publicacao-pagina/publicacao-pagina';
@@ -37,6 +39,13 @@ export const routes: Routes = [
     title: 'Confirmar e-mail · CampusConnect',
   },
   {
+    // O "Esqueceu a senha?" do login. Os três passos (e-mail, código e senha nova) ficam na mesma tela.
+    path: 'redefinir-senha',
+    component: RedefinirSenha,
+    canActivate: [visitanteGuard],
+    title: 'Redefinir senha · CampusConnect',
+  },
+  {
     // Telas logadas, dentro do layout do MVP. `data.trilha` alimenta a barra do topo.
     path: '',
     component: Shell,
@@ -50,6 +59,13 @@ export const routes: Routes = [
         component: EditarPerfil,
         title: 'Editar perfil · CampusConnect',
         data: { trilha: ['Perfil', 'Editar perfil'] },
+      },
+      {
+        // A troca de senha de quem está logado. O link fica no fim de "Editar perfil".
+        path: 'perfil/editar/senha',
+        component: AlterarSenha,
+        title: 'Alterar senha · CampusConnect',
+        data: { trilha: ['Perfil', 'Alterar senha'] },
       },
       { path: 'perfil/:username', component: PerfilPagina, title: 'Perfil · CampusConnect', data: { trilha: ['Perfil'] } },
       {

@@ -2,30 +2,27 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
   ElementRef,
   Injector,
   afterNextRender,
-  computed,
   inject,
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { aplicarErroDaApi, mensagemDeErro } from '../../shared/formulario';
 import { ToastService } from '../../shared/toast.service';
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService } from '../auth.service';
+import {
+  ContagemReenvio,
+  INTERVALO_REENVIO_MS,
+  MENSAGENS_CODIGO,
+  prepararCampoCodigo,
+} from '../codigo-por-email';
 import { ProblemaApi } from '../sessao';
-import { INTERVALO_REENVIO_MS, VerificacaoPendente } from './verificacao-pendente';
-
-/** Mesmas mensagens do `VerificacaoEmailRequest` no backend. */
-const MENSAGENS: Record<string, string> = {
-  required: 'Digite o código que mandamos para o seu e-mail.',
-  pattern: 'O código tem 6 números.',
-};
+import { VerificacaoPendente } from './verificacao-pendente';
 
 /**
  * Tela do código de 6 números mandado para o e-mail, depois do cadastro ou de um login sem verificar. O código certo
@@ -51,17 +48,7 @@ export class VerificarEmail {
   protected readonly reenviando = signal(false);
   protected readonly enviado = signal(false);
   protected readonly erroGeral = signal<string | null>(null);
-
-  private readonly agora = signal(Date.now());
-  private readonly liberaReenvioEm = signal(this.verificacao.pendente?.liberaReenvioEm ?? 0);
-  /** Segundos até poder pedir outro código. */
-  protected readonly espera = computed(() =>
-    Math.max(0, Math.ceil((this.liberaReenvioEm() - this.agora()) / 1000)),
-  );
-  protected readonly tempoDeEspera = computed(() => {
-    const segundos = this.espera();
-    return segundos <= 60 ? `${segundos} s` : `${Math.ceil(segundos / 60)} min`;
-  });
+  protected readonly reenvio = new ContagemReenvio(this.verificacao.pendente?.liberaReenvioEm ?? 0);
 
   private readonly campo = viewChild.required<ElementRef<HTMLInputElement>>('campo');
 
@@ -70,16 +57,9 @@ export class VerificarEmail {
   });
 
   constructor() {
-    const relogio = setInterval(() => this.agora.set(Date.now()), 1000);
-    inject(DestroyRef).onDestroy(() => clearInterval(relogio));
-
-    // Só números, até 6. O código colado do e-mail pode vir com espaço ou hífen. Com os 6, envia sozinho.
-    const codigo = this.form.controls.codigo;
-    codigo.valueChanges.pipe(takeUntilDestroyed()).subscribe((valor) => {
-      const digitos = valor.replace(/\D/g, '').slice(0, 6);
-      if (digitos !== valor) {
-        codigo.setValue(digitos);
-      } else if (digitos.length === 6 && !this.enviando()) {
+    // Com os 6 números, envia sozinho.
+    prepararCampoCodigo(this.form.controls.codigo, () => {
+      if (!this.enviando()) {
         this.verificar();
       }
     });
@@ -118,7 +98,7 @@ export class VerificarEmail {
   }
 
   protected reenviar(): void {
-    if (this.espera() > 0 || this.reenviando()) {
+    if (this.reenvio.segundos() > 0 || this.reenviando()) {
       return;
     }
     this.reenviando.set(true);
@@ -148,12 +128,11 @@ export class VerificarEmail {
   }
 
   protected mensagem(): string | null {
-    return mensagemDeErro(this.form.controls.codigo, MENSAGENS);
+    return mensagemDeErro(this.form.controls.codigo, MENSAGENS_CODIGO);
   }
 
   private aguardar(ms: number): void {
     this.verificacao.esperar(ms);
-    this.agora.set(Date.now());
-    this.liberaReenvioEm.set(Date.now() + ms);
+    this.reenvio.aguardar(ms);
   }
 }

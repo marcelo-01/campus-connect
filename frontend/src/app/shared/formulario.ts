@@ -18,11 +18,16 @@ export const emailValido: ValidatorFn = (controle) => {
   return valor === '' || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? null : { email: true };
 };
 
-/** Para o "Confirmar senha": compara com o controle `senha` do mesmo grupo. */
-export const igualASenha: ValidatorFn = (controle) => {
-  const senha = controle.parent?.get('senha')?.value;
-  return !controle.value || controle.value === senha ? null : { diferente: true };
-};
+/** Para o "Confirmar senha": compara com o controle `campo` do mesmo grupo. */
+export function igualAoCampo(campo: string): ValidatorFn {
+  return (controle) => {
+    const senha = controle.parent?.get(campo)?.value;
+    return !controle.value || controle.value === senha ? null : { diferente: true };
+  };
+}
+
+/** O "Confirmar senha" do cadastro, que compara com o controle `senha`. */
+export const igualASenha: ValidatorFn = igualAoCampo('senha');
 
 /** Primeira mensagem de erro do controle. O erro `servidor` traz o texto pronto vindo da API. */
 export function mensagemDeErro(

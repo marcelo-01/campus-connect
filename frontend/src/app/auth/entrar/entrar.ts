@@ -8,6 +8,7 @@ import { aplicarErroDaApi, emailValido, mensagemDeErro } from '../../shared/form
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService } from '../auth.service';
 import { EMAIL_NAO_VERIFICADO, ProblemaApi } from '../sessao';
+import { RedefinicaoPendente } from '../redefinir-senha/redefinicao-pendente';
 import { VerificacaoPendente } from '../verificar-email/verificacao-pendente';
 
 const MENSAGENS: Record<string, Record<string, string>> = {
@@ -28,6 +29,7 @@ export class Entrar {
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
   private readonly verificacao = inject(VerificacaoPendente);
+  private readonly redefinicao = inject(RedefinicaoPendente);
 
   protected readonly mostrarSenha = signal(false);
   protected readonly enviando = signal(false);
@@ -73,6 +75,18 @@ export class Entrar {
 
   protected mensagem(campo: 'email' | 'senha'): string | null {
     return mensagemDeErro(this.form.controls[campo], MENSAGENS[campo]);
+  }
+
+  /**
+   * Leva o e-mail já digitado para a tela de redefinir a senha. Um pedido antigo, de outra vez, é esquecido: a tela
+   * começa pelo e-mail.
+   */
+  protected esqueceuSenha(evento: Event): void {
+    evento.preventDefault();
+    this.redefinicao.terminar();
+    void this.router.navigate(['/redefinir-senha'], {
+      state: { email: this.form.controls.email.value.trim() },
+    });
   }
 
   protected emBreve(evento: Event, recurso: string): void {

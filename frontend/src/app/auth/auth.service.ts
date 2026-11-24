@@ -55,6 +55,50 @@ export class AuthService {
   }
 
   /**
+   * O "Esqueceu a senha?": manda o código que troca a senha. Como no reenvio, o servidor responde 202 até para
+   * e-mail sem conta, e 429 se for cedo demais.
+   */
+  esqueciSenha(email: string): Observable<void> {
+    return this.http.post<void>('/api/auth/esqueci-senha', { email });
+  }
+
+  /** Confere o código de redefinição antes da senha nova. O código não é gasto: ele vai de novo em {@link redefinirSenha}. */
+  conferirCodigoRedefinicao(email: string, codigo: string): Observable<void> {
+    return this.http.post<void>('/api/auth/redefinir-senha/conferir', { email, codigo });
+  }
+
+  /** Troca a senha pelo código e já entra na conta. As sessões abertas em outros aparelhos caem. */
+  redefinirSenha(email: string, codigo: string, novaSenha: string): Observable<UsuarioResumo> {
+    return this.http
+      .post<SessaoResponse>('/api/auth/redefinir-senha', { email, codigo, novaSenha })
+      .pipe(
+        tap((sessao) => this.guardar(sessao)),
+        map((sessao) => sessao.usuario),
+      );
+  }
+
+  /**
+   * Troca a senha de quem está logado. O servidor reconhece a pessoa pelo cookie do refresh token, encerra as sessões
+   * dos outros aparelhos e devolve uma sessão nova para este. Se o cookie não valer mais (401), a sessão local também
+   * acaba.
+   */
+  alterarSenha(senhaAtual: string, novaSenha: string): Observable<UsuarioResumo> {
+    return this.http
+      .post<SessaoResponse>('/api/auth/alterar-senha', { senhaAtual, novaSenha })
+      .pipe(
+        tap({
+          next: (sessao) => this.guardar(sessao),
+          error: (erro: unknown) => {
+            if (erro instanceof HttpErrorResponse && erro.status === 401) {
+              this.limpar();
+            }
+          },
+        }),
+        map((sessao) => sessao.usuario),
+      );
+  }
+
+  /**
    * Troca o refresh token (cookie) por um JWT novo. Chamadas simultâneas compartilham a mesma
    * requisição, porque cada refresh token só pode ser usado uma vez.
    */
