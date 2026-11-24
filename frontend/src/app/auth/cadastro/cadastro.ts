@@ -2,8 +2,7 @@ import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { ToastService } from '../../shared/toast.service';
-import { IconeGoogle, IconeOlho } from '../../shared/icones';
+import { IconeOlho } from '../../shared/icones';
 import {
   aplicarErroDaApi,
   emailValido,
@@ -43,14 +42,13 @@ const MENSAGENS: Record<Campo, Record<string, string>> = {
 @Component({
   selector: 'app-cadastro',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [AuthLayout, ReactiveFormsModule, RouterLink, IconeOlho, IconeGoogle],
+  imports: [AuthLayout, ReactiveFormsModule, RouterLink, IconeOlho],
   styles: ':host { display: contents; }',
   templateUrl: './cadastro.html',
 })
 export class Cadastro {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
-  private readonly toast = inject(ToastService);
   private readonly verificacao = inject(VerificacaoPendente);
 
   protected readonly mostrarSenha = signal(false);
@@ -110,10 +108,5 @@ export class Cadastro {
 
   protected mensagem(campo: Campo): string | null {
     return mensagemDeErro(this.form.controls[campo], MENSAGENS[campo]);
-  }
-
-  protected emBreve(evento: Event, recurso: string): void {
-    evento.preventDefault();
-    this.toast.mostrar(`${recurso} — em breve`);
   }
 }
