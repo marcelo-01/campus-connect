@@ -10,21 +10,26 @@ import org.springframework.security.core.CredentialsContainer;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-/** A conta como o Spring Security a enxerga durante o login. Só {@code ATIVO} e não anonimizada pode entrar. */
+/**
+ * A conta como o Spring Security a enxerga durante o login. Só {@code ATIVO} e não anonimizada pode entrar, e o
+ * e-mail precisa estar verificado (conferido em {@code SegurancaConfig#gerenciadorAutenticacao}).
+ */
 @Getter
 public class ContaUsuario implements UserDetails, CredentialsContainer {
 
     private final UUID id;
     private final String email;
     private final StatusUsuario status;
-    private final boolean podeEntrar;
+    private final boolean ativa;
+    private final boolean emailVerificado;
     private String senhaHash;
 
     ContaUsuario(Usuario usuario) {
         this.id = usuario.getId();
         this.email = usuario.getEmail();
         this.status = usuario.getStatus();
-        this.podeEntrar = usuario.podeEntrar();
+        this.ativa = usuario.estaAtiva();
+        this.emailVerificado = usuario.isEmailVerificado();
         this.senhaHash = usuario.getSenhaHash();
     }
 
@@ -48,10 +53,13 @@ public class ContaUsuario implements UserDetails, CredentialsContainer {
         return status != StatusUsuario.SUSPENSO && status != StatusUsuario.BANIDO;
     }
 
-    /** Suspensa ou banida aparece como bloqueada; desativada ou anonimizada, como desabilitada. */
+    /**
+     * Suspensa ou banida aparece como bloqueada; desativada ou anonimizada, como desabilitada. O e-mail não verificado
+     * fica de fora: ele tem resposta própria.
+     */
     @Override
     public boolean isEnabled() {
-        return podeEntrar;
+        return ativa;
     }
 
     @Override

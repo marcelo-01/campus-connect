@@ -27,20 +27,29 @@ public class UsuarioService {
     private final RegrasConta regras;
     private final PasswordEncoder senhas;
 
-    /** Cria a conta já ativa. Falha com {@link CampoDuplicadoException} se o e-mail ou o username estiverem em uso. */
+    /**
+     * Cria a conta ativa, mas com o e-mail ainda por verificar. Se o e-mail for de uma conta que nunca foi verificada,
+     * refaz essa conta com os dados novos (ver {@link Usuario#refazerCadastro}).
+     *
+     * <p>Só pacote: quem cadastra é o {@link AutenticacaoService}, que também manda o código.
+     *
+     * @throws CampoDuplicadoException se o e-mail ou o username estiverem em uso
+     */
     @Transactional
-    public UsuarioResumo cadastrar(NovoUsuario novo) {
+    Usuario cadastrar(NovoUsuario novo) {
         String email = Usuario.normalizarEmail(novo.email());
         String username = Usuario.normalizarUsername(novo.username());
+        String nome = novo.nomeCompleto().strip();
 
         // Confere antes de calcular o hash: o Argon2 é caro de propósito.
-        regras.garantirEmailLivre(email);
-        regras.garantirUsernameLivre(username, null);
+        Optional<Usuario> pendente = regras.contaParaRefazer(email);
+        regras.garantirUsernameLivre(username, pendente.map(Usuario::getId).orElse(null));
 
-        Usuario usuario = new Usuario(username, novo.nomeCompleto().strip(), email, senhas.encode(novo.senha()),
-                StatusUsuario.ATIVO);
+        String senhaHash = senhas.encode(novo.senha());
+        Usuario usuario = pendente.orElseGet(() -> new Usuario(username, nome, email, senhaHash, StatusUsuario.ATIVO));
+        usuario.refazerCadastro(username, nome, senhaHash);
         try {
-            return UsuarioResumo.de(usuarios.saveAndFlush(usuario));
+            return usuarios.saveAndFlush(usuario);
         } catch (DataIntegrityViolationException corrida) {
             throw RegrasConta.traduzirDuplicidade(corrida);
         }

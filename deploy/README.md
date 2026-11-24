@@ -15,7 +15,7 @@ nenhuma porta e só mexe nos próprios contêineres.
 | Peça | Onde |
 | --- | --- |
 | Código | `/opt/campus-connect/backend`, `frontend` e `deploy`, trocados a cada publicação |
-| Segredos | `/opt/campus-connect/api.env` (`DB_PASSWORD`, `JWT_SECRET`) e `banco.env` (`POSTGRES_PASSWORD`), só no servidor |
+| Segredos | `/opt/campus-connect/api.env` (`DB_PASSWORD`, `JWT_SECRET` e o SMTP, veja [E-mail](#e-mail)) e `banco.env` (`POSTGRES_PASSWORD`), só no servidor |
 | Nomes da infraestrutura | `/opt/campus-connect/deploy/.env`, só no servidor (veja abaixo) |
 | Banco | volume `campusconnect_banco_dados` |
 | Fotos e vídeos | volume `campusconnect_uploads` |
@@ -36,7 +36,8 @@ O `publicar.sh` preserva esse arquivo e para com um aviso se ele não existir.
 As redes:
 
 - `REDE_PROXY`: a rede do Caddy. Só o `campusconnect_web` entra nela, para o Caddy alcançá-lo.
-- `saida`: liga o web à API e dá acesso à internet, que a API usa para buscar a prévia dos links.
+- `saida`: liga o web à API e dá acesso à internet, que a API usa para buscar a prévia dos links e para mandar os
+  e-mails pelo SMTP.
 - `banco`: interna, sem internet. Só a API e o banco.
 
 Os serviços do compose têm o mesmo nome dos contêineres (`campusconnect_web` em vez de `web`). Na rede do Caddy
@@ -84,6 +85,58 @@ docker logs "$CADDY_CONTEINER" --tail 50     # certificado e HTTPS
 | Navegador diz que a conexão não é particular | O Caddy não conseguiu o certificado: os logs do Caddy |
 | O site abre, mas nada carrega (erro 502 no `/api`) | A API caiu ou ainda está subindo: `docker logs campusconnect_api` |
 | A API reinicia sem parar | Banco fora do ar ou senha diferente entre `api.env` e `banco.env` |
+| O código do cadastro não chega | `docker logs campusconnect_api 2>&1 \| grep "código de verificação"` mostra a falha do SMTP. Se não houver falha, olhe o spam e os registros de envio no painel do Brevo |
+| O log mostra falha de autenticação no SMTP | A chave SMTP do Brevo venceu: ela vale 1 ano (até 24/11/2027) e morre depois de 90 dias sem uso. Gere outra em **SMTP & API → SMTP**, troque o `SMTP_SENHA` no `api.env` e rode `docker compose up -d campusconnect_api` |
+
+## E-mail
+
+O cadastro manda um código de 6 números para o e-mail da pessoa, pelo SMTP do **Brevo**. O código usa SMTP padrão,
+então trocar de provedor é só trocar as variáveis abaixo.
+
+Os e-mails saem de um endereço do subdomínio `campusconnect.maisvida.cloud`. Assim, o SPF do domínio principal não
+muda, e a reputação desses envios fica separada.
+
+Para ligar:
+
+1. Crie a conta no Brevo e, em **Senders, Domains & Dedicated IPs → Domains**, adicione o domínio
+   `campusconnect.maisvida.cloud`, e não o `maisvida.cloud`. Com o domínio principal, o Brevo põe o "subdomínio de
+   marca" justamente em `campusconnect.maisvida.cloud`, que é o endereço do site.
+2. Escolha **registros DNS individuais** e a configuração **manual**. A configuração automática da Hostinger
+   oferece substituir o registro A de `campusconnect`, o que tira o site do ar. O subdomínio de marca é opcional e
+   pode ficar sem configurar ("Sem marca").
+3. No DNS do domínio, crie os registros que o Brevo mostrar: o TXT `brevo-code` em `campusconnect`, os CNAME
+   `brevo1` e `brevo2._domainkey.campusconnect` e o `_dmarc.campusconnect`. O TXT convive com o registro A do site.
+   Espere o Brevo marcar o domínio como **Autenticado**. Em 24/11/2026 ele ficou assim.
+4. Em **Senders**, cadastre o remetente `CampusConnect <nao-responda@campusconnect.maisvida.cloud>`. Em
+   **SMTP & API → SMTP**, gere uma chave SMTP. Acrescente ao `/opt/campus-connect/api.env`:
+
+   ```
+   SMTP_HOST=smtp-relay.brevo.com
+   SMTP_PORT=587
+   SMTP_TLS=true
+   SMTP_USUARIO=<o login SMTP que o Brevo mostra>
+   SMTP_SENHA=<a chave SMTP>
+   EMAIL_REMETENTE=CampusConnect <nao-responda@campusconnect.maisvida.cloud>
+   ```
+
+   O `publicar.sh` só cria o `api.env` na primeira publicação. Depois disso, ele não mexe mais no arquivo, e essas
+   linhas ficam lá.
+5. Confira se a VPS alcança a porta 587 (alguns provedores bloqueiam SMTP):
+
+   ```bash
+   docker exec campusconnect_api sh -c 'timeout 5 bash -c "</dev/tcp/smtp-relay.brevo.com/587" && echo aberta'
+   ```
+
+   Se a porta estiver fechada, use em `SMTP_PORT` outra porta que o Brevo aceite.
+6. Publique ou recrie a API para ela ler o `api.env` novo:
+   `cd /opt/campus-connect/deploy && docker compose up -d campusconnect_api`.
+7. Cadastre uma conta com um e-mail seu. No Gmail, em **Mostrar original**, o DKIM e o DMARC devem aparecer como
+   `PASS`. Sem o subdomínio de marca, o SPF vale para o domínio do Brevo, e quem alinha o DMARC é o DKIM.
+
+Sem essas variáveis, a API tenta o SMTP em `localhost:1025`, que não existe na VPS. O cadastro continua
+funcionando, mas o código nunca chega, e o log da API mostra a falha.
+
+As contas criadas antes da verificação de e-mail (migration V22) ficaram marcadas como verificadas.
 
 ## Mexer no Caddyfile
 

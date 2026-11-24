@@ -407,19 +407,15 @@ class ConexaoApiTest {
     }
 
     private Conta cadastrar(String nome, String username) throws Exception {
-        String corpo = mvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"nomeCompleto": "%s", "username": "%s", "email": "%s@exemplo.com", "senha": "senha-forte-123"}
-                        """.formatted(nome, username, username)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+        String corpo = ContasDeTeste.cadastrar(mvc, nome, username, username + "@exemplo.com");
         return new Conta(UUID.fromString(JsonPath.read(corpo, "$.usuario.id")), JsonPath.read(corpo, "$.accessToken"));
     }
 
     /** O Hibernate gera o id no persist, então um id escolhido precisa entrar por SQL. */
     private void usuarioComId(UUID id, String nome) {
         jdbc.update("""
-                insert into usuario (id, username, nome_completo, email, senha_hash, status)
-                values (?, ?, ?, ?, 'hash', 'ATIVO')
+                insert into usuario (id, username, nome_completo, email, senha_hash, status, email_verificado)
+                values (?, ?, ?, ?, 'hash', 'ATIVO', true)
                 """, id, nome, nome, nome + "@exemplo.com");
     }
 

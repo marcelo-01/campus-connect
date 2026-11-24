@@ -257,11 +257,7 @@ class PerfilApiTest {
     }
 
     private Conta cadastrar(String nome, String username) throws Exception {
-        String corpo = mvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"nomeCompleto": "%s", "username": "%s", "email": "%s@exemplo.com", "senha": "senha-forte-123"}
-                        """.formatted(nome, username, username)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+        String corpo = ContasDeTeste.cadastrar(mvc, nome, username, username + "@exemplo.com");
         return new Conta(UUID.fromString(JsonPath.read(corpo, "$.usuario.id")), JsonPath.read(corpo, "$.accessToken"));
     }
 

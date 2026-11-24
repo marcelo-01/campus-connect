@@ -1,0 +1,11 @@
+Olá, {{nome}}!
+
+Este é o seu código para confirmar o e-mail no CampusConnect:
+
+    {{codigo}}
+
+Volte ao CampusConnect e digite o código. Ele vale por {{minutos}} minutos.
+
+Se você não criou uma conta no CampusConnect, ignore este e-mail. Sem o código, ninguém entra na conta.
+
+campusconnect.

@@ -49,6 +49,7 @@ import br.com.campusconnect.publicacao.model.TipoReacao;
 import br.com.campusconnect.usuario.model.RefreshToken;
 import br.com.campusconnect.usuario.model.StatusUsuario;
 import br.com.campusconnect.usuario.model.Usuario;
+import br.com.campusconnect.usuario.model.VerificacaoEmail;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -90,6 +91,9 @@ class MapeamentoEntidadesTest {
 
         RefreshToken refreshToken = em.persist(new RefreshToken(ana, UUID.randomUUID(), "a".repeat(64), true,
                 Instant.parse("2026-12-01T03:00:00Z")));
+        VerificacaoEmail verificacao = em.persist(new VerificacaoEmail(joao, "b".repeat(64),
+                Instant.parse("2026-12-01T03:15:00Z")));
+        verificacao.registrarErro(5);
 
         Conexao conexao = em.persist(Conexao.solicitar(ana.getId(), joao.getId()));
         em.persist(new Bloqueio(joao.getId(), ana.getId()));
@@ -187,7 +191,7 @@ class MapeamentoEntidadesTest {
                 where table_schema = 'public' and table_type = 'BASE TABLE'
                   and table_name <> 'flyway_schema_history'
                 """, String.class);
-        assertThat(tabelas).hasSize(25).allSatisfy(tabela -> assertThat(
+        assertThat(tabelas).hasSize(26).allSatisfy(tabela -> assertThat(
                 jdbc.queryForObject("select count(*) from " + tabela, Long.class)).as(tabela).isPositive());
 
         Usuario anaLida = em.find(Usuario.class, ana.getId());
@@ -202,6 +206,11 @@ class MapeamentoEntidadesTest {
         assertThat(refreshTokenLido.isPersistente()).isTrue();
         assertThat(refreshTokenLido.isRevogado()).isFalse();
         assertThat(refreshTokenLido.getCriadoEm()).isNotNull();
+
+        VerificacaoEmail verificacaoLida = em.find(VerificacaoEmail.class, verificacao.getId());
+        assertThat(verificacaoLida.getUsuario().getId()).isEqualTo(joao.getId());
+        assertThat(verificacaoLida.getTentativas()).isEqualTo((short) 1);
+        assertThat(verificacaoLida.getCriadoEm()).isNotNull();
 
         assertThat(em.find(Conexao.class, conexao.getId()).getStatus()).isEqualTo(StatusConexao.PENDENTE);
         assertThat(em.find(Bloqueio.class, new BloqueioId(joao.getId(), ana.getId())).getCriadoEm()).isNotNull();

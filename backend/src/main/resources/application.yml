@@ -18,6 +18,22 @@ spring:
       # Uma publicacao leva ate 4 imagens de 5 MB ou 1 video de 50 MB, mais o JSON.
       max-request-size: 60MB
 
+  mail:
+    # Em dev, o Mailpit do docker-compose.yml (caixa de entrada em http://localhost:8025).
+    # Em producao, o SMTP do Brevo (veja deploy/README.md).
+    host: ${SMTP_HOST:localhost}
+    port: ${SMTP_PORT:1025}
+    username: ${SMTP_USUARIO:}
+    password: ${SMTP_SENHA:}
+    properties:
+      # SMTP_TLS liga o STARTTLS e o login no servidor, os dois obrigatorios no Brevo.
+      mail.smtp.auth: ${SMTP_TLS:false}
+      mail.smtp.starttls.enable: ${SMTP_TLS:false}
+      mail.smtp.starttls.required: ${SMTP_TLS:false}
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
+
 server:
   tomcat:
     # Sem isso, num upload acima do limite o Tomcat fecha a conexao e o navegador ve
@@ -50,3 +66,12 @@ campusconnect:
     # Limite contra spam nas mensagens privadas.
     mensagens-por-minuto: 30
     conversas-novas-por-dia: 20
+  verificacao:
+    # Codigo de 6 digitos mandado para o e-mail no cadastro.
+    validade-codigo: 15m
+    tentativas-por-codigo: 5
+    intervalo-reenvio: 60s
+    envios-por-hora: 5
+  email:
+    # O "De:" dos e-mails. Em producao, um endereco do dominio verificado no Brevo.
+    remetente: ${EMAIL_REMETENTE:CampusConnect <nao-responda@campusconnect.localhost>}

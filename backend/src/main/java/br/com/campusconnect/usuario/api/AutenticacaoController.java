@@ -1,6 +1,7 @@
 package br.com.campusconnect.usuario.api;
 
 import br.com.campusconnect.usuario.service.AutenticacaoService;
+import br.com.campusconnect.usuario.service.CadastroPendente;
 import br.com.campusconnect.usuario.service.SessaoEmitida;
 import br.com.campusconnect.usuario.service.SessaoInvalidaException;
 import jakarta.validation.Valid;
@@ -22,9 +23,22 @@ class AutenticacaoController {
     private final AutenticacaoService autenticacao;
     private final CookieRefreshToken cookie;
 
+    /** Não abre a sessão: ela só abre depois que o código mandado para o e-mail confere. */
     @PostMapping("/cadastro")
-    ResponseEntity<SessaoResponse> cadastrar(@Valid @RequestBody CadastroRequest requisicao) {
-        return comCookie(HttpStatus.CREATED, autenticacao.cadastrar(requisicao.paraNovoUsuario()));
+    ResponseEntity<CadastroPendente> cadastrar(@Valid @RequestBody CadastroRequest requisicao) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(autenticacao.cadastrar(requisicao.paraNovoUsuario()));
+    }
+
+    @PostMapping("/verificar-email")
+    ResponseEntity<SessaoResponse> verificarEmail(@Valid @RequestBody VerificacaoEmailRequest requisicao) {
+        return comCookie(HttpStatus.OK, autenticacao.verificarEmail(requisicao.email(), requisicao.codigo()));
+    }
+
+    /** Responde 202 também para e-mail sem conta, para não dizer quem tem conta pendente. */
+    @PostMapping("/reenviar-codigo")
+    ResponseEntity<Void> reenviarCodigo(@Valid @RequestBody ReenvioCodigoRequest requisicao) {
+        autenticacao.reenviarCodigo(requisicao.email());
+        return ResponseEntity.accepted().build();
     }
 
     @PostMapping("/login")

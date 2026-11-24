@@ -1,7 +1,11 @@
 package br.com.campusconnect.usuario.service;
 
 import br.com.campusconnect.comum.CampoDuplicadoException;
+import br.com.campusconnect.usuario.model.Usuario;
 import br.com.campusconnect.usuario.repository.UsuarioRepository;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
@@ -25,19 +29,39 @@ class RegrasConta {
      */
     static final Set<String> USERNAMES_RESERVADOS = Set.of("editar", "me");
 
+    /**
+     * Uma conta que nunca verificou o e-mail segura o username por esse tempo. Depois disso, quem pedir o mesmo
+     * username fica com ele, e a conta abandonada é apagada.
+     */
+    static final Duration RESERVA_USERNAME_NAO_VERIFICADO = Duration.ofHours(24);
+
     private final UsuarioRepository usuarios;
 
-    void garantirEmailLivre(String email) {
-        if (usuarios.existsByEmail(email)) {
+    /**
+     * No cadastro: a conta que já tem o e-mail e ainda pode ser refeita por ele, porque nunca verificou o e-mail e
+     * não foi suspensa, banida nem desativada.
+     *
+     * @throws CampoDuplicadoException se o e-mail for de uma conta verificada ou fora do ar
+     */
+    Optional<Usuario> contaParaRefazer(String email) {
+        Optional<Usuario> existente = usuarios.findByEmail(email);
+        if (existente.isPresent() && (existente.get().isEmailVerificado() || !existente.get().estaAtiva())) {
             throw new CampoDuplicadoException("email", EMAIL_EM_USO);
         }
+        return existente;
     }
 
-    /** @param dono conta que já usa esse username e pode mantê-lo; {@code null} no cadastro */
+    /**
+     * Libera, se for o caso, o username de uma conta não verificada há mais de
+     * {@link #RESERVA_USERNAME_NAO_VERIFICADO}.
+     *
+     * @param dono conta que já usa esse username e pode mantê-lo; {@code null} num cadastro novo
+     */
     void garantirUsernameLivre(String username, @Nullable UUID dono) {
         if (USERNAMES_RESERVADOS.contains(username)) {
             throw new CampoDuplicadoException("username", USERNAME_RESERVADO);
         }
+        usuarios.apagarNaoVerificadaComUsername(username, Instant.now().minus(RESERVA_USERNAME_NAO_VERIFICADO), dono);
         boolean emUso = dono == null
                 ? usuarios.existsByUsername(username)
                 : usuarios.existsByUsernameAndIdNot(username, dono);

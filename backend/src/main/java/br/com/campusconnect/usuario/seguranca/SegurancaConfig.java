@@ -1,5 +1,6 @@
 package br.com.campusconnect.usuario.seguranca;
 
+import br.com.campusconnect.usuario.service.EmailNaoVerificadoException;
 import jakarta.servlet.DispatcherType;
 import java.security.SecureRandom;
 import java.util.Base64;
@@ -80,13 +81,22 @@ class SegurancaConfig {
     /**
      * Confere a situação da conta só depois da senha. Na ordem padrão do Spring, uma senha errada em
      * conta suspensa responderia "conta bloqueada", e qualquer um descobriria a situação da conta.
+     *
+     * <p>O e-mail não verificado vem por último: a conta suspensa recebe a resposta de conta suspensa, e não o pedido
+     * de verificar o e-mail.
      */
     @Bean
     AuthenticationManager gerenciadorAutenticacao(UserDetailsService contas, PasswordEncoder senhas) {
         DaoAuthenticationProvider provedor = new DaoAuthenticationProvider(contas);
         provedor.setPasswordEncoder(senhas);
         provedor.setPreAuthenticationChecks(conta -> { });
-        provedor.setPostAuthenticationChecks(new AccountStatusUserDetailsChecker());
+        AccountStatusUserDetailsChecker situacao = new AccountStatusUserDetailsChecker();
+        provedor.setPostAuthenticationChecks(conta -> {
+            situacao.check(conta);
+            if (!((ContaUsuario) conta).isEmailVerificado()) {
+                throw new EmailNaoVerificadoException();
+            }
+        });
         return new ProviderManager(provedor);
     }
 

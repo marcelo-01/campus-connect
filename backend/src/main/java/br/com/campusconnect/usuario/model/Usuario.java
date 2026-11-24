@@ -95,9 +95,27 @@ public class Usuario extends EntidadeAuditada {
         this.status = status;
     }
 
-    /** Só conta ativa e não anonimizada pode entrar ou renovar a sessão. */
-    public boolean podeEntrar() {
+    /** Não está suspensa, banida, desativada nem anonimizada. Ainda pode faltar verificar o e-mail. */
+    public boolean estaAtiva() {
         return status == StatusUsuario.ATIVO && anonimizadoEm == null;
+    }
+
+    /**
+     * Só conta ativa, não anonimizada e com o e-mail verificado pode entrar ou renovar a sessão. É também a conta que
+     * aparece para as outras pessoas.
+     */
+    public boolean podeEntrar() {
+        return estaAtiva() && emailVerificado;
+    }
+
+    /**
+     * Um novo cadastro com o e-mail de uma conta que nunca foi verificada fica com a conta: ninguém provou ser dono
+     * do e-mail, então vale o cadastro mais recente.
+     */
+    public void refazerCadastro(@NonNull String username, @NonNull String nomeCompleto, @NonNull String senhaHash) {
+        this.username = normalizarUsername(username);
+        this.nomeCompleto = nomeCompleto;
+        this.senhaHash = senhaHash;
     }
 
     /** Conta suspensa ou desativada perde os poderes de administrador junto com o acesso. */

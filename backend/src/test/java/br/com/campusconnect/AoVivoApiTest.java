@@ -50,11 +50,7 @@ class AoVivoApiTest {
     @BeforeEach
     void criarConta() throws Exception {
         jdbc.execute("truncate usuario, bolha cascade");
-        String corpo = mvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
-                        {"nomeCompleto": "Ana", "username": "ana", "email": "ana@exemplo.com", "senha": "senha-forte-123"}
-                        """))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
+        String corpo = ContasDeTeste.cadastrar(mvc, "Ana", "ana", "ana@exemplo.com");
         anaId = UUID.fromString(JsonPath.read(corpo, "$.usuario.id"));
         anaToken = JsonPath.read(corpo, "$.accessToken");
     }

@@ -52,9 +52,29 @@ class AutenticacaoApiTest {
     // ---------------------------------------------------------------- cadastro
 
     @Test
-    void cadastroCriaAContaJaLogadaEGuardaASenhaComArgon2() throws Exception {
+    void cadastroNaoAbreASessaoEGuardaASenhaComArgon2() throws Exception {
         cadastrar("Ana Beatriz", "@Ana.BC", "  Ana@Exemplo.com ")
                 .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value("ana@exemplo.com"))
+                .andExpect(jsonPath("$.accessToken").doesNotExist())
+                .andExpect(jsonPath("$.usuario").doesNotExist())
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+
+        assertThat(jdbc.queryForMap("select username, nome_completo, email_verificado from usuario"))
+                .containsEntry("username", "ana.bc")
+                .containsEntry("nome_completo", "Ana Beatriz")
+                .containsEntry("email_verificado", false);
+        String hash = jdbc.queryForObject("select senha_hash from usuario where email = 'ana@exemplo.com'",
+                String.class);
+        assertThat(hash).startsWith("$argon2id$v=19$m=19456,t=2,p=1$").doesNotContain(SENHA);
+    }
+
+    @Test
+    void verificarOEmailAbreASessaoComManterConectado() throws Exception {
+        cadastrar("Ana Beatriz", "@Ana.BC", "  Ana@Exemplo.com ");
+
+        verificar("ANA@exemplo.com", CodigosDeTeste.PADRAO)
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accessToken").isNotEmpty())
                 .andExpect(jsonPath("$.expiraEm").isNotEmpty())
                 .andExpect(jsonPath("$.usuario.username").value("ana.bc"))
@@ -62,6 +82,7 @@ class AutenticacaoApiTest {
                 .andExpect(jsonPath("$.usuario.nomeCompleto").value("Ana Beatriz"))
                 .andExpect(jsonPath("$.usuario.senhaHash").doesNotExist())
                 .andExpect(jsonPath("$.refreshToken").doesNotExist())
+                .andExpect(header().string(HttpHeaders.CACHE_CONTROL, "no-store"))
                 .andExpect(header().string(HttpHeaders.SET_COOKIE, allOf(
                         containsString(COOKIE + "="),
                         containsString("HttpOnly"),
@@ -70,14 +91,12 @@ class AutenticacaoApiTest {
                         containsString("Path=/api/auth"),
                         containsString("Max-Age="))));
 
-        String hash = jdbc.queryForObject("select senha_hash from usuario where email = 'ana@exemplo.com'",
-                String.class);
-        assertThat(hash).startsWith("$argon2id$v=19$m=19456,t=2,p=1$").doesNotContain(SENHA);
+        assertThat(jdbc.queryForObject("select email_verificado from usuario", Boolean.class)).isTrue();
     }
 
     @Test
     void emailRepetidoComOutrasMaiusculasEhRecusado() throws Exception {
-        cadastrar("Ana", "ana", "ana@exemplo.com").andExpect(status().isCreated());
+        cadastrarVerificado("Ana", "ana", "ana@exemplo.com");
 
         cadastrar("Outra Ana", "outra.ana", "ANA@Exemplo.com")
                 .andExpect(status().isConflict())
@@ -86,7 +105,7 @@ class AutenticacaoApiTest {
 
     @Test
     void usernameRepetidoEhRecusado() throws Exception {
-        cadastrar("Ana", "ana", "ana@exemplo.com").andExpect(status().isCreated());
+        cadastrarVerificado("Ana", "ana", "ana@exemplo.com");
 
         cadastrar("Outra Ana", "ANA", "outra@exemplo.com")
                 .andExpect(status().isConflict())
@@ -111,7 +130,7 @@ class AutenticacaoApiTest {
 
     @Test
     void loginComSenhaCertaAbreASessao() throws Exception {
-        cadastrar("Ana", "ana", "ana@exemplo.com");
+        cadastrarVerificado("Ana", "ana", "ana@exemplo.com");
         jdbc.update("update usuario set ultimo_acesso_em = null");
 
         entrar("ANA@exemplo.com", SENHA, true)
@@ -125,7 +144,7 @@ class AutenticacaoApiTest {
 
     @Test
     void semManterConectadoOCookieSomeAoFecharONavegador() throws Exception {
-        cadastrar("Ana", "ana", "ana@exemplo.com");
+        cadastrarVerificado("Ana", "ana", "ana@exemplo.com");
 
         entrar("ana@exemplo.com", SENHA, false)
                 .andExpect(status().isOk())
@@ -135,7 +154,7 @@ class AutenticacaoApiTest {
 
     @Test
     void senhaErradaEEmailInexistenteTemAMesmaResposta() throws Exception {
-        cadastrar("Ana", "ana", "ana@exemplo.com");
+        cadastrarVerificado("Ana", "ana", "ana@exemplo.com");
 
         entrar("ana@exemplo.com", "senha-errada", true)
                 .andExpect(status().isUnauthorized())
@@ -148,7 +167,7 @@ class AutenticacaoApiTest {
 
     @Test
     void contaSuspensaSoEhReveladaParaQuemSabeASenha() throws Exception {
-        cadastrar("Ana", "ana", "ana@exemplo.com");
+        cadastrarVerificado("Ana", "ana", "ana@exemplo.com");
         jdbc.update("update usuario set status = 'SUSPENSO'");
 
         entrar("ana@exemplo.com", "senha-errada", true)
@@ -163,7 +182,8 @@ class AutenticacaoApiTest {
 
     @Test
     void rotaProtegidaExigeOJwtDeAcesso() throws Exception {
-        String accessToken = JsonPath.read(corpo(cadastrar("Ana", "ana", "ana@exemplo.com")), "$.accessToken");
+        String accessToken = JsonPath.read(corpo(cadastrarVerificado("Ana", "ana", "ana@exemplo.com")),
+                "$.accessToken");
 
         mvc.perform(get("/api/usuarios/me")).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/usuarios/me").header(HttpHeaders.AUTHORIZATION, "Bearer token-inventado"))
@@ -178,7 +198,7 @@ class AutenticacaoApiTest {
 
     @Test
     void refreshTrocaOTokenEEmiteOutroJwt() throws Exception {
-        Cookie original = refreshCookie(cadastrar("Ana", "ana", "ana@exemplo.com").andReturn());
+        Cookie original = refreshCookie(cadastrarVerificado("Ana", "ana", "ana@exemplo.com").andReturn());
 
         MvcResult renovado = renovar(original)
                 .andExpect(status().isOk())
@@ -205,7 +225,7 @@ class AutenticacaoApiTest {
      */
     @Test
     void reusoImediatoNaoDerrubaASessao() throws Exception {
-        Cookie original = refreshCookie(cadastrar("Ana", "ana", "ana@exemplo.com").andReturn());
+        Cookie original = refreshCookie(cadastrarVerificado("Ana", "ana", "ana@exemplo.com").andReturn());
         Cookie novo = refreshCookie(renovar(original).andReturn());
 
         renovar(original)
@@ -217,7 +237,7 @@ class AutenticacaoApiTest {
     /** Um token trocado há mais de 30 s que volta a ser usado indica cookie copiado: a família toda cai. */
     @Test
     void reusoDeTokenAntigoDerrubaAFamilia() throws Exception {
-        Cookie original = refreshCookie(cadastrar("Ana", "ana", "ana@exemplo.com").andReturn());
+        Cookie original = refreshCookie(cadastrarVerificado("Ana", "ana", "ana@exemplo.com").andReturn());
         Cookie novo = refreshCookie(renovar(original).andReturn());
         jdbc.update("update refresh_token set revogado_em = now() - interval '1 minute' where revogado_em is not null");
 
@@ -227,7 +247,7 @@ class AutenticacaoApiTest {
 
     @Test
     void refreshDeContaSuspensaFalhaERevogaASessao() throws Exception {
-        Cookie original = refreshCookie(cadastrar("Ana", "ana", "ana@exemplo.com").andReturn());
+        Cookie original = refreshCookie(cadastrarVerificado("Ana", "ana", "ana@exemplo.com").andReturn());
         jdbc.update("update usuario set status = 'SUSPENSO'");
 
         renovar(original).andExpect(status().isUnauthorized());
@@ -238,7 +258,7 @@ class AutenticacaoApiTest {
 
     @Test
     void refreshVencidoFalha() throws Exception {
-        Cookie original = refreshCookie(cadastrar("Ana", "ana", "ana@exemplo.com").andReturn());
+        Cookie original = refreshCookie(cadastrarVerificado("Ana", "ana", "ana@exemplo.com").andReturn());
         jdbc.update("update refresh_token set expira_em = now() - interval '1 second'");
 
         renovar(original).andExpect(status().isUnauthorized());
@@ -248,7 +268,7 @@ class AutenticacaoApiTest {
 
     @Test
     void logoutRevogaOTokenEApagaOCookie() throws Exception {
-        Cookie original = refreshCookie(cadastrar("Ana", "ana", "ana@exemplo.com").andReturn());
+        Cookie original = refreshCookie(cadastrarVerificado("Ana", "ana", "ana@exemplo.com").andReturn());
 
         mvc.perform(post("/api/auth/logout").cookie(original))
                 .andExpect(status().isNoContent())
@@ -268,6 +288,18 @@ class AutenticacaoApiTest {
         return mvc.perform(post("/api/auth/cadastro").contentType(MediaType.APPLICATION_JSON).content("""
                 {"nomeCompleto": "%s", "username": "%s", "email": "%s", "senha": "%s"}
                 """.formatted(nome, username, email, SENHA)));
+    }
+
+    /** Cadastra e confirma o e-mail. A resposta é a da verificação, que abre a sessão. */
+    private ResultActions cadastrarVerificado(String nome, String username, String email) throws Exception {
+        cadastrar(nome, username, email).andExpect(status().isCreated());
+        return verificar(email, CodigosDeTeste.PADRAO).andExpect(status().isOk());
+    }
+
+    private ResultActions verificar(String email, String codigo) throws Exception {
+        return mvc.perform(post("/api/auth/verificar-email").contentType(MediaType.APPLICATION_JSON).content("""
+                {"email": "%s", "codigo": "%s"}
+                """.formatted(email.strip(), codigo)));
     }
 
     private ResultActions entrar(String email, String senha, boolean manterConectado) throws Exception {
