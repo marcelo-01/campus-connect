@@ -1,7 +1,7 @@
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Observable, firstValueFrom, map, tap } from 'rxjs';
-import { NovoCadastro, SessaoResponse, UsuarioResumo } from './sessao';
+import { CadastroPendente, NovoCadastro, SessaoResponse, UsuarioResumo } from './sessao';
 
 const ESPERA_ANTES_DE_REPETIR_MS = 300;
 
@@ -36,11 +36,22 @@ export class AuthService {
       );
   }
 
-  cadastrar(dados: NovoCadastro): Observable<UsuarioResumo> {
-    return this.http.post<SessaoResponse>('/api/auth/cadastro', dados).pipe(
+  /** Cria a conta e manda o código para o e-mail. Não abre a sessão: ela abre em {@link verificarEmail}. */
+  cadastrar(dados: NovoCadastro): Observable<CadastroPendente> {
+    return this.http.post<CadastroPendente>('/api/auth/cadastro', dados);
+  }
+
+  /** Confere o código mandado para o e-mail e, se ele bater, já entra na conta. */
+  verificarEmail(email: string, codigo: string): Observable<UsuarioResumo> {
+    return this.http.post<SessaoResponse>('/api/auth/verificar-email', { email, codigo }).pipe(
       tap((sessao) => this.guardar(sessao)),
       map((sessao) => sessao.usuario),
     );
+  }
+
+  /** Pede outro código. O servidor responde 202 até para e-mail sem conta, e 429 se for cedo demais. */
+  reenviarCodigo(email: string): Observable<void> {
+    return this.http.post<void>('/api/auth/reenviar-codigo', { email });
   }
 
   /**

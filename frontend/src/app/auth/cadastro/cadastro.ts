@@ -14,6 +14,7 @@ import {
 } from '../../shared/formulario';
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService } from '../auth.service';
+import { VerificacaoPendente } from '../verificar-email/verificacao-pendente';
 
 type Campo = 'nomeCompleto' | 'username' | 'email' | 'senha' | 'confirmarSenha';
 
@@ -37,7 +38,7 @@ const MENSAGENS: Record<Campo, Record<string, string>> = {
 
 /**
  * Tela de cadastro. O MVP não tinha uma; esta usa a mesma moldura e os mesmos componentes visuais do login.
- * A conta já sai logada.
+ * A conta ainda não sai logada: a sessão abre na tela do código mandado para o e-mail.
  */
 @Component({
   selector: 'app-cadastro',
@@ -50,6 +51,7 @@ export class Cadastro {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly verificacao = inject(VerificacaoPendente);
 
   protected readonly mostrarSenha = signal(false);
   protected readonly mostrarConfirmacao = signal(false);
@@ -90,7 +92,10 @@ export class Cadastro {
         senha,
       })
       .subscribe({
-        next: () => void this.router.navigateByUrl('/'),
+        next: ({ email: pendente }) => {
+          this.verificacao.comecar(pendente);
+          void this.router.navigateByUrl('/verificar-email');
+        },
         error: (erro: unknown) => {
           this.erroGeral.set(aplicarErroDaApi(this.form, erro));
           this.enviando.set(false);

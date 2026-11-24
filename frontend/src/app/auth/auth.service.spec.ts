@@ -35,6 +35,35 @@ describe('AuthService', () => {
     expect(JSON.stringify(localStorage)).not.toContain('jwt-1');
   });
 
+  it('o cadastro não abre a sessão: ela só abre quando o código do e-mail confere', () => {
+    const novo = { nomeCompleto: 'Ana Beatriz', username: 'ana', email: 'ana@exemplo.com', senha: 'senha-forte-123' };
+    let pendente: unknown;
+    auth.cadastrar(novo).subscribe((resposta) => (pendente = resposta));
+
+    const cadastro = http.expectOne('/api/auth/cadastro');
+    expect(cadastro.request.body).toEqual(novo);
+    cadastro.flush({ email: 'ana@exemplo.com' }, { status: 201, statusText: 'Created' });
+    expect(pendente).toEqual({ email: 'ana@exemplo.com' });
+    expect(auth.autenticado()).toBe(false);
+
+    auth.verificarEmail('ana@exemplo.com', '123456').subscribe();
+    const verificacao = http.expectOne('/api/auth/verificar-email');
+    expect(verificacao.request.body).toEqual({ email: 'ana@exemplo.com', codigo: '123456' });
+    verificacao.flush(SESSAO);
+
+    expect(auth.accessToken).toBe('jwt-1');
+    expect(auth.usuario()?.username).toBe('ana');
+  });
+
+  it('pede outro código pelo e-mail', () => {
+    auth.reenviarCodigo('ana@exemplo.com').subscribe();
+
+    const reenvio = http.expectOne('/api/auth/reenviar-codigo');
+    expect(reenvio.request.method).toBe('POST');
+    expect(reenvio.request.body).toEqual({ email: 'ana@exemplo.com' });
+    reenvio.flush(null, { status: 202, statusText: 'Accepted' });
+  });
+
   it('renovações simultâneas usam uma única requisição, porque o refresh token só vale uma vez', async () => {
     const primeira = auth.renovar();
     const segunda = auth.renovar();

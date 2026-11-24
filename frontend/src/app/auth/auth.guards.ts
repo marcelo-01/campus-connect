@@ -1,6 +1,7 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
+import { VerificacaoPendente } from './verificar-email/verificacao-pendente';
 
 /** Só deixa passar quem está logado; os outros vão para o login. */
 export const autenticadoGuard: CanActivateFn = () =>
@@ -16,6 +17,10 @@ export const administradorGuard: CanActivateFn = () =>
 /** Login e cadastro são só para quem ainda não entrou; quem já está logado vai para o início. */
 export const visitanteGuard: CanActivateFn = () =>
   !inject(AuthService).autenticado() || inject(Router).createUrlTree(['/']);
+
+/** A tela do código só faz sentido com um e-mail esperando por ele; sem isso, volta para o cadastro. */
+export const verificacaoPendenteGuard: CanActivateFn = () =>
+  inject(VerificacaoPendente).pendente !== null || inject(Router).createUrlTree(['/cadastro']);
 
 /**
  * `/perfil/<o próprio username>/conexoes` vai para `/conexoes`, onde a pessoa também vê os pedidos. O username é

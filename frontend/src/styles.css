@@ -2303,6 +2303,38 @@ select.chip {
 }
 
 /* ========================================================================
+   Verificação de e-mail — adicionado no projeto Angular
+   O MVP não tinha esta tela. Depois do cadastro (ou de um login sem
+   verificar), a pessoa digita o código de 6 números mandado para o e-mail.
+   A moldura é a do login.
+   ======================================================================== */
+.verificacao-email { color: var(--text); font-weight: 600; overflow-wrap: anywhere; }
+
+/* Os números espaçados, centralizados como no e-mail. O text-indent compensa o espaço que o
+   letter-spacing deixa depois do último dígito. */
+.form-input.codigo-verificacao {
+  font-family: var(--font-mono);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.45em;
+  text-indent: 0.45em;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.form-input.codigo-verificacao::placeholder { color: var(--text-subtle); opacity: 0.55; }
+
+.verificacao-reenvio {
+  text-align: center;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  margin: 22px 0 0;
+}
+.link-acao { color: var(--accent); font-weight: 600; font-size: inherit; }
+.link-acao:hover { color: var(--accent-hover); text-decoration: underline; }
+.link-acao:disabled { opacity: 0.6; cursor: progress; text-decoration: none; }
+
+/* ========================================================================
    Telas estreitas (RNF01) — adicionado no projeto Angular
    O MVP era só para desktop: a moldura tinha largura mínima de 1100px, e no
    celular a página inteira encolhia ou rolava para o lado. Abaixo de 1024px

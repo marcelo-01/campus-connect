@@ -1,0 +1,52 @@
+<app-auth-layout>
+  <h1 class="auth-title">Confirme seu e-mail</h1>
+  <p class="auth-sub">
+    Digite o código de 6 números que mandamos para <span class="verificacao-email">{{ email }}</span
+    >.
+  </p>
+
+  <form class="auth-form" [formGroup]="form" (ngSubmit)="verificar()">
+    @if (erroGeral(); as erro) {
+      <div class="auth-alert" role="alert">{{ erro }}</div>
+    }
+
+    <div class="field-group full">
+      <label for="verificacao-codigo">Código</label>
+      <input
+        #campo
+        id="verificacao-codigo"
+        class="form-input codigo-verificacao"
+        [class.invalid]="mostrarErro()"
+        type="text"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        placeholder="000000"
+        formControlName="codigo"
+      />
+      @if (mostrarErro()) {
+        <p class="field-error">{{ mensagem() }}</p>
+      }
+    </div>
+
+    <button type="submit" class="btn btn-primary btn-block auth-submit" [disabled]="enviando()">
+      {{ enviando() ? 'Confirmando…' : 'Confirmar e entrar' }}
+    </button>
+  </form>
+
+  <p class="verificacao-reenvio">
+    Não chegou? Confira a caixa de spam ou
+    @if (espera() > 0) {
+      peça outro código em {{ tempoDeEspera() }}.
+    } @else {
+      <button type="button" class="link-acao" [disabled]="reenviando()" (click)="reenviar()">
+        peça outro código</button
+      >.
+    }
+  </p>
+
+  <p class="auth-foot">
+    <a routerLink="/cadastro">Usar outro e-mail</a>
+    <span aria-hidden="true"> · </span>
+    <a routerLink="/entrar">Voltar para o login</a>
+  </p>
+</app-auth-layout>

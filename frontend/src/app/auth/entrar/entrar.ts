@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -6,6 +7,8 @@ import { IconeGoogle, IconeOlho } from '../../shared/icones';
 import { aplicarErroDaApi, emailValido, mensagemDeErro } from '../../shared/formulario';
 import { AuthLayout } from '../auth-layout/auth-layout';
 import { AuthService } from '../auth.service';
+import { EMAIL_NAO_VERIFICADO, ProblemaApi } from '../sessao';
+import { VerificacaoPendente } from '../verificar-email/verificacao-pendente';
 
 const MENSAGENS: Record<string, Record<string, string>> = {
   email: { required: 'Informe seu e-mail.', email: 'Informe um e-mail válido.' },
@@ -24,6 +27,7 @@ export class Entrar {
   private readonly auth = inject(AuthService);
   private readonly router = inject(Router);
   private readonly toast = inject(ToastService);
+  private readonly verificacao = inject(VerificacaoPendente);
 
   protected readonly mostrarSenha = signal(false);
   protected readonly enviando = signal(false);
@@ -49,6 +53,13 @@ export class Entrar {
     this.auth.entrar(email.trim(), senha, manterConectado).subscribe({
       next: () => void this.router.navigateByUrl('/'),
       error: (erro: unknown) => {
+        // A senha está certa, mas falta o e-mail: o servidor já mandou um código novo.
+        const problema = erro instanceof HttpErrorResponse ? (erro.error as ProblemaApi | null) : null;
+        if (problema?.codigo === EMAIL_NAO_VERIFICADO) {
+          this.verificacao.comecar(email.trim());
+          void this.router.navigateByUrl('/verificar-email');
+          return;
+        }
         this.erroGeral.set(aplicarErroDaApi(this.form, erro));
         this.enviando.set(false);
       },

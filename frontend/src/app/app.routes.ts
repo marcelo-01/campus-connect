@@ -3,10 +3,12 @@ import {
   administradorGuard,
   autenticadoGuard,
   conexoesDeOutraPessoaGuard,
+  verificacaoPendenteGuard,
   visitanteGuard,
 } from './auth/auth.guards';
 import { Cadastro } from './auth/cadastro/cadastro';
 import { Entrar } from './auth/entrar/entrar';
+import { VerificarEmail } from './auth/verificar-email/verificar-email';
 import { BolhaForm } from './bolhas/bolha-form/bolha-form';
 import { BolhaPagina } from './bolhas/bolha-pagina/bolha-pagina';
 import { Explorar } from './bolhas/explorar/explorar';
@@ -27,6 +29,12 @@ import { SalvosPagina } from './publicacoes/salvos-pagina/salvos-pagina';
 export const routes: Routes = [
   { path: 'entrar', component: Entrar, canActivate: [visitanteGuard], title: 'Entrar · CampusConnect' },
   { path: 'cadastro', component: Cadastro, canActivate: [visitanteGuard], title: 'Criar conta · CampusConnect' },
+  {
+    path: 'verificar-email',
+    component: VerificarEmail,
+    canActivate: [visitanteGuard, verificacaoPendenteGuard],
+    title: 'Confirmar e-mail · CampusConnect',
+  },
   {
     // Telas logadas, dentro do layout do MVP. `data.trilha` alimenta a barra do topo.
     path: '',
