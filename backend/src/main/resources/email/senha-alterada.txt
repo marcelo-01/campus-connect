@@ -1,0 +1,9 @@
+Olá, {{nome}}!
+
+A senha da sua conta no CampusConnect acabou de ser alterada. A conta saiu de todos os outros aparelhos em que estava aberta.
+
+Se foi você, está tudo certo e não precisa fazer nada.
+
+Se não foi você, troque a senha agora: na tela de entrada do CampusConnect, use "Esqueceu a senha?". A troca tira da conta quem estiver nela.
+
+campusconnect.

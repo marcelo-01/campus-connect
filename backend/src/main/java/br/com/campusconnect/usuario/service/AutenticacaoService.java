@@ -1,5 +1,8 @@
 package br.com.campusconnect.usuario.service;
 
+import br.com.campusconnect.comum.CampoInvalidoException;
+import br.com.campusconnect.usuario.model.FinalidadeCodigo;
+import br.com.campusconnect.usuario.model.RefreshToken;
 import br.com.campusconnect.usuario.model.Usuario;
 import br.com.campusconnect.usuario.repository.UsuarioRepository;
 import br.com.campusconnect.usuario.seguranca.ContaUsuario;
@@ -20,12 +23,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Cadastra, verifica o e-mail e abre, renova e encerra sessões. Cada sessão é um JWT de acesso curto mais um refresh
- * token longo. A conta só tem sessão depois de verificar o e-mail.
+ * Cadastra, verifica o e-mail, troca a senha e abre, renova e encerra sessões. Cada sessão é um JWT de acesso curto
+ * mais um refresh token longo. A conta só tem sessão depois de verificar o e-mail.
  */
 @Service
 @RequiredArgsConstructor
 public class AutenticacaoService {
+
+    static final String SENHA_ATUAL_INCORRETA = "A senha atual está incorreta.";
+    static final String SENHA_REPETIDA = "A senha nova precisa ser diferente da atual.";
 
     private final AuthenticationManager autenticador;
     private final UsuarioService usuarioService;
@@ -33,6 +39,7 @@ public class AutenticacaoService {
     private final TokenAcessoService tokensAcesso;
     private final RefreshTokenService refreshTokens;
     private final VerificacaoEmailService verificacoes;
+    private final SenhaService senhas;
 
     /**
      * Cria a conta e manda o código para o e-mail. A sessão só abre em {@link #verificarEmail}.
@@ -43,7 +50,7 @@ public class AutenticacaoService {
     @Transactional
     public CadastroPendente cadastrar(NovoUsuario novo) {
         Usuario usuario = usuarioService.cadastrar(novo);
-        verificacoes.emitirSePuder(usuario);
+        verificacoes.emitirSePuder(usuario, FinalidadeCodigo.VERIFICACAO_EMAIL);
         return new CadastroPendente(usuario.getEmail());
     }
 
@@ -56,7 +63,7 @@ public class AutenticacaoService {
      */
     @Transactional(noRollbackFor = CodigoIncorretoException.class)
     public SessaoEmitida verificarEmail(String email, String codigo) {
-        Usuario usuario = verificacoes.confirmar(email, codigo);
+        Usuario usuario = verificacoes.confirmarEmail(email, codigo);
         if (!usuario.podeEntrar()) {
             throw new DisabledException("Conta fora do ar");
         }
@@ -73,7 +80,79 @@ public class AutenticacaoService {
     public void reenviarCodigo(String email) {
         usuarios.findByEmail(Usuario.normalizarEmail(email))
                 .filter(usuario -> !usuario.isEmailVerificado() && usuario.estaAtiva())
-                .ifPresent(verificacoes::emitir);
+                .ifPresent(usuario -> verificacoes.emitir(usuario, FinalidadeCodigo.VERIFICACAO_EMAIL));
+    }
+
+    /**
+     * O "Esqueceu a senha?": manda para o e-mail o código que troca a senha. Para um e-mail sem conta, ou de conta
+     * fora do ar, não faz nada e não diz nada. A conta que ainda não verificou o e-mail também recebe o código.
+     *
+     * @throws LimiteDeCodigosException se a conta pediu códigos demais em pouco tempo
+     */
+    @Transactional
+    public void esqueciSenha(String email) {
+        usuarios.findByEmail(Usuario.normalizarEmail(email))
+                .filter(Usuario::estaAtiva)
+                .ifPresent(usuario -> verificacoes.emitir(usuario, FinalidadeCodigo.REDEFINICAO_SENHA));
+    }
+
+    /**
+     * Confere o código de redefinição antes de a pessoa digitar a senha nova. O código não é gasto: ele vai de novo
+     * em {@link #redefinirSenha}.
+     *
+     * @throws CodigoIncorretoException se o código não bater; a tentativa fica contada
+     * @throws CampoInvalidoException se não houver código valendo para o e-mail
+     */
+    @Transactional(noRollbackFor = CodigoIncorretoException.class)
+    public void conferirCodigoRedefinicao(String email, String codigo) {
+        verificacoes.conferirRedefinicao(email, codigo);
+    }
+
+    /**
+     * Troca a senha pelo código mandado para o e-mail e já entra na conta, com "Manter conectado" ligado, como na
+     * verificação do e-mail. As sessões abertas em outros aparelhos caem.
+     *
+     * <p>Quem recebeu o código provou ser dono do e-mail, então a conta que ainda não tinha verificado o e-mail fica
+     * verificada.
+     *
+     * @throws CodigoIncorretoException se o código não bater; a tentativa fica contada
+     * @throws CampoInvalidoException se não houver código valendo para o e-mail
+     */
+    @Transactional(noRollbackFor = CodigoIncorretoException.class)
+    public SessaoEmitida redefinirSenha(String email, String codigo, String novaSenha) {
+        Usuario usuario = verificacoes.conferirRedefinicao(email, codigo);
+        usuario.setEmailVerificado(true);
+        verificacoes.apagarTodos(usuario);
+        senhas.trocar(usuario, novaSenha);
+        return abrirSessao(usuario, true);
+    }
+
+    /**
+     * A troca de senha de quem está logado, que se reconhece pelo refresh token do cookie e confirma a senha atual.
+     * As sessões da conta caem em todos os aparelhos, e a deste recomeça numa família nova, com o mesmo "Manter
+     * conectado".
+     *
+     * <p>Não desfaz a transação na {@link SessaoInvalidaException}, como em {@link #renovar}.
+     *
+     * @throws SessaoInvalidaException se o token não valer mais ou a conta não puder entrar
+     * @throws CampoInvalidoException se a senha atual estiver errada ou a nova for igual a ela
+     */
+    @Transactional(noRollbackFor = SessaoInvalidaException.class)
+    public SessaoEmitida alterarSenha(String refreshToken, String senhaAtual, String novaSenha) {
+        RefreshToken sessao = refreshTokens.sessaoAtual(refreshToken);
+        Usuario usuario = sessao.getUsuario();
+        if (!usuario.podeEntrar()) {
+            refreshTokens.revogarFamilia(refreshToken);
+            throw new SessaoInvalidaException();
+        }
+        if (!senhas.confere(usuario, senhaAtual)) {
+            throw new CampoInvalidoException("senhaAtual", SENHA_ATUAL_INCORRETA);
+        }
+        if (senhas.confere(usuario, novaSenha)) {
+            throw new CampoInvalidoException("novaSenha", SENHA_REPETIDA);
+        }
+        senhas.trocar(usuario, novaSenha);
+        return abrirSessao(usuario, sessao.isPersistente());
     }
 
     /**
@@ -90,7 +169,8 @@ public class AutenticacaoService {
         try {
             autenticacao = autenticador.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, senha));
         } catch (EmailNaoVerificadoException naoVerificado) {
-            usuarios.findByEmail(Usuario.normalizarEmail(email)).ifPresent(verificacoes::emitirSePuder);
+            usuarios.findByEmail(Usuario.normalizarEmail(email))
+                    .ifPresent(usuario -> verificacoes.emitirSePuder(usuario, FinalidadeCodigo.VERIFICACAO_EMAIL));
             throw naoVerificado;
         }
         ContaUsuario conta = (ContaUsuario) autenticacao.getPrincipal();

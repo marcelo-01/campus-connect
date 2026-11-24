@@ -1,0 +1,11 @@
+Olá, {{nome}}!
+
+Recebemos um pedido para redefinir a senha da sua conta no CampusConnect. Este é o código:
+
+    {{codigo}}
+
+Volte ao CampusConnect, digite o código e crie a senha nova. Ele vale por {{minutos}} minutos.
+
+Se você não pediu para redefinir a senha, ignore este e-mail. A sua senha continua a mesma, e sem o código ninguém consegue trocá-la.
+
+campusconnect.

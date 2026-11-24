@@ -67,7 +67,8 @@ campusconnect:
     mensagens-por-minuto: 30
     conversas-novas-por-dia: 20
   verificacao:
-    # Codigo de 6 digitos mandado para o e-mail no cadastro.
+    # Codigo de 6 digitos mandado para o e-mail no cadastro e no "Esqueceu a senha?".
+    # Os limites de envio contam cada um separado.
     validade-codigo: 15m
     tentativas-por-codigo: 5
     intervalo-reenvio: 60s

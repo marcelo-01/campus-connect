@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Redefinir a senha do CampusConnect</title>
+</head>
+<body style="margin:0;padding:0;background-color:#FAF7F2;">
+<!-- Pré-cabeçalho: o resumo que a caixa de entrada mostra ao lado do assunto. -->
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">O código vale por {{minutos}} minutos.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#FAF7F2;">
+  <tr>
+    <td align="center" style="padding:32px 16px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:480px;background-color:#FFFFFF;border:1px solid #E4E2EC;border-radius:16px;">
+        <tr>
+          <td style="padding:32px 32px 8px 32px;font-family:Arial,Helvetica,sans-serif;font-size:22px;font-weight:bold;color:#1F1B4B;">
+            campusconnect<span style="color:#7B5BE6;">.</span>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:16px 32px 0 32px;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:24px;color:#1F1B4B;">
+            Olá, {{nome}}!<br>
+            Recebemos um pedido para redefinir a senha da sua conta no CampusConnect. Este é o código:
+          </td>
+        </tr>
+        <tr>
+          <td align="center" style="padding:24px 32px;">
+            <div style="display:inline-block;padding:14px 24px;background-color:#EEE9FB;border-radius:12px;font-family:'Courier New',Courier,monospace;font-size:34px;font-weight:bold;letter-spacing:8px;color:#1F1B4B;">{{codigo}}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:0 32px 32px 32px;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:22px;color:#56536E;">
+            Volte ao CampusConnect, digite o código e crie a senha nova. Ele vale por <strong>{{minutos}} minutos</strong>.<br><br>
+            Se você não pediu para redefinir a senha, ignore este e-mail. A sua senha continua a mesma, e sem o código ninguém consegue trocá-la.
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>

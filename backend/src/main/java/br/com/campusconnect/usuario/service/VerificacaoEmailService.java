@@ -1,6 +1,7 @@
 package br.com.campusconnect.usuario.service;
 
 import br.com.campusconnect.comum.CampoInvalidoException;
+import br.com.campusconnect.usuario.model.FinalidadeCodigo;
 import br.com.campusconnect.usuario.model.Usuario;
 import br.com.campusconnect.usuario.model.VerificacaoEmail;
 import br.com.campusconnect.usuario.repository.UsuarioRepository;
@@ -19,11 +20,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Manda e confere o código de 6 dígitos que verifica o e-mail.
+ * Manda e confere os códigos de 6 dígitos mandados para o e-mail: o que verifica o e-mail e o que redefine a senha
+ * ({@link FinalidadeCodigo}).
  *
- * <p>Só o código mais novo da conta vale. Ele vale por {@code validade-codigo} e aceita {@code tentativas-por-codigo}
- * erros. A mesma conta recebe no máximo um código a cada {@code intervalo-reenvio} e {@code envios-por-hora} por
- * hora. Assim, adivinhar o código em 1 milhão fica inviável.
+ * <p>Em cada finalidade, só o código mais novo da conta vale. Ele vale por {@code validade-codigo} e aceita
+ * {@code tentativas-por-codigo} erros. A mesma conta recebe no máximo um código a cada {@code intervalo-reenvio} e
+ * {@code envios-por-hora} por hora, contados em cada finalidade. Assim, adivinhar o código em 1 milhão fica inviável.
  *
  * <p>Exige uma transação aberta por quem chama ({@link AutenticacaoService}). Com o código errado, a tentativa
  * contada precisa ficar gravada, então a {@link CodigoIncorretoException} não desfaz a transação.
@@ -45,60 +47,86 @@ class VerificacaoEmailService {
     private final ApplicationEventPublisher eventos;
 
     /**
-     * Manda um código novo. O anterior deixa de valer.
+     * Manda um código novo. O anterior da mesma finalidade deixa de valer.
      *
-     * @throws LimiteDeCodigosException se a conta pediu códigos demais em pouco tempo
+     * @throws LimiteDeCodigosException se a conta pediu códigos demais dessa finalidade em pouco tempo
      */
-    void emitir(Usuario usuario) {
+    void emitir(Usuario usuario, FinalidadeCodigo finalidade) {
         Instant agora = Instant.now();
-        Duration espera = espera(usuario, agora);
+        Duration espera = espera(usuario, finalidade, agora);
         if (espera.isPositive()) {
             throw new LimiteDeCodigosException(espera);
         }
-        mandar(usuario, agora);
+        mandar(usuario, finalidade, agora);
     }
 
     /**
      * Manda um código novo se o limite deixar. Se não deixar, nada muda, e o último código mandado continua valendo
      * enquanto estiver no prazo. Serve ao cadastro refeito e ao login, que não falham por causa do limite.
      */
-    void emitirSePuder(Usuario usuario) {
+    void emitirSePuder(Usuario usuario, FinalidadeCodigo finalidade) {
         Instant agora = Instant.now();
-        if (!espera(usuario, agora).isPositive()) {
-            mandar(usuario, agora);
+        if (!espera(usuario, finalidade, agora).isPositive()) {
+            mandar(usuario, finalidade, agora);
         }
     }
 
     /**
-     * Confere o código e, se ele bater, marca o e-mail como verificado e apaga os códigos da conta.
+     * Confere o código de verificação e, se ele bater, marca o e-mail como verificado e apaga os códigos de
+     * verificação da conta.
      *
      * @return a conta, com o e-mail verificado
      * @throws EmailJaVerificadoException se a conta já tinha verificado o e-mail
      * @throws CodigoIncorretoException se o código não bater; a tentativa fica contada
      * @throws CampoInvalidoException se a conta não existir ou não houver código valendo
      */
-    Usuario confirmar(String email, String codigo) {
-        Instant agora = Instant.now();
+    Usuario confirmarEmail(String email, String codigo) {
         Usuario usuario = usuarios.findByEmail(Usuario.normalizarEmail(email))
                 .orElseThrow(VerificacaoEmailService::vencido);
         if (usuario.isEmailVerificado()) {
             throw new EmailJaVerificadoException();
         }
-        VerificacaoEmail atual = verificacoes.findFirstByUsuarioIdOrderByCriadoEmDesc(usuario.getId())
-                .filter(verificacao -> verificacao.valeEm(agora, propriedades.tentativasPorCodigo()))
+        conferir(usuario, FinalidadeCodigo.VERIFICACAO_EMAIL, codigo);
+        usuario.setEmailVerificado(true);
+        verificacoes.apagarDaConta(usuario.getId(), FinalidadeCodigo.VERIFICACAO_EMAIL);
+        return usuario;
+    }
+
+    /**
+     * Confere o código de redefinição de senha sem gastá-lo: ele continua valendo para o envio da senha nova. Quem
+     * gasta o código é {@link #apagarTodos}.
+     *
+     * @return a conta do e-mail, ativa
+     * @throws CodigoIncorretoException se o código não bater; a tentativa fica contada
+     * @throws CampoInvalidoException se a conta não existir, não estiver ativa ou não houver código valendo
+     */
+    Usuario conferirRedefinicao(String email, String codigo) {
+        Usuario usuario = usuarios.findByEmail(Usuario.normalizarEmail(email))
+                .filter(Usuario::estaAtiva)
+                .orElseThrow(VerificacaoEmailService::vencido);
+        conferir(usuario, FinalidadeCodigo.REDEFINICAO_SENHA, codigo);
+        return usuario;
+    }
+
+    /** Apaga os códigos da conta, das duas finalidades. */
+    void apagarTodos(Usuario usuario) {
+        verificacoes.apagarTodosDaConta(usuario.getId());
+    }
+
+    private void conferir(Usuario usuario, FinalidadeCodigo finalidade, String codigo) {
+        VerificacaoEmail atual = verificacoes
+                .findFirstByUsuarioIdAndFinalidadeOrderByCriadoEmDesc(usuario.getId(), finalidade)
+                .filter(verificacao -> verificacao.valeEm(Instant.now(), propriedades.tentativasPorCodigo()))
                 .orElseThrow(VerificacaoEmailService::vencido);
         if (!confere(atual.getCodigoHash(), codigo)) {
             throw new CodigoIncorretoException(atual.registrarErro(propriedades.tentativasPorCodigo()));
         }
-        usuario.setEmailVerificado(true);
-        verificacoes.apagarDaConta(usuario.getId());
-        return usuario;
     }
 
-    /** Zero se a conta pode receber outro código agora. */
-    private Duration espera(Usuario usuario, Instant agora) {
-        List<VerificacaoEmail> recentes = verificacoes.findByUsuarioIdAndCriadoEmAfterOrderByCriadoEmDesc(
-                usuario.getId(), agora.minus(JANELA_ENVIOS));
+    /** Zero se a conta pode receber outro código dessa finalidade agora. */
+    private Duration espera(Usuario usuario, FinalidadeCodigo finalidade, Instant agora) {
+        List<VerificacaoEmail> recentes = verificacoes.findByUsuarioIdAndFinalidadeAndCriadoEmAfterOrderByCriadoEmDesc(
+                usuario.getId(), finalidade, agora.minus(JANELA_ENVIOS));
         Duration espera = Duration.ZERO;
         if (!recentes.isEmpty()) {
             Instant liberaEm = recentes.getFirst().getCriadoEm().plus(propriedades.intervaloReenvio());
@@ -112,11 +140,16 @@ class VerificacaoEmailService {
         return espera;
     }
 
-    private void mandar(Usuario usuario, Instant agora) {
+    private void mandar(Usuario usuario, FinalidadeCodigo finalidade, Instant agora) {
         String codigo = gerador.gerar();
-        verificacoes.save(new VerificacaoEmail(usuario, hash(codigo), agora.plus(propriedades.validadeCodigo())));
-        eventos.publishEvent(new CodigoVerificacaoEmitido(usuario.getEmail(), usuario.getNomeCompleto(), codigo,
-                propriedades.validadeCodigo()));
+        Duration validade = propriedades.validadeCodigo();
+        verificacoes.save(new VerificacaoEmail(usuario, finalidade, hash(codigo), agora.plus(validade)));
+        eventos.publishEvent(switch (finalidade) {
+            case VERIFICACAO_EMAIL ->
+                    new CodigoVerificacaoEmitido(usuario.getEmail(), usuario.getNomeCompleto(), codigo, validade);
+            case REDEFINICAO_SENHA ->
+                    new CodigoRedefinicaoSenhaEmitido(usuario.getEmail(), usuario.getNomeCompleto(), codigo, validade);
+        });
     }
 
     private static Duration maior(Duration uma, Duration outra) {

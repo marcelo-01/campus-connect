@@ -85,13 +85,14 @@ docker logs "$CADDY_CONTEINER" --tail 50     # certificado e HTTPS
 | Navegador diz que a conexão não é particular | O Caddy não conseguiu o certificado: os logs do Caddy |
 | O site abre, mas nada carrega (erro 502 no `/api`) | A API caiu ou ainda está subindo: `docker logs campusconnect_api` |
 | A API reinicia sem parar | Banco fora do ar ou senha diferente entre `api.env` e `banco.env` |
-| O código do cadastro não chega | `docker logs campusconnect_api 2>&1 \| grep "código de verificação"` mostra a falha do SMTP. Se não houver falha, olhe o spam e os registros de envio no painel do Brevo |
+| O código do cadastro ou da redefinição de senha não chega | `docker logs campusconnect_api 2>&1 \| grep "Não foi possível mandar"` mostra a falha do SMTP. Se não houver falha, olhe o spam e os registros de envio no painel do Brevo |
 | O log mostra falha de autenticação no SMTP | A chave SMTP do Brevo venceu: ela vale 1 ano (até 24/11/2027) e morre depois de 90 dias sem uso. Gere outra em **SMTP & API → SMTP**, troque o `SMTP_SENHA` no `api.env` e rode `docker compose up -d campusconnect_api` |
 
 ## E-mail
 
-O cadastro manda um código de 6 números para o e-mail da pessoa, pelo SMTP do **Brevo**. O código usa SMTP padrão,
-então trocar de provedor é só trocar as variáveis abaixo.
+O cadastro e o "Esqueceu a senha?" mandam um código de 6 números para o e-mail da pessoa, pelo SMTP do **Brevo**.
+Quando a senha muda, o dono da conta também recebe um aviso. A API usa SMTP padrão, então trocar de provedor é só
+trocar as variáveis abaixo.
 
 Os e-mails saem de um endereço do subdomínio `campusconnect.maisvida.cloud`. Assim, o SPF do domínio principal não
 muda, e a reputação desses envios fica separada.

@@ -78,10 +78,28 @@ public class RefreshTokenService {
         return new Rotacao(atual.getUsuario(), novo);
     }
 
+    /**
+     * O token que ainda vale, sem trocá-lo. Serve à troca de senha, que reconhece a pessoa pelo cookie.
+     *
+     * @throws SessaoInvalidaException se o token não existir, tiver vencido ou tiver sido revogado
+     */
+    public RefreshToken sessaoAtual(String valor) {
+        RefreshToken token = tokens.findByTokenHash(hash(valor)).orElseThrow(SessaoInvalidaException::new);
+        if (token.isRevogado() || token.expirouEm(Instant.now())) {
+            throw new SessaoInvalidaException();
+        }
+        return token;
+    }
+
     /** Usado no logout e quando a conta deixa de estar ativa. Token desconhecido é ignorado. */
     public void revogarFamilia(String valor) {
         tokens.findByTokenHash(hash(valor))
                 .ifPresent(token -> tokens.revogarFamilia(token.getFamiliaId(), Instant.now()));
+    }
+
+    /** Encerra as sessões da conta em todos os aparelhos. Usado quando a senha muda. */
+    public void revogarDaConta(Usuario usuario) {
+        tokens.revogarDaConta(usuario.getId(), Instant.now());
     }
 
     private TokenRenovacao salvar(Usuario usuario, UUID familiaId, boolean persistente, Instant agora) {

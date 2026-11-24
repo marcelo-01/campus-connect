@@ -32,9 +32,10 @@ import org.springframework.security.web.SecurityFilterChain;
 /**
  * API sem estado: cada requisição autenticada traz o JWT de acesso no header {@code Authorization}.
  *
- * <p>O CSRF fica desligado porque nenhuma rota autenticada depende de cookie. As únicas que leem
- * cookie são {@code /api/auth/refresh} e {@code /api/auth/logout}, e o cookie delas é
- * {@code SameSite=Strict}: o navegador não o envia em requisições vindas de outro site.
+ * <p>O CSRF fica desligado porque nenhuma rota autenticada pelo JWT depende de cookie. As únicas que leem
+ * cookie são {@code /api/auth/refresh}, {@code /api/auth/logout} e {@code /api/auth/alterar-senha}, e o cookie
+ * delas é {@code SameSite=Strict}: o navegador não o envia em requisições vindas de outro site. A troca de senha
+ * ainda pede a senha atual.
  */
 @Slf4j
 @Configuration

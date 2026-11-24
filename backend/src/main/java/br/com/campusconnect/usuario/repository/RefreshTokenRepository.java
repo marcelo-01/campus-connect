@@ -29,4 +29,15 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, UUID
             where t.familiaId = :familiaId and t.revogadoEm is null
             """)
     int revogarFamilia(@Param("familiaId") UUID familiaId, @Param("agora") Instant agora);
+
+    /**
+     * Todas as famílias da conta. Sem {@code clearAutomatically}: quem chama continua usando a conta carregada na
+     * mesma transação, e a limpeza a soltaria do Hibernate.
+     */
+    @Modifying(flushAutomatically = true)
+    @Query("""
+            update RefreshToken t set t.revogadoEm = :agora
+            where t.usuario.id = :usuarioId and t.revogadoEm is null
+            """)
+    int revogarDaConta(@Param("usuarioId") UUID usuarioId, @Param("agora") Instant agora);
 }

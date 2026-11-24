@@ -5,7 +5,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 
 /**
- * Bloco {@code campusconnect.verificacao} do {@code application.yml}: o código mandado para o e-mail no cadastro.
+ * Bloco {@code campusconnect.verificacao} do {@code application.yml}: os códigos mandados para o e-mail, no cadastro e
+ * no "Esqueceu a senha?". Os limites de envio contam cada finalidade separada.
  *
  * @param validadeCodigo quanto tempo o código vale depois de mandado
  * @param tentativasPorCodigo quantos códigos errados a pessoa pode digitar antes de o código deixar de valer

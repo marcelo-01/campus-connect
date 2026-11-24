@@ -57,6 +57,31 @@ class CaixaDeSaidaFalsa extends JavaMailSenderImpl {
                 "Esperava " + quantos + " e-mail(s) para " + email + ", chegaram " + para(email).size());
     }
 
+    /**
+     * Espera, por no máximo 5 s, um e-mail para o endereço com o trecho no assunto. Serve quando saem vários e-mails
+     * seguidos: cada um vai numa thread, e a ordem de chegada não é garantida.
+     */
+    MimeMessage esperarAssunto(String email, String trecho) throws InterruptedException {
+        Instant limite = Instant.now().plus(Duration.ofSeconds(5));
+        while (Instant.now().isBefore(limite)) {
+            Optional<MimeMessage> achada = para(email).stream().filter(mensagem -> assunto(mensagem).contains(trecho))
+                    .findFirst();
+            if (achada.isPresent()) {
+                return achada.get();
+            }
+            Thread.sleep(20);
+        }
+        throw new AssertionError("Nenhum e-mail para " + email + " com \"" + trecho + "\" no assunto");
+    }
+
+    private static String assunto(MimeMessage mensagem) {
+        try {
+            return Optional.ofNullable(mensagem.getSubject()).orElse("");
+        } catch (MessagingException excecao) {
+            throw new IllegalStateException(excecao);
+        }
+    }
+
     /** O corpo do tipo pedido ({@code text/html} ou {@code text/plain}), já decodificado. */
     static String corpo(MimeMessage mensagem, String tipo) throws IOException, MessagingException {
         return procurar(mensagem, tipo)

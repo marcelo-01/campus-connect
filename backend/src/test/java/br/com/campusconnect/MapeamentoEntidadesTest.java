@@ -46,6 +46,7 @@ import br.com.campusconnect.publicacao.model.RepublicacaoId;
 import br.com.campusconnect.publicacao.model.StatusPublicacao;
 import br.com.campusconnect.publicacao.model.TipoMidia;
 import br.com.campusconnect.publicacao.model.TipoReacao;
+import br.com.campusconnect.usuario.model.FinalidadeCodigo;
 import br.com.campusconnect.usuario.model.RefreshToken;
 import br.com.campusconnect.usuario.model.StatusUsuario;
 import br.com.campusconnect.usuario.model.Usuario;
@@ -91,8 +92,8 @@ class MapeamentoEntidadesTest {
 
         RefreshToken refreshToken = em.persist(new RefreshToken(ana, UUID.randomUUID(), "a".repeat(64), true,
                 Instant.parse("2026-12-01T03:00:00Z")));
-        VerificacaoEmail verificacao = em.persist(new VerificacaoEmail(joao, "b".repeat(64),
-                Instant.parse("2026-12-01T03:15:00Z")));
+        VerificacaoEmail verificacao = em.persist(new VerificacaoEmail(joao, FinalidadeCodigo.REDEFINICAO_SENHA,
+                "b".repeat(64), Instant.parse("2026-12-01T03:15:00Z")));
         verificacao.registrarErro(5);
 
         Conexao conexao = em.persist(Conexao.solicitar(ana.getId(), joao.getId()));
@@ -209,6 +210,7 @@ class MapeamentoEntidadesTest {
 
         VerificacaoEmail verificacaoLida = em.find(VerificacaoEmail.class, verificacao.getId());
         assertThat(verificacaoLida.getUsuario().getId()).isEqualTo(joao.getId());
+        assertThat(verificacaoLida.getFinalidade()).isEqualTo(FinalidadeCodigo.REDEFINICAO_SENHA);
         assertThat(verificacaoLida.getTentativas()).isEqualTo((short) 1);
         assertThat(verificacaoLida.getCriadoEm()).isNotNull();
 

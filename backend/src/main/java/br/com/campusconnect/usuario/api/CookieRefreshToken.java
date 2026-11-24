@@ -14,7 +14,8 @@ import org.springframework.stereotype.Component;
  * <ul>
  *   <li>{@code HttpOnly}: o JavaScript não lê o token, então um XSS não consegue roubá-lo.
  *   <li>{@code SameSite=Strict}: não vai em requisições disparadas por outro site (CSRF).
- *   <li>{@code Path=/api/auth}: só acompanha as rotas de refresh e logout.
+ *   <li>{@code Path=/api/auth}: só acompanha as rotas de autenticação, das quais só o refresh, o logout e a troca
+ *       de senha o leem.
  *   <li>Com "Manter conectado", tem {@code Max-Age}; sem, é cookie de sessão e some ao fechar o navegador.
  * </ul>
  */
